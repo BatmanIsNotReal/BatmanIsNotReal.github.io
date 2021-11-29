@@ -213,7 +213,7 @@ function HousePar(houseSize, xpRates, houseImages){
             return this.currentSize * 2;
         },
     }
-	
+		
 	this.xpReturnDisplay = function(){
 		return String(xp + "/" + xpNext);
 	};
