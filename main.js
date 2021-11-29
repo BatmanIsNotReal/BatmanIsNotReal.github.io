@@ -25,6 +25,12 @@ function Player(vName, hName){
 
 //storage vars
 function Inventory(){
+
+	this.items = {
+		blood: 10,
+		humanFood: 10,
+	}
+
 	this.bloodAmmount = 10;
 	this.humanFoodAmmount = 10;
 	this.newHumanFoodPerRound = 0;
@@ -51,8 +57,8 @@ function Inventory(){
 	};
 
 	this.getBloodCount = function(){
-		this.bloodAmmount = Math.floor(this.bloodAmmount);
-		return this.bloodAmmount;
+		this.items.blood = Math.floor(this.items.blood);
+		return this.items.blood;
 	};
 
 
@@ -63,15 +69,15 @@ function Inventory(){
 	};
 
 	this.addBlood = function(ammount){
-		this.bloodAmmount = this.bloodAmmount + ammount;
+		this.items.blood = this.items.blood + ammount;
 	};
 
 	this.getHumanFoodAmmount = function(){
-		return this.humanFoodAmmount;
+		return this.items.humanFood;
 	};
 
 	this.useBlood = function(ammount){
-		this.bloodAmmount = this.bloodAmmount - ammount;
+		this.items.blood = this.items.blood - ammount;
 	};
 
 	this.updateBlood = function(){
@@ -170,14 +176,14 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 			Familiars.addFamiliar();
 			House.useXp(Familiars.cost);
 			Inv.getHumanFoodPerRound();
-			document.getElementById("humanFoodCount").innerHTML = Inv.humanFoodAmmount;
+			document.getElementById("humanFoodCount").innerHTML = Inv.items.humanFood;
 			coolDown("adoptFamiliar", 5000);
 		};
 		document.getElementById("newHumanFoodPerRound").innerHTML = Inv.newHumanFoodPerRound;
 	};
 
 	this.gatherHumanFood = function(){
-		Inv.humanFoodAmmount = Inv.humanFoodAmmount + Inv.newHumanFoodPerRound;
+		Inv.items.humanFood = Inv.items.humanFood + Inv.newHumanFoodPerRound;
 	};
 
 	this.gatherBloodVictim = function(){
@@ -185,8 +191,8 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	};
 
 	this.eat = function(){
-		if (Inv.humanFoodAmmount >= 1){
-			Inv.humanFoodAmmount = Inv.humanFoodAmmount - this.ammount;
+		if (Inv.items.humanFood >= 1){
+			Inv.items.humanFood = Inv.items.humanFood - this.ammount;
 		}
 	};
 
@@ -268,14 +274,14 @@ load();
 
 //Drinking blood
 function drinkBlood(){
-	if (Inv.bloodAmmount >= 1){
-	Inv.bloodAmmount = Inv.bloodAmmount + 1;
-	document.getElementById("bloodCount").innerHTML = Inv.bloodAmmount;
+	if (Inv.items.blood >= 1){
+	Inv.items.blood = Inv.items.blood + 1;
+	document.getElementById("bloodCount").innerHTML = Inv.items.blood;
 	};
 };
 
 function buyVampire(n){
-	if (Inv.bloodAmmount >= n.cost){
+	if (Inv.items.blood >= n.cost){
 		n.ammount = n.ammount + 1;
 		Inv.useBlood(n.cost);
 		Account.addBloodPerRoundGain(n.gain);
@@ -432,8 +438,8 @@ function load(){
 	}else{
 		return;
 	}
-	if (typeof savegame.bloodAmmount !== "undefined") Inv.bloodAmmount = savegame.bloodAmmount;
-	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.humanFoodAmmount = savegame.humanFoodAmmount;
+	if (typeof savegame.bloodAmmount !== "undefined") Inv.items.blood = savegame.bloodAmmount;
+	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.items.humanFood = savegame.humanFoodAmmount;
 	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
 	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
 	if (typeof savegame.vampireRatAmmount !== "undefined") VampireRat.ammount = savegame.vampireRatAmmount;
@@ -459,8 +465,8 @@ function load(){
 
 function save(){
 	var save = {
-		bloodAmmount: Inv.bloodAmmount,
-		humanFoodAmmount: Inv.humanFoodAmmount,
+		bloodAmmount: Inv.items.blood,
+		humanFoodAmmount: Inv.items.humanFood,
 		vampiresAmmount: Account.vampiresAmmount,
 		mosquitoAmmount: Mosquito.ammount,
 		vampireRatAmmount: VampireRat.ammount,
