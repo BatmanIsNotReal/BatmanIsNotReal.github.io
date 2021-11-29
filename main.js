@@ -29,6 +29,7 @@ function Inventory(){
 	this.items = {
 		blood: 10,
 		humanFood: 10,
+		wood: 10,
 	}
 
 	this.bloodAmmount = 10;
@@ -343,8 +344,10 @@ function displayUpdate(){
 	
 	document.getElementById("familiarNotWorking").innerHTML = Familiars.getNotWorking();
 
+	//inventory
 	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
 	document.getElementById("bloodCount").innerHTML = Inv.getBloodCount();
+	document.getElementById("woodCount").innerHTML = Inv.items.wood;
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.cost;
 	
