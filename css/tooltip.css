@@ -1,0 +1,34 @@
+.hover{
+	display: none;
+}
+
+.button:hover .hover,
+.hover-parent:hover .hover
+{
+	position: fixed;
+	padding: 0.5em;
+	background-color: gray;
+	display: flex;
+	justify-content: space-evenly;
+	flex-direction: column;
+	outline: lightgray 2px solid;
+	color: white;
+	font-size:15px;
+	pointer-events: none;
+	left: calc(var(--cursorX) + 20px);
+	top: calc(var(--cursorY) + 20px);
+	border-radius: 10px;
+	align-items: center;
+}
+
+.blood{
+	cursor: help;
+}
+
+.humanFood{
+	cursor: help;
+}
+
+.currentHouse{
+	cursor: help;
+}

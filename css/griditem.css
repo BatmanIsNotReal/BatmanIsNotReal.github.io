@@ -1,0 +1,14 @@
+.grid-item {
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	background-color: #343131;
+	color: white;
+	padding: 1em;
+}
+
+.grid-item-title {
+	margin: 0;
+	padding: 1em;
+	background-color: grey;
+}

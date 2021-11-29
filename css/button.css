@@ -1,0 +1,63 @@
+@keyframes blobin {
+	0% {
+		transform: scale(1, 1);
+	}
+	60% {
+		transform: scale(1.5, 1.5);
+	}
+	100% {
+		transform: scale(1.2, 1.2);
+	}
+}
+
+.button {
+	border: 2px solid white;
+	width: fit-content;
+	font-size: 15px;
+	padding: 1em;
+	margin-left: auto;
+	margin-right: auto;
+	min-width: 2em;
+}
+.button:hover {
+	background-color: rgb(82, 82, 82);
+}
+
+.button:active {
+	background-color: gray;
+}
+
+.drink-button {
+	position: fixed;
+	color: white;
+	background-color: rgb(94, 0, 0);
+	--size: 5em;
+	width: var(--size);
+	height: var(--size);
+	border-radius: 50%;
+	box-shadow: 1px 1px 10px black;
+	border: none;
+	left: calc(100% - var(--size) * 2);	
+	top: calc(100% - var(--size) * 2);
+}
+
+.drink-button i {
+	font-size: 50px;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	transition: ease-in-out font-size 0.02s, color ease-in-out 0.02s;
+}
+
+.drink-button:hover {
+	background-color: rgb(177, 0, 0);
+	color: white;
+	animation: blobin 0.2s forwards ease-in-out;
+}
+
+.drink-button:active i{
+	font-size: 60px;
+	color: rgb(117, 117, 117);
+}
+
