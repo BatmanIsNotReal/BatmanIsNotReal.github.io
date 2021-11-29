@@ -11,16 +11,21 @@ function Player(vName, hName){
 	this.houseName = '';
 	this.playedBefore = 0;
 	this.vampiresAmmount = 0;
-	this.influence = 0;
+	this.influence = 1000;
+	this.bloodPerRoundGain = 0;
 
 	this.addInfluence = function(gain){
 		this.influence = Math.round(this.influence + gain);
 	};
+
+	this.addBloodPerRoundGain = function(gain){
+		this.bloodPerRoundGain = this.bloodPerRoundGain + gain;
+	}
 };
 
 //storage vars
 function Inventory(){
-	this.bloodAmmount = 10;
+	this.bloodAmmount = 10000;
 	this.humanFoodAmmount = 10;
 	this.newHumanFoodPerRound = 0;
 	this.newBloodPerRound = 0;
@@ -31,8 +36,18 @@ function Inventory(){
 		return n;
 	};
 
+	this.getBloodPerRound = function(){
+		var n = (Familiars.bloodGather * Familiars.bloodGatherGain) + Account.bloodPerRoundGain;
+		this.newBloodPerRound = n;
+		return n;
+	};
+
 	this.getNewHumanFoodPerRound = function(){
 		return this.newHumanFoodPerRound;
+	};
+
+	this.getNewBloodPerRound = function(){
+		return this.newBloodPerRound;
 	};
 
 	this.getBloodCount = function(){
@@ -40,12 +55,11 @@ function Inventory(){
 		return this.bloodAmmount;
 	};
 
-	this.getNewBloodPerRound = function(){
-		return Math.floor(this.newBloodPerRound);
-	};
 
 	this.addBloodPerRound = function(gain){
+		alert(gain);
 		this.newBloodPerRound = this.newBloodPerRound + gain;
+		alert(this.newBloodPerRound);
 	};
 
 	this.addBlood = function(ammount){
@@ -60,9 +74,13 @@ function Inventory(){
 		this.bloodAmmount = this.bloodAmmount - ammount;
 	};
 
+	this.updateBlood = function(){
+		this.addBlood(this.newBloodPerRound);
+	}
+
 	this.update = function(){
 		this.getBloodCount();
-		this.getNewBloodPerRound();
+		this.getBloodPerRound();
 		this.getHumanFoodPerRound();
 	};
 };
@@ -99,14 +117,14 @@ function Vampire(ammount, cost, gain, influence){
 	
 };
 
-function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain){
+function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain, notWorking){
 	this.ammount = ammount;
 	this.cost = cost;
 	this.foodGather = foodGather;
 	this.foodGatherGain = foodGatherGain;
 	this.bloodGather = bloodGather;
 	this.bloodGatherGain = bloodGatherGain;
-	this.notWorking = 0;
+	this.notWorking = notWorking;
 
 	this.getNotWorking = function(){
 		return this.notWorking;
@@ -144,6 +162,7 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 			this.bloodGather = this.bloodGather + n;
 			this.notWorking = this.notWorking - n;
 		}
+		alert(Inv.newBloodPerRound);
 	};
 
 	this.adopt = function(){
@@ -162,7 +181,7 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	};
 
 	this.gatherBloodVictim = function(){
-		Inv.bloodAmmount = Inv.bloodAmmount + Inv.newBloodPerRound;
+		Inv.addBlood(this.bloodGather * 2);
 	};
 
 	this.eat = function(){
@@ -231,7 +250,7 @@ let Badabook = new Vampire(0, 3000, 100, 0.3);
 
 
 //familiar vars
-let Familiars = new Familiar(0, 500, 0, 2, 0, 2);
+let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
 
 
 //consumption vars
@@ -259,7 +278,8 @@ function buyVampire(n){
 	if (Inv.bloodAmmount >= n.cost){
 		n.ammount = n.ammount + 1;
 		Inv.useBlood(n.cost);
-		Inv.addBloodPerRound(n.gain);
+		Account.addBloodPerRoundGain(n.gain);
+		alert(n.gain);
 		Account.addInfluence(n.influence);
 		Vampire.ammount = Vampire.ammount + 1;
 	}
@@ -272,20 +292,26 @@ function buyVampire(n){
 //FAMILIAR WORK
 //add
 function addGather(type){
-	if (type == 'humanFoodGather'){
-		Familiars.addHumanFoodGather(1);
-	}
-	if (type == "bloodGather"){
-		Familiars.addBloodGather(1);
+	if(Familiars.notWorking >= 1){
+		if (type == 'humanFoodGather'){
+			Familiars.addHumanFoodGather(1);
+		}
+		if (type == "bloodGather"){
+			Familiars.addBloodGather(1);
+		}
 	}
 }
 //sub
 function useGather(type){
 	if (type == "humanFoodGather"){
-		Familiars.addHumanFoodGather(-1);
+		if(Familiars.foodGather >= 1){
+			Familiars.addHumanFoodGather(-1);
+		}
 	}
-	if (type == "bloodGather"){
-		Familiars.addBloodGather(-1);
+	if (Familiars.bloodGather >= 1){
+		if (type == "bloodGather"){
+			Familiars.addBloodGather(-1);
+		}
 	}
 }
 
@@ -328,8 +354,8 @@ function displayUpdate(){
 	document.getElementById("newHumanFoodPerRoundStat").innerHTML = Inv.getNewHumanFoodPerRound();
 	
 	document.getElementById("bloodVictimGather").innerHTML = Familiars.bloodGather;
-	document.getElementById("newBloodPerRound").innerHTML = Inv.getNewBloodPerRound();
-	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.getNewBloodPerRound();
+	document.getElementById("newBloodPerRound").innerHTML = Inv.getBloodPerRound();
+	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.newBloodPerRound;
 	
 	document.getElementById("mosquitoCount").innerHTML = Mosquito.getAmmount();
 	document.getElementById("mosquitoCost").innerHTML = Mosquito.getCost();
@@ -373,6 +399,7 @@ window.setInterval(function(){
 	Familiars.update();
 	House.updateXP();
 	save();
+	Inv.updateBlood();
 }, 10000);
 
 
@@ -417,8 +444,9 @@ function load(){
 	if (typeof savegame.familiarAmmount !== "undefined") Familiars.ammount = savegame.familiarAmmount;
 	if (typeof savegame.newHumanFoodPerRound !== "undefined") Inv.newHumanFoodPerRound = savegame.newHumanFoodPerRound;
 	if (typeof savegame.newBloodPerRound !== "undefined") Inv.newBloodPerRound = savegame.newBloodPerRound;
-	if (typeof savegame.humanFoodGather !== "undefined") Familiars.humanFoodGather = savegame.humanFoodGather;
+	if (typeof savegame.humanFoodGather !== "undefined") Familiars.foodGather = savegame.humanFoodGather;
 	if (typeof savegame.bloodVictimGather !== "undefined") Familiars.bloodGather = savegame.bloodVictimGather;
+	if (typeof savegame.familiarNotWorking !== "undefined") Familiars.notWorking = savegame.familiarNotWorking;
 	if (typeof savegame.xp !== "undefined") House.xp = savegame.xp;
 	if (typeof savegame.currentSize !== "undefined") House.currentSize = savegame.currentSize;
 	if (typeof savegame.currentHouse !== "undefined") House.currentHouse = savegame.currentHouse;
@@ -442,8 +470,9 @@ function save(){
 		familiarAmmount: Familiars.ammount,
 		newHumanFoodPerRound: Inv.newHumanFoodPerRound,
 		newBloodPerRound: Inv.getNewBloodPerRound(),
-		humanFoodGather: Familiars.humanFoodGather,
+		humanFoodGather: Familiars.foodGather,
 		bloodVictimGather: Familiars.bloodGather,
+		familiarNotWorking: Familiars.notWorking,
 		humanFoodPerTurn: Inv.getHumanFoodPerRound(),
 		xp: House.xp,
 		currentSize: House.currentSize,
