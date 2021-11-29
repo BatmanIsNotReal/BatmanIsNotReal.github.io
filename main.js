@@ -12,7 +12,7 @@ function Player(vName, hName){
 	this.houseName = '';
 	this.playedBefore = 0;
 	this.vampiresAmmount = 0;
-	this.influence = 900;
+	this.influence = 0;
 	this.bloodPerRoundGain = 0;
 
 	this.addInfluence = function(gain){
@@ -209,6 +209,13 @@ function HousePar(houseSize, xpRates, houseImages){
 	this.xpNext = xpRates[this.currentSize + 1];
 	this.currentHouse = houseSize[this.currentSize];
 	
+	this.fire = {
+		percent : 100,
+		getRate(){
+			return this.currentSize * 2;
+		},
+	}
+	
 	this.xpReturnDisplay = function(){
 		return String(xp + "/" + xpNext);
 	};
@@ -236,6 +243,13 @@ function HousePar(houseSize, xpRates, houseImages){
 
 	this.updateImage = function(){
 		document.getElementById("house").src = String(this.houseImages[this.currentSize]);
+	}
+
+	this.updateFire = function(){
+		this.fire.percent = this.fire.percent - this.fire.getRate();
+		if (this.fire.percent <= 10){
+			alert("The fire is running out!");
+		}
 	}
 
 	this.update = function(){
