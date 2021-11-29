@@ -199,6 +199,18 @@ p {
 	font-size: 20px;
 }
 
+@keyframes blobin {
+	0% {
+		transform: scale(1, 1);
+	}
+	60% {
+		transform: scale(1.5, 1.5);
+	}
+	100% {
+		transform: scale(1.2, 1.2);
+	}
+}
+
 .drink-button {
 	position: fixed;
 	background-color: rgb(177, 0, 0);
@@ -225,7 +237,11 @@ p {
 .drink-button:hover {
 	background-color: red;
 	color: white;
-	transform: scale(1.2, 1.2);
+	animation: blobin 0.2s forwards ease-in-out;
+}
+
+.drink-button:active {
+	animation: blobin 0.2s forwards ease-in-out;
 }
 
 
