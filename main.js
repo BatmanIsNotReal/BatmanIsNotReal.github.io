@@ -208,11 +208,11 @@ function HousePar(houseSize, xpRates, houseImages){
 	this.currentHouse = houseSize[this.currentSize];
 	
 	this.fire = {
-		percent : 100,
-		getRate(){
-			return this.currentSize * 2;
-		},
-	}
+        percent : 100,
+        getRate: () => {
+            return this.currentSize * 2;
+        },
+    }
 	
 	this.xpReturnDisplay = function(){
 		return String(xp + "/" + xpNext);
@@ -245,6 +245,7 @@ function HousePar(houseSize, xpRates, houseImages){
 
 	this.updateFire = function(){
 		this.fire.percent = this.fire.percent - this.fire.getRate();
+		alert(this.fire.percent);
 		if (this.fire.percent == 10){
 			alert("The fire is running out!");
 		}
@@ -253,7 +254,6 @@ function HousePar(houseSize, xpRates, houseImages){
 
 	this.update = function(){
 		this.getXP();
-		this.updateFire();
 		this.updateImage();
 	}
 };
@@ -424,6 +424,7 @@ window.setInterval(function(){
 	House.updateXP();
 	save();
 	Inv.updateBlood();
+	House.updateFire();
 }, 10000);
 
 
