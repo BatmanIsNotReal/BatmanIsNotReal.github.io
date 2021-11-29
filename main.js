@@ -33,8 +33,6 @@ function Inventory(){
 		wood: 10,
 	}
 
-	this.bloodAmmount = 10;
-	this.humanFoodAmmount = 10;
 	this.newHumanFoodPerRound = 0;
 	this.newBloodPerRound = 0;
 
