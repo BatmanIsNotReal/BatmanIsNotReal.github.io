@@ -119,13 +119,17 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	};
 
 	this.addHumanFoodGather = function(n){
-		if (this.ammount >= n){
-			this.foodGather = this.foodGather + (n);
-			this.notWorking = this.notWorking - n;
+		if(n > 0){
+			if (this.ammount >= n){
+				this.foodGather = this.foodGather + (n);
+				this.notWorking = this.notWorking - n;
+			}
 		}
-		if (this.ammount <= n){
-			this.foodGather = this.foodGather + (-n);
-			this.notWorking = this.notWorking + n;
+		if(n < 0){
+			if (this.ammount <= n){
+				this.foodGather = this.foodGather + (-n);
+				this.notWorking = this.notWorking + n;
+			}
 		}
 	};
 
