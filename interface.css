@@ -73,6 +73,9 @@ body{
 	border-radius: 5px;
 	width: 25%;
 	font-size: 15px;
+	padding: 0.2em;
+	margin-left: auto;
+	margin-right: auto;
 }
 .button:hover {
 	background-color: rgb(82, 82, 82);
@@ -99,7 +102,7 @@ body{
 		'vampires vampires vampires2 vampires2 familiar familiar'
 		'stats stats house house storage storage'
 		'upgrade upgrade upgrade action action action';
-	grid-gap: 5px;
+	gap: 0.5em;
 	background-color: #0d0c0c;
 	padding: 10px;
 }
@@ -110,9 +113,8 @@ body{
 	padding: 0px 0;
 	color: white;
 	font-size: 20px;
+	text-align: center;
 }
-
-
 
 
 #overlay{
