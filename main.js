@@ -2,6 +2,7 @@
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
+const houseImages = ['src/smallHut.png', 'src/house2.png'];
 
 
 //Class constructors
@@ -199,7 +200,8 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	}
 };
 
-function HousePar(houseSize, xpRates){
+function HousePar(houseSize, xpRates, houseImages){
+	this.houseImages = houseImages;
 	this.houseSize = houseSize;
 	this.xpRates = xpRates;
 	this.xp = 0;
@@ -232,8 +234,13 @@ function HousePar(houseSize, xpRates){
 		return String(this.xp + "/" + this.xpNext);
 	};
 
+	this.updateImage = function(){
+		document.getElementById("house").src = this.houseImages[this.houseSize];
+	}
+
 	this.update = function(){
 		this.getXP();
+		this.updateImage();
 	}
 };
 
@@ -259,7 +266,7 @@ let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
 
 
 //house 
-let House = new HousePar(houseSize, xpRates);
+let House = new HousePar(houseSize, xpRates, houseImages);
 
 
 //Random events
