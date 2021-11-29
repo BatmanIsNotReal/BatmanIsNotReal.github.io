@@ -213,8 +213,8 @@ p {
 
 .drink-button {
 	position: fixed;
-	background-color: rgb(177, 0, 0);
 	color: white;
+	background-color: rgb(94, 0, 0);
 	--size: 5em;
 	width: var(--size);
 	height: var(--size);
@@ -223,7 +223,6 @@ p {
 	border: none;
 	left: calc(100% - var(--size) * 2);	
 	top: calc(100% - var(--size) * 2);
-	transition: ease-in 0.1s;
 }
 
 .drink-button i {
@@ -232,16 +231,18 @@ p {
 	left: 50%;
 	top: 50%;
 	transform: translate(-50%, -50%);
+	transition: ease-in-out font-size 0.02s, color ease-in-out 0.02s;
 }
 
 .drink-button:hover {
-	background-color: red;
+	background-color: rgb(177, 0, 0);
 	color: white;
 	animation: blobin 0.2s forwards ease-in-out;
 }
 
-.drink-button:active {
-	animation: blobin 0.2s forwards ease-in-out;
+.drink-button:active i{
+	font-size: 60px;
+	color: rgb(117, 117, 117);
 }
 
 
