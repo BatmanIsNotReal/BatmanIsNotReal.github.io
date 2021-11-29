@@ -1,3 +1,5 @@
+import {Player} from './js/Player';
+
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -7,22 +9,22 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 //Class constructors
 //personal
-function Player(vName, hName){
-	this.vampireName = '';
-	this.houseName = '';
-	this.playedBefore = 0;
-	this.vampiresAmmount = 0;
-	this.influence = 0;
-	this.bloodPerRoundGain = 0;
+// function Player(vName, hName){
+// 	this.vampireName = '';
+// 	this.houseName = '';
+// 	this.playedBefore = 0;
+// 	this.vampiresAmmount = 0;
+// 	this.influence = 0;
+// 	this.bloodPerRoundGain = 0;
 
-	this.addInfluence = function(gain){
-		this.influence = Math.round(this.influence + gain);
-	};
+// 	this.addInfluence = function(gain){
+// 		this.influence = Math.round(this.influence + gain);
+// 	};
 
-	this.addBloodPerRoundGain = function(gain){
-		this.bloodPerRoundGain = this.bloodPerRoundGain + gain;
-	}
-};
+// 	this.addBloodPerRoundGain = function(gain){
+// 		this.bloodPerRoundGain = this.bloodPerRoundGain + gain;
+// 	}
+// };
 
 //storage vars
 function Inventory(){
@@ -259,7 +261,7 @@ function HousePar(houseSize, xpRates, houseImages){
 
 //game basics - inventory, player 
 let Inv = new Inventory();
-let Account = new Player();
+let Account = new Player("john", "house");
 
 //vampires vars
 let Mosquito = new Vampire(0, 10, 0.1, 0.01);
@@ -449,6 +451,7 @@ function newGame(){
 }
 
 function load(){
+	House.updateFire();
 	savegame = JSON.parse(localStorage.getItem("save"));
 	if (savegame == null) savegame = ""; newGame();
 	if (savegame.bloodAmmount !== "undefined"){ 
