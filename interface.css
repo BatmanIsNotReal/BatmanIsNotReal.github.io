@@ -23,19 +23,8 @@ body{
 	display: none;
 }
 
-.adoptFamiliar:hover + .hover,
-.blood:hover + .hover,
-.humanFood:hover + .hover,
-.currentHouse:hover + .hover,
-.humanFoodGather:hover + .hover,
-.bloodVictimGather:hover + .hover,
-.mosquito:hover + .hover,
-.vampireRat:hover + .hover,
-.vampireBat:hover + .hover,
-.bloodHound:hover + .hover,
-.vampireSlave:hover + .hover,
-.nightWalker:hover + .hover,
-.badabook:hover + .hover
+.button:hover .hover,
+.hover-parent:hover .hover
 {
 	position: fixed;
 	padding: 0.5em;
@@ -52,8 +41,8 @@ body{
 	border-radius: 10px;
 	align-items: center;
 }
-.hover p {
-	margin: 0;
+p {
+	margin: 0.5em;
 }
 
 .blood{
@@ -67,14 +56,23 @@ body{
 	cursor: help;
 }
 
+.flex-row {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-evenly;
+}
+
+.flex-center {
+	align-items: center;
+}
 
 
 .button {
 	border: 2px solid white;
 	border-radius: 5px;
-	width: 25%;
+	width: fit-content;
 	font-size: 15px;
-	padding: 0.2em;
+	padding: 0.5em;
 	margin-left: auto;
 	margin-right: auto;
 }
@@ -108,13 +106,23 @@ body{
 	padding: 10px;
 }
 
-.grid-container > div{
+/* .grid-container > div{
 	background-color: #343131;
 	text-align:center;
 	padding: 0px 0;
 	color: white;
 	font-size: 20px;
+} */
+
+.grid-item {
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	background-color: #343131;
+	color: white;
 }
+
+
 
 
 #overlay{
