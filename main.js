@@ -209,7 +209,7 @@ function HousePar(houseSize, xpRates, houseImages){
 	
 	this.fire = {
 		percent : 100,
-		getRate(){
+		getRate: () => {
 			return this.currentSize * 2;
 		},
 	}
