@@ -4,9 +4,11 @@
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> 
+	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
+	<div class="button drink-button" id="drinkBlood" onclick="drinkBlood()"><i class="fas fa-tint"></i></div>
 	<div id="overlay">
 		<div class="grid-container-signup">
 			<div class="item10">
@@ -45,16 +47,18 @@
 		<!-- info on house and xp -->
 		<div class="item6 grid-item">
 			<div class="currentHouse">
-				<h3><span id="currentHouse"></h3>
+				<h3 class="grid-item-title"><span id="currentHouse"></h3>
 				<p><span id="hName"></p>
 			</div>
 			<!-- <div class="hover">vampires = influence</p> </div> -->
-			<image src="src/smallHut.png" width="250" height="250"></image>
-			<image src="src/bonFire.webp" width="50" height="50"></image>
+			<div class="flex-row house-art-container">
+				<image src="src/smallHut.png" width="250" height="250"></image>
+				<image src="src/bonFire.webp" width="50" height="50"></image>
+			</div>
 		</div>
 		<div class="item3 grid-item">
 		<!-- drink blood, adopt familiar -->
-			<h3>Vampire animals</h3>
+			<h3 class="grid-item-title">Vampire animals</h3>
 			<div class="item2">
 				<!-- mosquito -->
 				<div class="mosquito">
@@ -100,7 +104,7 @@
 		</div>
 		<div class="item7 grid-item">
 		<!-- drink blood, get monsters -->
-			<h3>Vampires</h3>
+			<h3 class="grid-item-title">Vampires</h3>
 			<div class="item2">
 				<!-- vampire slave -->
 				<div class="vampireSlave">
@@ -136,8 +140,8 @@
 		</div>
 		<div class="item4 grid-item">
 		<!-- info on vampire and familiar count -->
-			<h3> Command familiars </h3>
-			<p> familiars not working: <span id="familiarNotWorking"> </p>
+			<h3 class="grid-item-title">Command familiars</h3>
+			<p>familiars not working: <span id="familiarNotWorking"></p>
 			<div class="adoptFamiliar">
 				<div class="button" id="adoptFamiliar" onclick="Familiars.adopt()">Adopt a familiar
 					<div class="hover"><p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"></p></div>
@@ -147,11 +151,13 @@
 			<div class="humanFoodGather">
 				<p> human food gatherers: <span id="humanFoodGather"></p>
 				<div class="flex-row">
-					<div class="button" id="humanFoodGather" onclick="addGather('humanFoodGather')">+
-						<div class="hover">+Food/10 sec: 2</div>
-					</div>
-					<div class="button" id="humanFoodGather" onclick="useGather('humanFoodGather')">-
-						<div class="hover">-Food/10 sec: 2</div>
+					<div class="flex-row">
+						<div class="button" id="humanFoodGather" onclick="addGather('humanFoodGather')">+
+							<div class="hover">+Food/10 sec: 2</div>
+						</div>
+						<div class="button" id="humanFoodGather" onclick="useGather('humanFoodGather')">-
+							<div class="hover">-Food/10 sec: 2</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -159,18 +165,20 @@
 			<div class="bloodVictimGather">
 				<p>blood victim gatherers: <span id="bloodVictimGather"></p>
 				<div class="flex-row">
-					<div class="button" id="bloodVictimGather" onclick="addGather('bloodGather')">+
-						<div class="hover">+Blood/10 sec: 2</div>
-					</div>
-					<div class="button" id="bloodVictimGather" onclick="useGather('bloodGather')">-
-						<div class="hover">-Blood/10 sec: 2</div>
+					<div class="flex-row">
+						<div class="button" id="bloodVictimGather" onclick="addGather('bloodGather')">+
+							<div class="hover">+Blood/10 sec: 2</div>
+						</div>
+						<div class="button" id="bloodVictimGather" onclick="useGather('bloodGather')">-
+							<div class="hover">-Blood/10 sec: 2</div>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 		<div class="item2 grid-item">
 			<!-- storage info -->
-			<h3>Storage</h3>
+			<h3 class="grid-item-title">Storage</h3>
 			<div class="blood hover-parent">
 				<p>Blood: <span id="bloodCount"></p>
 				<div class="hover">
@@ -186,7 +194,6 @@
 			<div class="wood">
 				<p>Wood: <span id="woodCount"></span></p>
 			</div>
-			<p class="button" id="drinkBlood" onclick="drinkBlood()">Drink blood</p>
 		</div>
 		<div>
 		Upgrade
