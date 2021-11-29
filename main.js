@@ -2,7 +2,7 @@
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
-const houseImages = ['src/smallHut.png', 'src/house2.png'];
+const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 
 //Class constructors
@@ -12,7 +12,7 @@ function Player(vName, hName){
 	this.houseName = '';
 	this.playedBefore = 0;
 	this.vampiresAmmount = 0;
-	this.influence = 1000;
+	this.influence = 900;
 	this.bloodPerRoundGain = 0;
 
 	this.addInfluence = function(gain){
@@ -235,7 +235,7 @@ function HousePar(houseSize, xpRates, houseImages){
 	};
 
 	this.updateImage = function(){
-		document.getElementById("house").src = this.houseImages[this.houseSize];
+		document.getElementById("house").src = String(this.houseImages[this.currentSize]);
 	}
 
 	this.update = function(){
