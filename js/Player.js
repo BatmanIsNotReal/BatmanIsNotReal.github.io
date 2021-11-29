@@ -39,7 +39,7 @@ export default class Player{
     }
 
     addBloodPerRoundGain(gain){
-        this.bloodPerRoundGain = this.bloodPerRoundGain + gain);
+        this.bloodPerRoundGain = (this.bloodPerRoundGain + gain);
     }
 
 }
