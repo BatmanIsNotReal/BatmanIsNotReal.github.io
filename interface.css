@@ -10,93 +10,43 @@ body{
     user-select:none;
 }
 
+:root::before {
+	--cursorX: 0px;
+	--cursorY: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
 .hover{
 	display: none;
 }
 
-.adoptFamiliar:hover + .hover{
-    position: absolute;
-    padding: 1em;
-    background-color: gray;
-    display: block;
-    outline: lightgray 2px solid;
-    color: white;
-    font-size:15px;
-    transform: translate(70%, 10%);
-}
-
-.blood:hover + .hover{
+.adoptFamiliar:hover + .hover,
+.blood:hover + .hover,
+.humanFood:hover + .hover,
+.currentHouse:hover + .hover,
+.humanFoodGather:hover + .hover,
+.bloodVictimGather:hover + .hover,
+.mosquito:hover + .hover,
+.vampireRat:hover + .hover,
+.vampireBat:hover + .hover,
+.bloodHound:hover + .hover,
+.vampireSlave:hover + .hover,
+.nightWalker:hover + .hover,
+.badabook:hover + .hover
+{
+	position: fixed;
+	padding: 0.5em;
+	background-color: gray;
 	display: block;
+	outline: lightgray 2px solid;
 	color: white;
 	font-size:15px;
-	
-}
-
-.humanFood:hover + .hover{
-	display: block;
-	color: white;
-	font-size:15px;
-	
-}
-
-.currentHouse:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.humanFoodGather:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.bloodVictimGather:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.mosquito:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.vampireRat:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.vampireBat:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.bloodHound:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.vampireSlave:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.nightWalker:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
-}
-
-.badabook:hover + .hover{
-	display: block;
-	color: white;
-	font-size: 15px;
+	pointer-events: none;
+	left: var(--cursorX);
+	top: var(--cursorY);
+	border-radius: 10px;
 }
 
 .blood{
@@ -112,7 +62,7 @@ body{
 
 
 
-.button#drinkBlood{
+.button{
 	border: 2px solid white;
 	border-radius: 5px;
 	width: 25%;
@@ -120,93 +70,6 @@ body{
 	cursor:cell;
 }
 
-.button#restart{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#mosquito{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#vampireRat{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#vampireBat{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#bloodHound{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#vampireSlave{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#nightWalker{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#badabook{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#adoptFamiliar{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#humanFoodGather{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
-
-.button#bloodVictimGather{
-	border: 2px solid white;
-	border-radius: 5px;
-	width: 25%;
-	font-size: 15px;
-	cursor:cell;
-}
 
 
 #displayFamiliarCost{
