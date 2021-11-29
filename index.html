@@ -37,7 +37,7 @@
 	</div>
 	<div class="grid-container">
 		<!-- info on vampire and familiar count -->
-		<div class="item1 -grid-item">
+		<div class="item1 grid-item">
 			<h1 style="font-family: 'VT323', monospace; font-size: 50px;"><image src="src/skullCandle.gif" height="100" width="50"></image> VAMPIRE HOUSE <image src="src/skullCandle.gif" height="100" width="50"></image></h1>
 			<h1 style="font-family: 'VT323', monospace; font-size: 25px;">  <span id="vName"> </h1>
 			<p class="button" id="restart" onclick="deleteSave()">restart</p> 
@@ -45,8 +45,8 @@
 		<!-- info on house and xp -->
 		<div class="item6 grid-item">
 			<div class="currentHouse">
-				<p> <span id="currentHouse"> </p>
-				<p> <span id="hName"> </p>
+				<h3><span id="currentHouse"></h3>
+				<p><span id="hName"></p>
 			</div>
 			<!-- <div class="hover">vampires = influence</p> </div> -->
 			<image src="src/smallHut.png" width="250" height="250"></image>
@@ -115,41 +115,26 @@
 				<div class="button" id="adoptFamiliar" onclick="Familiars.adopt()">Adopt a familiar</div>
 			</div>
 			<div class="hover"><p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"></p></div>
-			<hr>
+			
+			<div class="hover"> +Blood/10 sec: 2  </div>
+			<div class="hover"> <p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"> </p>  </div>
 			<!-- gathering human food -->
 			<div class="humanFoodGather">
 				<p> human food gatherers: <span id="humanFoodGather"> </p>
-				<p class="button" id="humanFoodGather" onclick="addGather(humanFoodGather)"> + </p>
-				<p class="button" id="humanFoodGather" onclick="useGather(humanFoodGather)"> - </p>
+					<p class="button" id="humanFoodGather" onclick="addGather('humanFoodGather')"> + </p>
+					<p class="button" id="humanFoodGather" onclick="useGather('humanFoodGather')"> - </p>
 			</div>
 			<div class="hover"> +Food/10 sec: 2  </div>
-			
 			<!-- gathering victims for blood -->
 			<div class="bloodVictimGather">
 				<p> blood victim gatherers: <span id="bloodVictimGather"> </p>
-				<p class="button" id="bloodVictimGather" onclick="addGather(bloodGather)"> + </p>
-				<p class="button" id="bloodVictimGather" onclick="useGather(bloodGather)"> - </p>
+				<p class="button" id="bloodVictimGather" onclick="addGather('bloodGather')"> + </p>
+				<p class="button" id="bloodVictimGather" onclick="useGather('bloodGather')"> - </p>
 			</div>
-			<div class="hover"> +Blood/10 sec: 2  </div>
-		<div class="hover"> <p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"> </p>  </div>
-		<hr>
-		<!-- gathering human food -->
-		<div class="humanFoodGather">
-			<p> human food gatherers: <span id="humanFoodGather"> </p>
-				<p class="button" id="humanFoodGather" onclick="addGather('humanFoodGather')"> + </p>
-				<p class="button" id="humanFoodGather" onclick="useGather('humanFoodGather')"> - </p>
-		</div>
-		<div class="hover"> +Food/10 sec: 2  </div>
-		<!-- gathering victims for blood -->
-		<div class="bloodVictimGather">
-			<p> blood victim gatherers: <span id="bloodVictimGather"> </p>
-			<p class="button" id="bloodVictimGather" onclick="addGather('bloodGather')"> + </p>
-			<p class="button" id="bloodVictimGather" onclick="useGather('bloodGather')"> - </p>
 		</div>
 		<div class="item2 grid-item">
 			<!-- storage info -->
 			<h3>Storage</h3>
-			<hr>
 			<div class="blood">
 				<p>Blood: <span id="bloodCount"></p>
 			</div>
