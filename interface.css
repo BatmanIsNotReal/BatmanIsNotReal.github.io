@@ -1,0 +1,294 @@
+body{
+	background-color:0d0c0c;
+}
+
+* {
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+}
+
+.hover{
+	display: none;
+}
+
+.adoptFamiliar:hover + .hover{
+    position: absolute;
+    padding: 1em;
+    background-color: gray;
+    display: block;
+    outline: lightgray 2px solid;
+    color: white;
+    font-size:15px;
+    transform: translate(70%, 10%);
+}
+
+.blood:hover + .hover{
+	display: block;
+	color: white;
+	font-size:15px;
+	
+}
+
+.humanFood:hover + .hover{
+	display: block;
+	color: white;
+	font-size:15px;
+	
+}
+
+.currentHouse:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.humanFoodGather:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.bloodVictimGather:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.mosquito:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.vampireRat:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.vampireBat:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.bloodHound:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.vampireSlave:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.nightWalker:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.badabook:hover + .hover{
+	display: block;
+	color: white;
+	font-size: 15px;
+}
+
+.blood{
+	cursor: help;
+}
+.humanFood{
+	cursor: help;
+}
+
+.currentHouse{
+	cursor: help;
+}
+
+
+
+.button#drinkBlood{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#restart{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#mosquito{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#vampireRat{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#vampireBat{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#bloodHound{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#vampireSlave{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#nightWalker{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#badabook{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#adoptFamiliar{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#humanFoodGather{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+.button#bloodVictimGather{
+	border: 2px solid white;
+	border-radius: 5px;
+	width: 25%;
+	font-size: 15px;
+	cursor:cell;
+}
+
+
+#displayFamiliarCost{
+	background:color: #0d0c0c;
+	width: 50px;
+	height: 20px;
+	padding: 20px;
+	
+}
+
+.item1 {grid-area: header;}
+.item2 {grid-area: storage;}
+.item3 {grid-area: vampires;}
+.item4 {grid-area: familiar;}
+.item5 {grid-area: stats;}
+.item6 {grid-area: house;}
+.item7 {grid-area: vampires2;}
+.item8 {grid-area: upgrade;}
+.item9 {grid-area: action;}
+
+.grid-container{
+	display: grid;
+	grid-template-areas:
+		'header header header header header header'
+		'vampires vampires vampires2 vampires2 familiar familiar'
+		'stats stats house house storage storage'
+		'upgrade upgrade upgrade action action action';
+	grid-gap: 5px;
+	background-color: #0d0c0c;
+	padding: 10px;
+}
+
+.grid-container > div{
+	background-color: #343131;
+	text-align:center;
+	padding: 0px 0;
+	color: white;
+	font-size: 20px;
+}
+
+
+
+
+#overlay{
+	position:fixed;
+	display: none;
+	width: 25%;
+	height: 50%;
+	top: 25%;
+	left: 37%;
+	background-color: black;
+	z-index: 2;
+	cursor: pointer;
+}
+
+#text{
+	padding: 10px;
+}
+
+.item10 {grid-area: header;}
+.item11 {grid-area: image;}
+.item12 {grid-area: vampireName;}
+.item13 {grid-area: houseName;}
+.item14 {grid-area: confirmButton;}
+
+
+.grid-container-signup{
+	display: grid;
+	grid-template-areas:
+		'header header header header header header'
+		'image image vampireName vampireName vampireName vampireName'
+		'image image houseName houseName houseName houseName'
+		'confirmButton confirmButton confirmButton confirmButton confirmButton confirmButton';
+	grid-gap: 5px;
+	background-color: #0d0c0c;
+	padding: 10px;
+}
+
+.grid-container-signup > div{
+	background-color: #343131;
+	text-align:center;
+	padding: 5px 0;
+	color: white;
+	font-size: 20px;
+}

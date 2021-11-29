@@ -1,0 +1,207 @@
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="interface.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> 
+</head>
+<body>
+
+
+<div id="overlay">
+
+<div class="grid-container-signup">
+	
+	<div class="item10">
+	<div id="text"> Welcome to vampire house</div>
+	</div>
+	
+	<div class="item11">
+	<div id="text"> <img src="sPlayerDown.png" width="25" height= "100";></div>
+	</div>
+	
+	<div class="item12">
+	<div id="text">
+		<form name="signUp" onsubmit="validateForm()" method="post">
+			<label for="vName">Vampire name:</label><br>
+			<input type="text" id="vName" name="vName" value=""><br>
+	</div>
+	</div>
+	
+	<div class="item13">
+	<div id="text">
+			<label for="vName">House name:</label><br>
+			<input type="text" id="hName" name="hName" value=""><br>
+	</div>
+	</div>
+	
+	<div class="item14">
+	<div id="text">
+			<input type="submit" value="awaken"><br>
+	</div>
+	</div>
+	</div>
+	</div>
+
+
+
+<div class="grid-container">
+	<!-- info on vampire and familiar count -->
+	<div class="item1">
+		<h1 style="font-family: 'VT323', monospace; font-size: 50px;"><image src="src/skullCandle.gif" height="100" width="50"></image> VAMPIRE HOUSE <image src="src/skullCandle.gif" height="100" width="50"></image></h1>
+		<h1 style="font-family: 'VT323', monospace; font-size: 25px;">  <span id="vName"> </h1>
+		<center>
+		<p class="button" id="restart" onclick="deleteSave()">restart</p> 
+	</div>
+	
+   <!-- info on house and xp -->
+   <div class="item6">
+		<div>
+			<div class="currentHouse">
+			<p> <span id="currentHouse"> </p>
+			<p> <span id="hName"> </p>
+			</div>
+			<!-- <div class="hover">vampires = influence</p> </div> -->
+
+			<image src="src/smallHut.png" width="250" height="250"></image>
+			<image src="src/bonFire.webp" width="50" height="50"></image>
+		</div>
+	</div>
+  
+  <div class="item3">
+	  <!-- drink blood, adopt familiar -->
+	  <div>
+		<center>
+		<p class="button" id="drinkBlood" onclick="drinkBlood()">Drink blood</p> 
+		<hr>
+		
+		<div class="item2">
+		<!-- mosquito -->
+		<div class="mosquito">
+			<p> mosquito: <span id="mosquitoCount"> </p>
+			<p class="button" id="mosquito" onclick="buyVampire(Mosquito)">mosquito</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 0.1</p> <p>price blood: <span id="mosquitoCost"></p>  </div>
+		
+		<!-- vampire rat -->
+		<div class="vampireRat">
+			<p> vampire rats: <span id="vampireRatCount"> </p>
+			<p class="button" id="vampireRat" onclick="buyVampire(VampireRat)">vampire rat</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 0.3</p> <p>price blood: <span id="vampireRatCost"></p>  </div>
+		
+		<!-- vampire bat -->
+		<div class="vampireBat">
+			<p> vampire bats: <span id="vampireBatCount"> </p>
+			<p class="button" id="vampireBat" onclick="buyVampire(VampireBat)">vampire bat</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 0.6</p> <p>price blood: <span id="vampireBatCost"></p>  </div>
+
+		<!-- blood hound -->
+		<div class="bloodHound">
+			<p> bloodhounds: <span id="bloodHoundCount"> </p>
+			<p class="button" id="bloodHound" onclick="buyVampire(BloodHound)">bloodhound</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 2</p> <p>price blood: <span id="bloodHoundCost"></p>  </div>
+		</div>
+	  </div>
+  </div>
+  
+   <div class="item7">
+	  <!-- drink blood, get monsters -->
+	  <div>
+		<center>
+		<div class="item2">
+		<!-- vampire slave -->
+		<div class="vampireSlave">
+			<p> vampire slaves: <span id="vampireSlaveCount"> </p>
+			<p class="button" id="vampireSlave" onclick="buyVampire(VampireSlave)">vampire slave</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 10</p> <p>price blood: <span id="vampireSlaveCost"></p>  </div>
+		
+		<!-- nightwalker -->
+		<div class="nightWalker">
+			<p> nightwalkers: <span id="nightWalkerCount"> </p>
+			<p class="button" id="nightWalker" onclick="buyVampire(NightWalker)">nightwalker</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 30</p> <p>price blood: <span id="nightWalkerCost"></p>  </div>
+		
+		<!-- badabook -->
+		<div class="badabook">
+			<p> badabooks: <span id="badabookCount"> </p>
+			<p class="button" id="badabook" onclick="buyVampire(Badabook)">badabook</p>
+		</div>
+		<div class="hover"> <p>+blood/10 sec: 100</p> <p>price blood: <span id="badabookCost"></p>  </div>
+		</div>
+	  </div>
+  </div>
+  
+  <div class="item4">
+	  <!-- info on vampire and familiar count -->
+	  <div>
+		<p> Command familiars </p>
+		<p> familiars not working: <span id="familiarNotWorking"> </p>
+		<div class="adoptFamiliar">
+			<center><div class="button" id="adoptFamiliar" onclick="Familiars.adopt()">Adopt a familiar</div> </center>
+		</div>
+		<div class="hover"> <p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"> </p>  </div>
+		</center>
+		<hr>
+		<!-- gathering human food -->
+		<div class="humanFoodGather">
+			<p> human food gatherers: <span id="humanFoodGather"> </p>
+				<center><p class="button" id="humanFoodGather" onclick="addGather(humanFoodGather)"> + </p></center>
+				<center><p class="button" id="humanFoodGather" onclick="useGather(humanFoodGather)"> - </p></center>
+		</div>
+		<div class="hover"> +Food/10 sec: 2  </div>
+		
+		<!-- gathering victims for blood -->
+		<div class="bloodVictimGather">
+			<p> blood victim gatherers: <span id="bloodVictimGather"> </p>
+				<center><p class="button" id="bloodVictimGather" onclick="addGather(bloodGather)"> + </p></center>
+				<center><p class="button" id="bloodVictimGather" onclick="useGather(bloodGather)"> - </p></center>
+		</div>
+		<div class="hover"> +Blood/10 sec: 2  </div>
+	  </div>
+  </div>
+  
+  <div class="item2">
+	  <!-- storage info -->
+	  <div>
+			<p> Storage </p>
+			<hr>
+			<div class="blood">
+				<p>Blood: <span id="bloodCount"></p>
+			</div>
+			<div class="hover">blood/10 sec: <span id="newBloodPerRound"> </div>
+			<div class="humanFood">
+				<p>Human food: <span id="humanFoodCount"></p>
+			</div>
+			<div class="hover">Food/10 sec: <span id="newHumanFoodPerRound"> </div>
+	  </div>
+  </div>
+
+  <div>
+	Upgrade
+  </div>
+  
+  <!-- stats -->
+  <div class="item5">
+	  <div>
+		<p>Stats</p>
+		<hr>
+			<p>Influence: <span id="xpReturnDisplayStat"> </p>
+		<hr>
+			<p>blood/10 sec: <span id="newBloodPerRoundStat"> </p>
+			<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"> </p>
+	  </div>
+  </div>
+  
+  <div>
+	Actions
+  </div>
+</div>
+
+<script type="text/javascript" src="main.js"></script>
+</body>
+</html>
