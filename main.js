@@ -1,5 +1,8 @@
 
 //Init data
+const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
+const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
+
 
 //Class constructors
 //personal
@@ -23,7 +26,7 @@ function Inventory(){
 	this.newBloodPerRound = 0;
 
 	this.getHumanFoodPerRound = function(){
-		var n = Math.round(Familiars.ammount - (Familiars.foodGather * Familiars.foodGatherGain));
+		var n = (Familiars.foodGather * Familiars.foodGatherGain);
 		this.newHumanFoodPerRound = n;
 		return n;
 	};
@@ -106,8 +109,7 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	this.notWorking = 0;
 
 	this.getNotWorking = function(){
-		var notWorking = this.ammount - (foodGather + bloodGather);
-		return notWorking;
+		return this.notWorking;
 	};
 
 	this.getHumanFoodGather = function(){
@@ -116,32 +118,31 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 
 	this.addFamiliar = function(){
 		this.ammount = this.ammount + 1;
+		this.notWorking = this.notWorking + 1;
+		alert(Inv.newHumanFoodPerRound);
 	};
 
 	this.addHumanFoodGather = function(n){
 		if(n > 0){
-			if (this.ammount >= n){
-				this.foodGather = this.foodGather + (n);
-				this.notWorking = this.notWorking - n;
-			}
+			this.foodGather = this.foodGather + (n);
+			this.notWorking = this.notWorking - n;
 		}
 		if(n < 0){
-			if (this.ammount <= n){
-				this.foodGather = this.foodGather + (-n);
-				this.notWorking = this.notWorking + n;
-			}
+			this.foodGather = this.foodGather + n;
+			this.notWorking = this.notWorking - n;
 		}
+		alert(Inv.newHumanFoodPerRound);
 	};
 
 	
 	this.addBloodGather = function(n){
-		if (this.ammount >= n){
+		if(n > 0){
 			this.bloodGather = this.bloodGather + (n);
 			this.notWorking = this.notWorking - n;
 		}
-		if (this.ammount <= n){
-			this.blooddGather = this.bloodGather + (-n);
-			this.notWorking = this.notWorking + n;
+		if(n < 0){
+			this.bloodGather = this.bloodGather + n;
+			this.notWorking = this.notWorking - n;
 		}
 	};
 
@@ -149,7 +150,7 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 		if (House.xp >= Familiars.cost){
 			Familiars.addFamiliar();
 			House.useXp(Familiars.cost);
-			Inv.getFoodPerRound();
+			Inv.getHumanFoodPerRound();
 			document.getElementById("humanFoodCount").innerHTML = Inv.humanFoodAmmount;
 			coolDown("adoptFamiliar", 5000);
 		};
@@ -177,12 +178,12 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	}
 };
 
-function HousePar(){
-	const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
-	const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
+function HousePar(houseSize, xpRates){
+	this.houseSize = houseSize;
+	this.xpRates = xpRates;
 	this.xp = 0;
-	this.xpNext = 1000;
 	this.currentSize = 0;
+	this.xpNext = xpRates[this.currentSize + 1];
 	this.currentHouse = houseSize[this.currentSize];
 	
 	this.xpReturnDisplay = function(){
@@ -237,7 +238,7 @@ let Familiars = new Familiar(0, 500, 0, 2, 0, 2);
 
 
 //house 
-let House = new HousePar();
+let House = new HousePar(houseSize, xpRates);
 
 
 //Random events
@@ -271,7 +272,7 @@ function buyVampire(n){
 //FAMILIAR WORK
 //add
 function addGather(type){
-	if (type == "humanFoodGather"){
+	if (type == 'humanFoodGather'){
 		Familiars.addHumanFoodGather(1);
 	}
 	if (type == "bloodGather"){
@@ -350,6 +351,7 @@ function displayUpdate(){
 	
 	document.getElementById("badabookCount").innerHTML = Badabook.getAmmount();
 	document.getElementById("badabookCost").innerHTML = Badabook.getCost();
+	
 	
 	
 	
