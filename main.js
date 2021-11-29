@@ -103,6 +103,7 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	this.foodGatherGain = foodGatherGain;
 	this.bloodGather = bloodGather;
 	this.bloodGatherGain = bloodGatherGain;
+	this.notWorking = 0;
 
 	this.getNotWorking = function(){
 		var notWorking = this.ammount - (foodGather + bloodGather);
@@ -118,12 +119,26 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	};
 
 	this.addHumanFoodGather = function(n){
-		this.foodGather = this.foodGather + (n);
+		if (this.ammount >= n){
+			this.foodGather = this.foodGather + (n);
+			this.notWorking = this.notWorking - n;
+		}
+		if (this.ammount <= n){
+			this.foodGather = this.foodGather + (-n);
+			this.notWorking = this.notWorking + n;
+		}
 	};
 
 	
 	this.addBloodGather = function(n){
-		this.bloodGather = this.bloodGather + (n);
+		if (this.ammount >= n){
+			this.bloodGather = this.bloodGather + (n);
+			this.notWorking = this.notWorking - n;
+		}
+		if (this.ammount <= n){
+			this.blooddGather = this.bloodGather + (-n);
+			this.notWorking = this.notWorking + n;
+		}
 	};
 
 	this.adopt = function(){
