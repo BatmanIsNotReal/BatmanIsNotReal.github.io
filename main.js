@@ -291,7 +291,7 @@ load();
 
 //Drinking blood
 function drinkBlood(){
-	if (Inv.items.blood >= 1){
+	if (Inv.items.blood >= 0){
 	Inv.items.blood = Inv.items.blood + 1;
 	document.getElementById("bloodCount").innerHTML = Inv.items.blood;
 	};
