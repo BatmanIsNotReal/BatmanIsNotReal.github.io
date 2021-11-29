@@ -64,9 +64,7 @@ function Inventory(){
 
 
 	this.addBloodPerRound = function(gain){
-		alert(gain);
 		this.newBloodPerRound = this.newBloodPerRound + gain;
-		alert(this.newBloodPerRound);
 	};
 
 	this.addBlood = function(ammount){
@@ -144,7 +142,6 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 	this.addFamiliar = function(){
 		this.ammount = this.ammount + 1;
 		this.notWorking = this.notWorking + 1;
-		alert(Inv.newHumanFoodPerRound);
 	};
 
 	this.addHumanFoodGather = function(n){
@@ -156,7 +153,6 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 			this.foodGather = this.foodGather + n;
 			this.notWorking = this.notWorking - n;
 		}
-		alert(Inv.newHumanFoodPerRound);
 	};
 
 	
@@ -169,7 +165,6 @@ function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodG
 			this.bloodGather = this.bloodGather + n;
 			this.notWorking = this.notWorking - n;
 		}
-		alert(Inv.newBloodPerRound);
 	};
 
 	this.adopt = function(){
@@ -286,7 +281,6 @@ function buyVampire(n){
 		n.ammount = n.ammount + 1;
 		Inv.useBlood(n.cost);
 		Account.addBloodPerRoundGain(n.gain);
-		alert(n.gain);
 		Account.addInfluence(n.influence);
 		Vampire.ammount = Vampire.ammount + 1;
 	}
