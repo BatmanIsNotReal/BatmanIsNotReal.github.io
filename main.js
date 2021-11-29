@@ -25,7 +25,7 @@ function Player(vName, hName){
 
 //storage vars
 function Inventory(){
-	this.bloodAmmount = 10000;
+	this.bloodAmmount = 10;
 	this.humanFoodAmmount = 10;
 	this.newHumanFoodPerRound = 0;
 	this.newBloodPerRound = 0;
@@ -432,6 +432,7 @@ function load(){
 	}else{
 		return;
 	}
+	if (typeof savegame.bloodAmmount !== "undefined") Inv.bloodAmmount = savegame.bloodAmmount;
 	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.humanFoodAmmount = savegame.humanFoodAmmount;
 	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
 	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
@@ -452,6 +453,7 @@ function load(){
 	if (typeof savegame.currentHouse !== "undefined") House.currentHouse = savegame.currentHouse;
 	if (typeof savegame.vampireName !== "undefined") Account.vampireName = savegame.vampireName;
 	if (typeof savegame.houseName !== "undefined") Account.houseName = savegame.houseName;
+	if (typeof savegame.playerBloodPerRoundGain !== "undefined") Account.bloodPerRoundGain = savegame.playerBloodPerRoundGain;
 	
 }
 
@@ -479,6 +481,7 @@ function save(){
 		currentHouse: House.currentHouse,
 		vampireName: Account.vampireName,
 		houseName: Account.houseName,
+		playerBloodPerRoundGain: Account.bloodPerRoundGain
 	}
 	localStorage.setItem("save", JSON.stringify(save));
 }
