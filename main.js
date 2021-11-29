@@ -250,7 +250,7 @@ function HousePar(houseSize, xpRates, houseImages){
 		if (this.fire.percent == 10){
 			alert("The fire is running out!");
 		}
-		document.getElementById("fireProgressBar").style.width = this.fire.percent + "%";
+		document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
 	}
 
 	this.update = function(){
