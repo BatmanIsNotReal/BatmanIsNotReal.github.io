@@ -193,6 +193,9 @@ window.setInterval(function(){
 	//Player
 
 	//Vampire
+
+	//save
+	save();
 }, 10000);
 
 
