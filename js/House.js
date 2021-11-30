@@ -65,6 +65,7 @@ export default class HousePar {
             if (this.fire.percent > 99){
                 this.fire.percent = 100;
             }
+            alert(inventory.getWoodAmmount());
         }
     }
 
