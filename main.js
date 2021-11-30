@@ -24,10 +24,17 @@ let VampireSlave = new Vampire(0, 400, 10, 0.1);
 let NightWalker = new Vampire(0, 1000, 30, 0.15);
 let Badabook = new Vampire(0, 3000, 100, 0.3);
 
+const vampireTypes = {
+    "mosquito": Mosquito,
+    "vampireRat": VampireRat,
+    "mosquito": Mosquito,
+    "mosquito": Mosquito,
+    "mosquito": Mosquito,
+	
+}
 
 //familiar vars
 let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
-
 
 //consumption vars
 
@@ -35,7 +42,17 @@ let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
 
-
+const drinkBloodButton = document.getElementById("drinkBlood");
+const buyVampireButtons = document.getElementsByClassName("buy-vamp-button");
+for (let i = 0; i < buyVampireButtons.length; i++) {
+	buyVampireButtons[i].addEventListener("click", (event) => {
+		vampireTypes[event.target.id].addVampire();
+	})
+}
+function drinkBlood() {
+	document.getElementById("bloodCount").innerHTML = ++Inv.items.blood;
+}
+drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = ++Inv.items.blood; });
 
 
 //Random events
@@ -48,23 +65,16 @@ load();
 
 
 const buyVampire = (n) =>{
-	if (Inv.items.blood >= n.cost){
-		n.ammount = n.ammount + 1;
-		Inv.useBlood(n.cost);
-		Account.addBloodPerRoundGain(n.gain);
-		Account.addInfluence(n.influence);
-		Vampire.ammount = Vampire.ammount + 1;
-	}
+	window.console.log(n);
+	// if (Inv.items.blood >= n.cost){
+	// 	n.ammount = n.ammount + 1;
+	// 	Inv.useBlood(n.cost);
+	// 	Account.addBloodPerRoundGain(n.gain);
+	// 	Account.addInfluence(n.influence);
+	// 	Vampire.ammount = Vampire.ammount + 1;
+	// }
 };
 
-
-
-	function drinkBlood (){
-		if (Inv.items.blood >= 0){
-		Inv.items.blood = Inv.items.blood + 1;
-		document.getElementById("bloodCount").innerHTML = Inv.items.blood;
-		};
-	};
 
 	
 
@@ -112,9 +122,6 @@ const buyVampire = (n) =>{
 			}
 		}
 	}
-
-	
-
 
 
 //CORE GAME MECHANICS

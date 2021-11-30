@@ -25,7 +25,7 @@ export default class Vampire{
 
     //Adders
     addVampire(){
-        this.ammount = this.ammount + 1;
+        this.ammount++;
     }
 
     addInfluence(gain){

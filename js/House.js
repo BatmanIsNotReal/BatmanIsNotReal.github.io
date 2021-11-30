@@ -42,7 +42,7 @@ export default class HousePar {
     }
 
     updateImage(document){
-        document.getElementById("house").src = String(this.houseImages[this.currentSize]);
+        return String(this.houseImages[this.currentSize]);
     }
 
     updateFire(document){

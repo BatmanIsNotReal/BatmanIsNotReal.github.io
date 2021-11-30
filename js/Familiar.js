@@ -50,8 +50,6 @@ export default class Familiar{
 
     //Misc
 
-    
-
     update(Inv){
         this.gatherHumanFood(Inv);
         this.gatherBloodVictim(Inv);
