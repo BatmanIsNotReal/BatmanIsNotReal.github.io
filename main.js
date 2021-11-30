@@ -71,9 +71,24 @@ buyVampire = function(n){
 
 	//BUY FAMILIAR
 	//Adopt a familiar
+	var adoptFamiliar = function(){
+		if (House.xp >= Familiars.cost){
+			Familiars.addFamiliar();
+			House.useXp(Familiars.cost);
+			Inv.getHumanFoodPerRound();
+			document.getElementById("humanFoodCount").innerHTML = Inv.items.humanFood;
+		}
+		document.getElementById("newHumanFoodPerRound").innerHTML = Inv.newHumanFoodPerRound;
+	}
 
+	//Eat food
+	familiarEat = function(){
+		if (Inv.items.humanFood >= 1){
+			Inv.useHumanFood(Familiars.ammount);
+		}
+	}
 
-	//FAMILIAR WORK
+	//FAMILIARs
 	//add
 	function addGather(type){
 		if(Familiars.notWorking >= 1){
@@ -98,6 +113,8 @@ buyVampire = function(n){
 			}
 		}
 	}
+
+	
 
 
 
@@ -184,8 +201,10 @@ window.setInterval(function(){
 
 //every 10 seconds
 window.setInterval(function(){
-	Familiars.update(Inv);
-	House.updateXP();
+	//Familiar
+	this.familiarEat();
+	
+	
 	save();
 	House.updateFire(document);
 
@@ -197,6 +216,8 @@ window.setInterval(function(){
 
 	//Inventory
 	Inv.updateBlood();
+	Inv.gatherHumanFood();
+	Inv.gatherBloodVictim(Familiars.bloodGather);
 }, 10000);
 
 

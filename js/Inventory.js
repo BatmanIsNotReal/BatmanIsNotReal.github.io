@@ -67,6 +67,8 @@ export default class Inventory{
         this.items.wood = this.items.wood - ammount;
     }
 
+    
+
     //Updates
     updateBlood(){
         this.addBlood(this.newBloodPerRound);

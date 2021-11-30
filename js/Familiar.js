@@ -1,3 +1,5 @@
+
+
 export default class Familiar{
     constructor(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain, notWorking){
         this.ammount = ammount;
@@ -47,29 +49,8 @@ export default class Familiar{
     }
 
     //Misc
-    adopt(house, inventory, document){
-        if (house.xp >= this.cost){
-            this.addFamiliar();
-            house.useXp(this.cost);
-            inventory.getHumanFoodPerRound();
-            document.getElementById("humanFoodCount").innerHTML = inventory.items.humanFood;
-        }
-        document.getElementById("newHumanFoodPerRound").innerHTML = inventory.newHumanFoodPerRound;
-    }
 
-    gatherHumanFood(inventory){
-        inventory.items.humanFood = inventory.items.humanFood + inventory.newHumanFoodPerRound;
-    }
-
-    gatherBloodVictim(inventory){
-        inventory.addBlood(this.bloodGather * 2);
-    }
-
-    eat(inventory){
-        if (inventory.items.humanFood >= 1){
-            inventory.items.humanFood = inventory.items.humanFood - this.ammount;
-        }
-    }
+    
 
     update(Inv){
         this.gatherHumanFood(Inv);
