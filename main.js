@@ -459,7 +459,7 @@ function load(){
 	savegame = JSON.parse(localStorage.getItem("save"));
 	if (savegame == null) savegame = ""; newGame();
 	if (savegame.bloodAmmount !== "undefined"){ 
-		bloodAmmount = savegame.bloodAmmount;
+		Inv.bloodAmmount = savegame.bloodAmmount;
 	}else{
 		return;
 	}

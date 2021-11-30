@@ -73,7 +73,7 @@ export default class Inventory{
     }
 
     updateOne(){
-        this.getBloodCount();
+        this.getBloodAmmount();
         this.getBloodPerRound();
         this.getHumanFoodPerRound();
     }
