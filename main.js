@@ -1,4 +1,4 @@
-import Player from '.vampire/js/Player.js';
+import Player from '.vampire/js/Player';
 import Inventory from './js/Inventory';
 import Vampire from './js/Vampire';
 import Familiar from './js/Familiar';
