@@ -3,6 +3,7 @@ import Inventory from './js/Inventory.js';
 import Vampire from './js/Vampire.js';
 import Familiar from './js/Familiar.js';
 import HousePar from './js/House.js';
+import Timers from './js/Timers.js';
 
 
 
@@ -37,8 +38,8 @@ const vampireTypes = {
 //familiar vars
 let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
 
-//consumption vars
-
+//Timers
+const Timer = new Timers();
 
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
@@ -146,7 +147,12 @@ function displayUpdate(){
 	
 	document.getElementById("vName").innerHTML = Account.vampireName;
 	document.getElementById("hName").innerHTML = Account.houseName;
+
+	//Timers
+	document.getElementById("tenSecTimer").innerHTML = Timer.resetTime;
 }
+
+
 
 
 //GAME LOOP
@@ -166,7 +172,8 @@ window.setInterval(function(){
 
 	//Vampire
 
-
+	//Timers
+	Timer.countDownTenSec();
 }, 1000);
 
 //every 10 seconds
