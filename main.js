@@ -81,7 +81,7 @@ const buyVampire = (n) =>{
 	}
 
 	//Eat food
-	familiarEat = function(){
+	function familiarEat() {
 		if (Inv.items.humanFood >= 1){
 			Inv.useHumanFood(Familiars.ammount);
 		}
@@ -201,7 +201,7 @@ window.setInterval(function(){
 //every 10 seconds
 window.setInterval(function(){
 	//Familiar
-	this.familiarEat();
+	// Familiars.familiarEat();
 	
 	
 	save();
@@ -215,8 +215,8 @@ window.setInterval(function(){
 
 	//Inventory
 	Inv.updateBlood();
-	Inv.gatherHumanFood();
-	Inv.gatherBloodVictim(Familiars.bloodGather);
+	// Inv.gatherHumanFood();
+	// Inv.gatherBloodVictim(Familiars.bloodGather);
 }, 10000);
 
 

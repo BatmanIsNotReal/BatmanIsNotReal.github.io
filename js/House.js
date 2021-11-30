@@ -1,4 +1,4 @@
-export default class HousePar{
+export default class HousePar {
     constructor(houseSize, xpRates, houseImages){
         this.houseImages = houseImages;
         this.houseSize = houseSize;
@@ -18,7 +18,7 @@ export default class HousePar{
 
     //Getters
     xpReturnDisplay(){
-        return String(xp + "/" + xpNext);
+        return String(this.xp + "/" + this.xpNext);
     }
 
     //Add

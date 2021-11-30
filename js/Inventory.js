@@ -1,4 +1,4 @@
-import Familiar from './Familiar';
+import Familiar from './Familiar.js';
 
 export default class Inventory{
     constructor(){
