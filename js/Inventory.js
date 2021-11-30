@@ -12,14 +12,14 @@ export default class Inventory{
     }
 
     //Getters
-    getHumanFoodPerRound(foodGather, foodGatherGain){
-        var n = (foodGather * foodGatherGain);
+    getHumanFoodPerRound(familiar){
+        var n = (familiar.foodGather * familiar.foodGatherGain);
         this.newHumanFoodPerRound = n;
         return n;
     }
 
-    getBloodPerRound(bloodGather, bloodGatherGain, bloodPerRoundGain){
-        var n = (bloodGather * bloodGatherGain) + bloodPerRoundGain;
+    getBloodPerRound(familiar, account){
+        var n = (familiar.bloodGather * familiar.bloodGatherGain) + account.bloodPerRoundGain;
         this.newBloodPerRound = n;
         return n;
     }
@@ -33,8 +33,7 @@ export default class Inventory{
     }
 
     getBloodAmmount(){
-        this.items.blood = Math.floor(this.items.blood);
-        return this.items.blood;
+        return Math.floor(this.items.blood);
     }
 
     getHumanFoodAmmount(){
@@ -74,10 +73,10 @@ export default class Inventory{
         this.addBlood(this.newBloodPerRound);
     }
 
-    updateOne(){
+    updateOne(familiar, account){
         this.getBloodAmmount();
-        this.getBloodPerRound();
-        this.getHumanFoodPerRound();
+        this.getBloodPerRound(familiar, account);
+        this.getHumanFoodPerRound(familiar);
     }
 
     updateTen(){

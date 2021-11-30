@@ -27,10 +27,11 @@ let Badabook = new Vampire(0, 3000, 100, 0.3);
 const vampireTypes = {
     "mosquito": Mosquito,
     "vampireRat": VampireRat,
-    "mosquito": Mosquito,
-    "mosquito": Mosquito,
-    "mosquito": Mosquito,
-	
+	"vampireBat": VampireBat,
+    "bloodHound": BloodHound,
+    "vampireSlave": VampireSlave,
+    "nightWalker": NightWalker,
+	"badabook": Badabook,
 }
 
 //familiar vars
@@ -44,16 +45,27 @@ let House = new HousePar(houseSize, xpRates, houseImages);
 
 const drinkBloodButton = document.getElementById("drinkBlood");
 const buyVampireButtons = document.getElementsByClassName("buy-vamp-button");
+const adoptFamiliarButton = document.getElementById("adoptFamiliar");
+const addGatherButtons = document.getElementsByClassName("add-gather-button");
+const removeGatherButtons = document.getElementsByClassName("remove-gather-button");
+
+const restartButton = document.getElementById("restart");
+
 for (let i = 0; i < buyVampireButtons.length; i++) {
 	buyVampireButtons[i].addEventListener("click", (event) => {
-		vampireTypes[event.target.id].addVampire();
+		vampireTypes[event.target.id].addVampire(Inv, Account);
 	})
 }
-function drinkBlood() {
-	document.getElementById("bloodCount").innerHTML = ++Inv.items.blood;
-}
-drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = ++Inv.items.blood; });
 
+drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
+
+adoptFamiliarButton.addEventListener("click", () => { Familiars.adopt(House, Inv); })
+
+for (let i = 0; i < addGatherButtons.length; i++){
+	addGatherButtons[i].addEventListener("click", () => { Familiars.addGather(event.target.id); } )
+	removeGatherButtons[i].addEventListener("click", () => { Familiars.removeGather(event.target.id); })
+}
+restartButton.addEventListener("click", () => {deleteSave();})
 
 //Random events
 //const randEvents = [];
@@ -62,81 +74,19 @@ drinkBloodButton.addEventListener("click", () => { document.getElementById("bloo
 load();
 //Drinking blood
 
-
-
-const buyVampire = (n) =>{
-	window.console.log(n);
-	// if (Inv.items.blood >= n.cost){
-	// 	n.ammount = n.ammount + 1;
-	// 	Inv.useBlood(n.cost);
-	// 	Account.addBloodPerRoundGain(n.gain);
-	// 	Account.addInfluence(n.influence);
-	// 	Vampire.ammount = Vampire.ammount + 1;
-	// }
-};
-
-
-	
-
-	//BUY FAMILIAR
-	//Adopt a familiar
-	var adoptFamiliar = function(){
-		if (House.xp >= Familiars.cost){
-			Familiars.addFamiliar();
-			House.useXp(Familiars.cost);
-			Inv.getHumanFoodPerRound();
-			document.getElementById("humanFoodCount").innerHTML = Inv.items.humanFood;
-		}
-		document.getElementById("newHumanFoodPerRound").innerHTML = Inv.newHumanFoodPerRound;
-	}
-
-	//Eat food
-	function familiarEat() {
-		if (Inv.items.humanFood >= 1){
-			Inv.useHumanFood(Familiars.ammount);
-		}
-	}
-
-	//FAMILIARs
-	//add
-	function addGather(type){
-		if(Familiars.notWorking >= 1){
-			if (type == 'humanFoodGather'){
-				Familiars.addHumanFoodGather(1);
-			}
-			if (type == "bloodGather"){
-				Familiars.addBloodGather(1);
-			}
-		}
-	}
-	//sub
-	function useGather(type){
-		if (type == "humanFoodGather"){
-			if(Familiars.foodGather >= 1){
-				Familiars.addHumanFoodGather(-1);
-			}
-		}
-		if (Familiars.bloodGather >= 1){
-			if (type == "bloodGather"){
-				Familiars.addBloodGather(-1);
-			}
-		}
-	}
-
-
 //CORE GAME MECHANICS
 //cooldown function
-function coolDown(elementID, time){
-	document.getElementById(elementID).disabled = true;
-	setTimeout(function() {document.getElementById(elementID).disabled = false;}, time);
-}
+// function coolDown(elementID, time){
+// 	document.getElementById(elementID).disabled = true;
+// 	setTimeout(function() {document.getElementById(elementID).disabled = false;}, time);
+// }
 
-//random number getter
-function getRandomInt(min, max){
-	min = Math.ceil(min);
-	max = Math.floor(max);
-	return Math.floor(Math.random() * (max - min) + min);
-}
+// //random number getter
+// function getRandomInt(min, max){
+// 	min = Math.ceil(min);
+// 	max = Math.floor(max);
+// 	return Math.floor(Math.random() * (max - min) + min);
+// }
 
 //update displayed values
 function displayUpdate(){
@@ -146,24 +96,24 @@ function displayUpdate(){
 	//inventory
 	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
 	document.getElementById("bloodCount").innerHTML = Inv.getBloodAmmount();
-	document.getElementById("woodCount").innerHTML = Inv.items.wood;
+	document.getElementById("woodCount").innerHTML = Inv.getWoodAmmount();
 	
-	document.getElementById("familiarCost").innerHTML = Familiars.cost;
+	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
 	//document.getElementById("bloodPerTurn").innerHTML = bloodPerTurn;
 	//document.getElementById("humanFoodPerTurn").innerHTML = humanFoodPerTurn;
 	
-	document.getElementById("currentHouse").innerHTML = House.currentHouse;
+	document.getElementById("currentHouse").innerHTML = House.getCurrentHouse();
 	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
-	document.getElementById("humanFoodGather").innerHTML = Familiars.foodGather;
-	document.getElementById("newHumanFoodPerRound").innerHTML = Inv.getNewHumanFoodPerRound();
+	document.getElementById("humanFoodGather").innerHTML = Familiars.getHumanFoodGather();
+	document.getElementById("newHumanFoodPerRound").innerHTML = Inv.getNewHumanFoodPerRound(Familiars);
 	document.getElementById("newHumanFoodPerRoundStat").innerHTML = Inv.getNewHumanFoodPerRound();
 	
-	document.getElementById("bloodVictimGather").innerHTML = Familiars.bloodGather;
-	document.getElementById("newBloodPerRound").innerHTML = Inv.getBloodPerRound();
-	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.newBloodPerRound;
+	document.getElementById("bloodVictimGather").innerHTML = Familiars.getBloodGather();
+	document.getElementById("newBloodPerRound").innerHTML = Inv.getBloodPerRound(Familiars, Account);
+	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.getNewBloodPerRound();
 	
 	document.getElementById("mosquitoCount").innerHTML = Mosquito.getAmmount();
 	document.getElementById("mosquitoCost").innerHTML = Mosquito.getCost();
@@ -186,6 +136,7 @@ function displayUpdate(){
 	document.getElementById("badabookCount").innerHTML = Badabook.getAmmount();
 	document.getElementById("badabookCost").innerHTML = Badabook.getCost();
 	
+	document.getElementById("fireLeft").innerHTML = House.fire.percent;
 	
 	document.getElementById("house").src = House.updateImage();
 	
@@ -198,32 +149,36 @@ function displayUpdate(){
 //every second
 window.setInterval(function(){
 	displayUpdate();
-	House.update();
+	
+	//Familiars
+
 	//Inventory
-	Inv.getBloodAmmount();
-	Inv.getBloodPerRound(Familiars.bloodGather, Familiars.bloodGatherGain, Account.bloodPerRoundGain);
-	Inv.getHumanFoodPerRound(Familiars.foodGather, Familiars.foodGatherGain);
+	Inv.updateOne(Familiars, Account);
+
+	//House
+	House.updateOne();
+
+	//Player
+
+	//Vampire
+
+
 }, 1000);
 
 //every 10 seconds
 window.setInterval(function(){
-	//Familiar
-	// Familiars.familiarEat();
-	
-	
-	save();
-	House.updateFire(document);
-
-	//House
-	House.updateXP(Account.influence);
-	House.updateImage(document);
-	House.updateFire(document);
-
+	//Familiars
+	Familiars.update(Inv);
 
 	//Inventory
-	Inv.updateBlood();
-	// Inv.gatherHumanFood();
-	// Inv.gatherBloodVictim(Familiars.bloodGather);
+	Inv.updateTen();
+
+	//House
+	House.updateTen(Account, document);
+
+	//Player
+
+	//Vampire
 }, 10000);
 
 
@@ -296,11 +251,11 @@ function save(){
 		badabookAmmount: Badabook.ammount,
 		familiarAmmount: Familiars.ammount,
 		newHumanFoodPerRound: Inv.newHumanFoodPerRound,
-		newBloodPerRound: Inv.getNewBloodPerRound(),
+		newBloodPerRound: Inv.newBloodPerRound,
 		humanFoodGather: Familiars.foodGather,
 		bloodVictimGather: Familiars.bloodGather,
 		familiarNotWorking: Familiars.notWorking,
-		humanFoodPerTurn: Inv.getHumanFoodPerRound(),
+		humanFoodPerTurn: Inv.newHumanFoodPerRound,
 		xp: House.xp,
 		currentSize: House.currentSize,
 		currentHouse: House.currentHouse,

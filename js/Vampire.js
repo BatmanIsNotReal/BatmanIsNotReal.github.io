@@ -24,8 +24,14 @@ export default class Vampire{
     }
 
     //Adders
-    addVampire(){
-        this.ammount++;
+    addVampire(inventory, account){
+        if (inventory.items.blood >= this.cost){
+            this.ammount++;
+            inventory.useBlood(this.cost);
+            account.addBloodPerRoundGain(this.gain);
+            account.addInfluence(this.influence);
+        }
+
     }
 
     addInfluence(gain){

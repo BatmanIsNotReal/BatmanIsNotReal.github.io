@@ -21,6 +21,10 @@ export default class HousePar {
         return String(this.xp + "/" + this.xpNext);
     }
 
+    getCurrentHouse(){
+        return this.currentHouse = this.houseSize[this.currentSize];
+    }
+
     //Add
     addXp(account){
         this.xp = this.xp + account.influence;
@@ -32,8 +36,8 @@ export default class HousePar {
     }
 
     //Updates
-    updateXP(influence){
-        this.xp = (this.xp + influence) + 1;
+    updateXP(account){
+        this.xp = (this.xp + account.influence) + 1;
 		if(this.xp >= this.xpNext){
 			this.currentSize = this.currentSize + 1;
 			this.xpNext = this.xpRates[this.currentSize];
@@ -41,7 +45,7 @@ export default class HousePar {
 		}
     }
 
-    updateImage(document){
+    updateImage(){
         return String(this.houseImages[this.currentSize]);
     }
 
@@ -53,8 +57,13 @@ export default class HousePar {
 		document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
     }
 
-    update(){
-        this.getXP();
+    updateOne(){
+        this.xpReturnDisplay();
+    }
+
+    updateTen(account, document){
         this.updateImage();
+        this.updateFire(document);
+        this.updateXP(account);
     }
 }

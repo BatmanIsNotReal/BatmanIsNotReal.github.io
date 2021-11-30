@@ -41,7 +41,7 @@
 		<div class="item1 grid-item">
 			<h1 style="font-family: 'VT323', monospace; font-size: 50px;"><image src="src/skullCandle.gif" height="100" width="50"></image> VAMPIRE HOUSE <image src="src/skullCandle.gif" height="100" width="50"></image></h1>
 			<h1 style="font-family: 'VT323', monospace; font-size: 25px;">  <span id="vName"> </h1>
-			<p class="button" id="restart" onclick="deleteSave()">restart</p> 
+			<p class="button" id="restart">restart</p> 
 		</div>
 		<!-- info on house and xp -->
 		<div class="item6 grid-item">
@@ -55,7 +55,7 @@
 				<image src="src/bonFire.webp" width="50" height="50"></image>
 			</div>
 			<div class="progress-bar">
-				<div class="progress-bar-inner" id="#fireProgressBar"></div>
+				<div class="progress-bar-inner" id="#fireProgressBar"> <span id="fireLeft"></span></div>
 			</div>
 		</div>
 		<div class="item3 grid-item">
@@ -75,7 +75,7 @@
 				<!-- vampire rat -->
 				<div class="vampireRat">
 					<p> vampire rats: <span id="vampireRatCount"> </p>
-					<div class="button" id="vampireRat" onclick="buyVampire(VampireRat)">Buy vampire rat
+					<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
 						<div class="hover">
 							<p>+blood/10 sec: 0.3</p>
 							<p>price blood: <span id="vampireRatCost"></p>
@@ -85,7 +85,7 @@
 				<!-- vampire bat -->
 				<div class="vampireBat">
 					<p>vampire bats: <span id="vampireBatCount">
-					<div class="button" id="vampireBat" onclick="buyVampire(VampireBat)">Buy vampire bat
+					<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
 						<div class="hover">
 							<p>+blood/10 sec: 0.6</p>
 							<p>price blood: <span id="vampireBatCost"></p>
@@ -95,7 +95,7 @@
 				<!-- blood hound -->
 				<div class="bloodHound">
 					<p> bloodhounds: <span id="bloodHoundCount"> </p>
-					<div class="button" id="bloodHound" onclick="buyVampire(BloodHound)">bloodhound
+					<div class="button buy-vamp-button" id="bloodHound">bloodhound
 						<div class="hover">
 							<p>+blood/10 sec: 2</p>
 							<p>price blood: <span id="bloodHoundCost"></p>
@@ -111,7 +111,7 @@
 				<!-- vampire slave -->
 				<div class="vampireSlave">
 					<p>vampire slaves: <span id="vampireSlaveCount"></p>
-					<div class="button" id="vampireSlave" onclick="buyVampire(VampireSlave)">Buy vampire slave
+					<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
 						<div class="hover">
 							<p>+blood/10 sec: 10</p>
 							<p>price blood: <span id="vampireSlaveCost"></p>
@@ -121,7 +121,7 @@
 				<!-- nightwalker -->
 				<div class="nightWalker">
 					<p>nightwalkers: <span id="nightWalkerCount"></p>
-					<div class="button" id="nightWalker" onclick="buyVampire(NightWalker)">Buy nightwalker
+					<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
 						<div class="hover">
 							<p>+blood/10 sec: 30</p>
 							<p>price blood: <span id="nightWalkerCost"></p>
@@ -131,7 +131,7 @@
 				<!-- badabook -->
 				<div class="badabook">
 					<p> badabooks: <span id="badabookCount"> </p>
-					<div class="button" id="badabook" onclick="buyVampire(Badabook)">Buy badabook
+					<div class="button buy-vamp-button" id="badabook" >Buy badabook
 						<div class="hover">
 							<p>+blood/10 sec: 100</p>
 							<p>price blood: <span id="badabookCost"></p>
@@ -145,7 +145,7 @@
 			<h3 class="grid-item-title">Command familiars</h3>
 			<p>familiars not working: <span id="familiarNotWorking"></p>
 			<div class="adoptFamiliar">
-				<div class="button" id="adoptFamiliar" onclick="adoptFamiliar()">Adopt a familiar
+				<div class="button" id="adoptFamiliar">Adopt a familiar
 					<div class="hover"><p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"></p></div>
 				</div>
 			</div>
@@ -154,10 +154,10 @@
 				<p> human food gatherers: <span id="humanFoodGather"></p>
 				<div class="flex-row">
 					<div class="flex-row">
-						<div class="button" id="humanFoodGather" onclick="addGather('humanFoodGather')">+
+						<div class="button add-gather-button" id="humanFoodGather">+
 							<div class="hover">+Food/10 sec: 2</div>
 						</div>
-						<div class="button" id="humanFoodGather" onclick="useGather('humanFoodGather')">-
+						<div class="button remove-gather-button" id="humanFoodGather">-
 							<div class="hover">-Food/10 sec: 2</div>
 						</div>
 					</div>
@@ -168,10 +168,10 @@
 				<p>blood victim gatherers: <span id="bloodVictimGather"></p>
 				<div class="flex-row">
 					<div class="flex-row">
-						<div class="button" id="bloodVictimGather" onclick="addGather('bloodGather')">+
+						<div class="button add-gather-button" id="bloodGather">+
 							<div class="hover">+Blood/10 sec: 2</div>
 						</div>
-						<div class="button" id="bloodVictimGather" onclick="useGather('bloodGather')">-
+						<div class="button remove-gather-button" id="bloodGather">-
 							<div class="hover">-Blood/10 sec: 2</div>
 						</div>
 					</div>
