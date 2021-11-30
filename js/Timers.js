@@ -1,13 +1,13 @@
 export default class Timers{
     constructor(){
-        this.resetTime = 10;
+        this.resetTime = 9;
     }
 
     countDownTenSec(){
         if (this.resetTime > 0){
             this.resetTime--;
         }else{
-            this.resetTime = 10;
+            this.resetTime = 9;
         }
     }
 }

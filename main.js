@@ -158,6 +158,9 @@ function displayUpdate(){
 //GAME LOOP
 //every second
 window.setInterval(function(){
+	//Timers
+	Timer.countDownTenSec();
+	
 	displayUpdate();
 	
 	//Familiars
@@ -172,8 +175,8 @@ window.setInterval(function(){
 
 	//Vampire
 
-	//Timers
-	Timer.countDownTenSec();
+	
+	
 }, 1000);
 
 //every 10 seconds
