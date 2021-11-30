@@ -1,9 +1,8 @@
-import Player from '.vampire/js/Player';
-import Inventory from './js/Inventory';
-import Vampire from './js/Vampire';
-import Familiar from './js/Familiar';
-import HousePar from './js/House';
-
+import Player from './js/Player.js';
+import Inventory from './js/Inventory.js';
+import Vampire from './js/Vampire.js';
+import Familiar from './js/Familiar.js';
+import HousePar from './js/House.js';
 
 
 
@@ -48,7 +47,7 @@ load();
 
 
 
-buyVampire = function(n){
+const buyVampire = (n) =>{
 	if (Inv.items.blood >= n.cost){
 		n.ammount = n.ammount + 1;
 		Inv.useBlood(n.cost);
@@ -60,7 +59,7 @@ buyVampire = function(n){
 
 
 
-	drinkBlood = function(){
+	function drinkBlood (){
 		if (Inv.items.blood >= 0){
 		Inv.items.blood = Inv.items.blood + 1;
 		document.getElementById("bloodCount").innerHTML = Inv.items.blood;
