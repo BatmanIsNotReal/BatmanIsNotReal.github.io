@@ -57,6 +57,14 @@ export default class HousePar {
 		document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
     }
 
+    //Maintenance - house
+    addWoodToFire(inventory){
+        if (inventory.getWoodAmmount() >= 1){
+            this.fire.percent = this.fire.percent + 50;
+            inventory.useWood(this.currentSize);
+        }
+    }
+
     updateOne(){
         this.xpReturnDisplay();
     }

@@ -49,6 +49,8 @@ const adoptFamiliarButton = document.getElementById("adoptFamiliar");
 const addGatherButtons = document.getElementsByClassName("add-gather-button");
 const removeGatherButtons = document.getElementsByClassName("remove-gather-button");
 
+const addWoodButton = document.getElementById("addWoodFire");
+
 const restartButton = document.getElementById("restart");
 
 for (let i = 0; i < buyVampireButtons.length; i++) {
@@ -56,6 +58,8 @@ for (let i = 0; i < buyVampireButtons.length; i++) {
 		vampireTypes[event.target.id].addVampire(Inv, Account);
 	})
 }
+
+addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv);})
 
 drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
 
