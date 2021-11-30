@@ -11,257 +11,6 @@ const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
 const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 
-//Class constructors
-//personal
-// function Player(vName, hName){
-// 	this.vampireName = '';
-// 	this.houseName = '';
-// 	this.playedBefore = 0;
-// 	this.vampiresAmmount = 0;
-// 	this.influence = 0;
-// 	this.bloodPerRoundGain = 0;
-
-// 	this.addInfluence = function(gain){
-// 		this.influence = Math.round(this.influence + gain);
-// 	};
-
-// 	this.addBloodPerRoundGain = function(gain){
-// 		this.bloodPerRoundGain = this.bloodPerRoundGain + gain;
-// 	}
-// };
-
-//storage vars
-// function Inventory(){
-
-// 	this.items = {
-// 		blood: 10,
-// 		humanFood: 10,
-// 		wood: 10,
-// 	}
-
-// 	this.newHumanFoodPerRound = 0;
-// 	this.newBloodPerRound = 0;
-
-// 	this.getHumanFoodPerRound = function(){
-// 		var n = (Familiars.foodGather * Familiars.foodGatherGain);
-// 		this.newHumanFoodPerRound = n;
-// 		return n;
-// 	};
-
-// 	this.getBloodPerRound = function(){
-// 		var n = (Familiars.bloodGather * Familiars.bloodGatherGain) + Account.bloodPerRoundGain;
-// 		this.newBloodPerRound = n;
-// 		return n;
-// 	};
-
-// 	this.getNewHumanFoodPerRound = function(){
-// 		return this.newHumanFoodPerRound;
-// 	};
-
-// 	this.getNewBloodPerRound = function(){
-// 		return this.newBloodPerRound;
-// 	};
-
-// 	this.getBloodCount = function(){
-// 		this.items.blood = Math.floor(this.items.blood);
-// 		return this.items.blood;
-// 	};
-
-
-// 	this.addBloodPerRound = function(gain){
-// 		this.newBloodPerRound = this.newBloodPerRound + gain;
-// 	};
-
-// 	this.addBlood = function(ammount){
-// 		this.items.blood = this.items.blood + ammount;
-// 	};
-
-// 	this.getHumanFoodAmmount = function(){
-// 		return this.items.humanFood;
-// 	};
-
-// 	this.useBlood = function(ammount){
-// 		this.items.blood = this.items.blood - ammount;
-// 	};
-
-// 	this.updateBlood = function(){
-// 		this.addBlood(this.newBloodPerRound);
-// 	}
-
-// 	this.update = function(){
-// 		this.getBloodCount();
-// 		this.getBloodPerRound();
-// 		this.getHumanFoodPerRound();
-// 	};
-// };
-
-// function Vampire(ammount, cost, gain, influence){
-// 	this.ammount = ammount;
-// 	this.cost = cost;
-// 	this.gain = gain;
-// 	this.influence = influence;
-
-// 	this.addVampire = function(){
-// 		this.ammount = this.ammount + 1;
-// 	};
-
-// 	this.addInfluence = function(gain){
-// 		this.influence = this.influence + gain;
-// 	};
-
-// 	this.getAmmount = function(){
-// 		return this.ammount;
-// 	};
-
-// 	this.getCost = function(){
-// 		return this.cost;
-// 	};
-
-// 	this.getGain = function(){
-// 		return this.gain;
-// 	};
-
-// 	this.getInfluence = function(){
-// 		return this.influence;
-// 	};
-	
-// };
-
-// function Familiar(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain, notWorking){
-// 	this.ammount = ammount;
-// 	this.cost = cost;
-// 	this.foodGather = foodGather;
-// 	this.foodGatherGain = foodGatherGain;
-// 	this.bloodGather = bloodGather;
-// 	this.bloodGatherGain = bloodGatherGain;
-// 	this.notWorking = notWorking;
-
-// 	this.getNotWorking = function(){
-// 		return this.notWorking;
-// 	};
-
-// 	this.getHumanFoodGather = function(){
-// 		return this.foodGather;
-// 	};
-
-// 	this.addFamiliar = function(){
-// 		this.ammount = this.ammount + 1;
-// 		this.notWorking = this.notWorking + 1;
-// 	};
-
-// 	this.addHumanFoodGather = function(n){
-// 		if(n > 0){
-// 			this.foodGather = this.foodGather + (n);
-// 			this.notWorking = this.notWorking - n;
-// 		}
-// 		if(n < 0){
-// 			this.foodGather = this.foodGather + n;
-// 			this.notWorking = this.notWorking - n;
-// 		}
-// 	};
-
-	
-// 	this.addBloodGather = function(n){
-// 		if(n > 0){
-// 			this.bloodGather = this.bloodGather + (n);
-// 			this.notWorking = this.notWorking - n;
-// 		}
-// 		if(n < 0){
-// 			this.bloodGather = this.bloodGather + n;
-// 			this.notWorking = this.notWorking - n;
-// 		}
-// 	};
-
-// 	this.adopt = function(){
-// 		if (House.xp >= Familiars.cost){
-// 			Familiars.addFamiliar();
-// 			House.useXp(Familiars.cost);
-// 			Inv.getHumanFoodPerRound();
-// 			document.getElementById("humanFoodCount").innerHTML = Inv.items.humanFood;
-// 			coolDown("adoptFamiliar", 5000);
-// 		};
-// 		document.getElementById("newHumanFoodPerRound").innerHTML = Inv.newHumanFoodPerRound;
-// 	};
-
-// 	this.gatherHumanFood = function(){
-// 		Inv.items.humanFood = Inv.items.humanFood + Inv.newHumanFoodPerRound;
-// 	};
-
-// 	this.gatherBloodVictim = function(){
-// 		Inv.addBlood(this.bloodGather * 2);
-// 	};
-
-// 	this.eat = function(){
-// 		if (Inv.items.humanFood >= 1){
-// 			Inv.items.humanFood = Inv.items.humanFood - this.ammount;
-// 		}
-// 	};
-
-// 	this.update = function(){
-// 		this.gatherHumanFood();
-// 		this.gatherBloodVictim();
-// 		this.eat();
-// 	}
-// };
-
-// function HousePar(houseSize, xpRates, houseImages){
-// 	this.houseImages = houseImages;
-// 	this.houseSize = houseSize;
-// 	this.xpRates = xpRates;
-// 	this.xp = 0;
-// 	this.currentSize = 0;
-// 	this.xpNext = xpRates[this.currentSize + 1];
-// 	this.currentHouse = houseSize[this.currentSize];
-	
-// 	this.fire = {
-//         percent : 100,
-//         getRate: () => {
-//             return (this.currentSize * 2) + 1;
-//         },
-//     }
-
-// 	this.xpReturnDisplay = function(){
-// 		return String(xp + "/" + xpNext);
-// 	};
-	
-// 	this.addXp = function(){
-// 		this.xp = this.xp + Account.influence;
-// 	}
-
-// 	this.useXp = function(ammount){
-// 		this.xp = this.xp - ammount;
-// 	};
-
-// 	this.updateXP = function(){
-// 		this.xp = (this.xp + Account.influence) + 1;
-// 		if(this.xp >= this.xpNext){
-// 			this.currentSize = this.currentSize + 1;
-// 			this.xpNext = this.xpRates[this.currentSize];
-// 			this.currentHouse = this.houseSize[this.currentSize];
-// 		}
-// 	};
-
-// 	this.getXP = function(){
-// 		return String(this.xp + "/" + this.xpNext);
-// 	};
-
-// 	this.updateImage = function(){
-// 		document.getElementById("house").src = String(this.houseImages[this.currentSize]);
-// 	}
-
-// 	this.updateFire = function(){
-// 		this.fire.percent = this.fire.percent - this.fire.getRate();
-// 		if (this.fire.percent == 10){
-// 			alert("The fire is running out!");
-// 		}
-// 		document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
-// 	}
-
-// 	this.update = function(){
-// 		this.getXP();
-// 		this.updateImage();
-// 	}
-// };
 
 //game basics - inventory, player 
 let Inv = new Inventory();
@@ -418,18 +167,29 @@ function displayUpdate(){
 //GAME LOOP
 //every second
 window.setInterval(function(){
-	Inv.update();
 	displayUpdate();
 	House.update();
+	//Inventory
+	Inv.getBloodAmmount();
+	Inv.getBloodPerRound(Familiars.bloodGather, Familiars.bloodGatherGain, Account.bloodPerRoundGain);
+	Inv.getHumanFoodPerRound(Familiars.foodGather, Familiars.foodGatherGain);
 }, 1000);
 
 //every 10 seconds
 window.setInterval(function(){
-	Familiars.update();
+	Familiars.update(Inv);
 	House.updateXP();
 	save();
+	House.updateFire(document);
+
+	//House
+	House.updateXP(Account.influence);
+	House.updateImage(document);
+	House.updateFire(document);
+
+
+	//Inventory
 	Inv.updateBlood();
-	House.updateFire();
 }, 10000);
 
 
@@ -451,12 +211,12 @@ function validateForm(){
 
 function newGame(){
 	//document.getElementById("overlay").style.display="grid";
-	playedBefore = true;
+	Account.playedBefore = true;
 }
 
 function load(){
-	House.updateFire();
-	savegame = JSON.parse(localStorage.getItem("save"));
+	House.updateFire(document);
+	var savegame = JSON.parse(localStorage.getItem("save"));
 	if (savegame == null) savegame = ""; newGame();
 	if (savegame.bloodAmmount !== "undefined"){ 
 		Inv.bloodAmmount = savegame.bloodAmmount;
