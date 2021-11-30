@@ -5,12 +5,12 @@ import Familiar from './js/Familiar';
 import HousePar from './js/House';
 
 
+
+
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
 const houseImages = ["src/smallHut.png", "src/house2.png"];
-
-
 
 //game basics - inventory, player 
 let Inv = new Inventory();
@@ -37,21 +37,18 @@ let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
 let House = new HousePar(houseSize, xpRates, houseImages);
 
 
+
+
 //Random events
 //const randEvents = [];
 //let randEvents[1] = "";
 
 load();
-
 //Drinking blood
-function drinkBlood(){
-	if (Inv.items.blood >= 0){
-	Inv.items.blood = Inv.items.blood + 1;
-	document.getElementById("bloodCount").innerHTML = Inv.items.blood;
-	};
-};
 
-function buyVampire(n){
+
+
+buyVampire = function(n){
 	if (Inv.items.blood >= n.cost){
 		n.ammount = n.ammount + 1;
 		Inv.useBlood(n.cost);
@@ -61,35 +58,47 @@ function buyVampire(n){
 	}
 };
 
-//BUY FAMILIAR
-//Adopt a familiar
 
 
-//FAMILIAR WORK
-//add
-function addGather(type){
-	if(Familiars.notWorking >= 1){
-		if (type == 'humanFoodGather'){
-			Familiars.addHumanFoodGather(1);
-		}
-		if (type == "bloodGather"){
-			Familiars.addBloodGather(1);
+	drinkBlood = function(){
+		if (Inv.items.blood >= 0){
+		Inv.items.blood = Inv.items.blood + 1;
+		document.getElementById("bloodCount").innerHTML = Inv.items.blood;
+		};
+	};
+
+	
+
+	//BUY FAMILIAR
+	//Adopt a familiar
+
+
+	//FAMILIAR WORK
+	//add
+	function addGather(type){
+		if(Familiars.notWorking >= 1){
+			if (type == 'humanFoodGather'){
+				Familiars.addHumanFoodGather(1);
+			}
+			if (type == "bloodGather"){
+				Familiars.addBloodGather(1);
+			}
 		}
 	}
-}
-//sub
-function useGather(type){
-	if (type == "humanFoodGather"){
-		if(Familiars.foodGather >= 1){
-			Familiars.addHumanFoodGather(-1);
+	//sub
+	function useGather(type){
+		if (type == "humanFoodGather"){
+			if(Familiars.foodGather >= 1){
+				Familiars.addHumanFoodGather(-1);
+			}
+		}
+		if (Familiars.bloodGather >= 1){
+			if (type == "bloodGather"){
+				Familiars.addBloodGather(-1);
+			}
 		}
 	}
-	if (Familiars.bloodGather >= 1){
-		if (type == "bloodGather"){
-			Familiars.addBloodGather(-1);
-		}
-	}
-}
+
 
 
 //CORE GAME MECHANICS
@@ -106,8 +115,6 @@ function getRandomInt(min, max){
 	return Math.floor(Math.random() * (max - min) + min);
 }
 
-
-
 //update displayed values
 function displayUpdate(){
 	
@@ -115,7 +122,7 @@ function displayUpdate(){
 
 	//inventory
 	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
-	document.getElementById("bloodCount").innerHTML = Inv.getBloodCount();
+	document.getElementById("bloodCount").innerHTML = Inv.getBloodAmmount();
 	document.getElementById("woodCount").innerHTML = Inv.items.wood;
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.cost;
@@ -124,7 +131,7 @@ function displayUpdate(){
 	//document.getElementById("humanFoodPerTurn").innerHTML = humanFoodPerTurn;
 	
 	document.getElementById("currentHouse").innerHTML = House.currentHouse;
-	document.getElementById("xpReturnDisplayStat").innerHTML = House.getXP();
+	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
 	document.getElementById("humanFoodGather").innerHTML = Familiars.foodGather;
@@ -157,7 +164,7 @@ function displayUpdate(){
 	document.getElementById("badabookCost").innerHTML = Badabook.getCost();
 	
 	
-	
+	document.getElementById("house").src = House.updateImage();
 	
 	document.getElementById("vName").innerHTML = Account.vampireName;
 	document.getElementById("hName").innerHTML = Account.houseName;
@@ -281,6 +288,7 @@ function deleteSave(){
 	localStorage.removeItem("save");
 	
 }
+
 
 //random event timer
 //window.setInterval(function(){

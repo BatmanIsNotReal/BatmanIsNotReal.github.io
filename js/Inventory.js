@@ -12,14 +12,14 @@ export default class Inventory{
     }
 
     //Getters
-    getHumanFoodPerRound(familiar){
-        var n = (familiar.foodGather * familiar.foodGatherGain);
+    getHumanFoodPerRound(foodGather, foodGatherGain){
+        var n = (foodGather * foodGatherGain);
         this.newHumanFoodPerRound = n;
         return n;
     }
 
-    getBloodPerRound(familiar, account){
-        var n = (familiar.bloodGather * familiar.bloodGatherGain) + account.bloodPerRoundGain;
+    getBloodPerRound(bloodGather, bloodGatherGain, bloodPerRoundGain){
+        var n = (bloodGather * bloodGatherGain) + bloodPerRoundGain;
         this.newBloodPerRound = n;
         return n;
     }

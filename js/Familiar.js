@@ -71,9 +71,9 @@ export default class Familiar{
         }
     }
 
-    update(){
-        this.gatherHumanFood();
-        this.gatherBloodVictim();
-        this.eat();
+    update(Inv){
+        this.gatherHumanFood(Inv);
+        this.gatherBloodVictim(Inv);
+        this.eat(Inv);
     }
 }

@@ -32,8 +32,8 @@ export default class HousePar{
     }
 
     //Updates
-    updateXP(){
-        this.xp = (this.xp + Account.influence) + 1;
+    updateXP(influence){
+        this.xp = (this.xp + influence) + 1;
 		if(this.xp >= this.xpNext){
 			this.currentSize = this.currentSize + 1;
 			this.xpNext = this.xpRates[this.currentSize];
