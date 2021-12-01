@@ -230,6 +230,7 @@ function newGame(){
 }
 
 function load(){
+	document.body.style.zoom="75%";
 	House.updateFire(document);
 	var savegame = JSON.parse(localStorage.getItem("save"));
 	if (savegame == null) savegame = ""; newGame();
