@@ -23,6 +23,17 @@
 	background-color: rgb(82, 82, 82);
 }
 
+.house-button{
+	border: 2px solid white;
+	width: fit-content;
+	font-size: 15px;
+	padding: 1em;
+	margin-left: 15px;
+	margin-right: auto;
+	min-width: 2em;
+	margin-top:0;
+}
+
 .button:active {
 	background-color: gray;
 }
