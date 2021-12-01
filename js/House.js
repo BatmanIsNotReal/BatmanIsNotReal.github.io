@@ -69,6 +69,7 @@ export default class HousePar {
     //Maintenance - house
     addWoodToFire(inventory){
         if (inventory.getWoodAmmount() >= 1){
+            this.fire.getPercent();
             this.fire.percent = this.fire.percent + 50;
             inventory.useWood(1);
             if (this.fire.percent > 99){
