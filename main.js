@@ -169,7 +169,7 @@ window.setInterval(function(){
 	Inv.updateOne(Familiars, Account);
 
 	//House
-	House.updateOne();
+	House.updateOne(document);
 
 	//Player
 
