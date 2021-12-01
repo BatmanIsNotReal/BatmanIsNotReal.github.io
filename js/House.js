@@ -14,6 +14,9 @@ export default class HousePar {
         getRate: () =>{
             return (this.currentSize * 2) + 1;
         },
+        getPercent: () =>{
+            percent = 100 * (this.currentSize + 1);
+        }
     }
 
     //Getters
