@@ -45,6 +45,7 @@ export default class HousePar {
 			this.currentSize = this.currentSize + 1;
 			this.xpNext = this.xpRates[this.currentSize + 1];
 			this.currentHouse = this.houseSize[this.currentSize];
+            this.fire.getPercent();
 		}
     }
 
