@@ -40,9 +40,14 @@ export default class HousePar {
         this.xp = (this.xp + account.influence) + 1;
 		if(this.xp >= this.xpNext){
 			this.currentSize = this.currentSize + 1;
-			this.xpNext = this.xpRates[this.currentSize];
+			this.xpNext = this.xpRates[this.currentSize + 1];
 			this.currentHouse = this.houseSize[this.currentSize];
 		}
+        if (this.xp < this.xpRates[this.currentSize - 1]){
+            this.currentSize = this.currentSize - 1;
+            this.xpNext = this.xpRates[this.currentSize - 1];
+            this.currentHouse = this.houseSize[this.currentSize];
+        }
     }
 
     updateImage(){
