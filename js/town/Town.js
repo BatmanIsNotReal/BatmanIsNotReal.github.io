@@ -7,6 +7,7 @@ export default class Town{
         this.gridSize = 100; //10x10
         this.gridData = new Array(this.gridSize);
         this.newDiv = new Array(this.gridSize);
+        this.buildings = new Building();
     }
 
     newGrid(){

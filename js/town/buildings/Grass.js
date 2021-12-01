@@ -6,6 +6,6 @@ export default class Grass extends Building{
         this.name = "grass";
         this.description = "grass";
         this.capacity = 0;
-        this.imgsrc = "../../src/grass.png";
+        this.imgsrc = '../../../src/grass.png'; 
     }
 }
