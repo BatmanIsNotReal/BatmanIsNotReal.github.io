@@ -1,9 +1,11 @@
 .progress-bar {
 	position: relative;
-	width: 100%;
-	height: 30px;
+	width: 30%;
+	height: 20px;
 	background-image: linear-gradient(90deg, red, yellow);
 	color: white;
+	margin-top: 15px;
+	border: 4px solid black;
 }
 
 .progress-bar-inner {
