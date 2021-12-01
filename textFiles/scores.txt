@@ -1,0 +1,4 @@
+danil 200
+jonas 50
+renas 100
+Joel 500

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>contains demo</title>
+  <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+</head>
+<body onload="showScores()">
+
+<div id="div"></div>
+<script>
+function showScores(){
+  jQuery.get('../../textFiles/scores.txt', function(data){
+   //process text file line by line
+   var textByLine = data.split("\n");
+   console.log(textByLine);
+   for(i = 0; i < textByLine.length; i++){
+        document.getElementById("div").innerHTML += textByLine[i] + "<br>";
+   }
+});
+}
+</script>
+ 
+</body>
+</html>

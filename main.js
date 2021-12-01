@@ -231,6 +231,7 @@ function load(){
 	}
 	if (typeof savegame.bloodAmmount !== "undefined") Inv.items.blood = savegame.bloodAmmount;
 	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.items.humanFood = savegame.humanFoodAmmount;
+	if (typeof savegame.woodAmmount !== "undefined") Inv.items.wood = savegame.woodAmmount;
 	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
 	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
 	if (typeof savegame.vampireRatAmmount !== "undefined") VampireRat.ammount = savegame.vampireRatAmmount;
@@ -251,6 +252,7 @@ function load(){
 	if (typeof savegame.vampireName !== "undefined") Account.vampireName = savegame.vampireName;
 	if (typeof savegame.houseName !== "undefined") Account.houseName = savegame.houseName;
 	if (typeof savegame.playerBloodPerRoundGain !== "undefined") Account.bloodPerRoundGain = savegame.playerBloodPerRoundGain;
+	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
 	
 }
 
@@ -258,6 +260,7 @@ function save(){
 	var save = {
 		bloodAmmount: Inv.items.blood,
 		humanFoodAmmount: Inv.items.humanFood,
+		woodAmmount: Inv.items.wood,
 		vampiresAmmount: Account.vampiresAmmount,
 		mosquitoAmmount: Mosquito.ammount,
 		vampireRatAmmount: VampireRat.ammount,
@@ -278,6 +281,7 @@ function save(){
 		currentHouse: House.currentHouse,
 		vampireName: Account.vampireName,
 		houseName: Account.houseName,
+		firePercent: House.fire.percent,
 		playerBloodPerRoundGain: Account.bloodPerRoundGain
 	}
 	localStorage.setItem("save", JSON.stringify(save));
