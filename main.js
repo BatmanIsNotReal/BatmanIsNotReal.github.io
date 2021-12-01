@@ -17,13 +17,13 @@ let Inv = new Inventory();
 let Account = new Player("john", "house");
 
 //vampires vars
-let Mosquito = new Vampire(0, 10, 0.1, 0.01);
-let VampireRat = new Vampire(0, 20, 0.3, 0.03);
-let VampireBat = new Vampire(0, 30, 0.6, 0.06);
-let BloodHound = new Vampire(0, 100, 2, 0.08);
-let VampireSlave = new Vampire(0, 400, 10, 0.1);
-let NightWalker = new Vampire(0, 1000, 30, 0.15);
-let Badabook = new Vampire(0, 3000, 100, 0.3);
+let Mosquito = new Vampire(0, 10, 0.1, 0.1);
+let VampireRat = new Vampire(0, 20, 0.3, 0.3);
+let VampireBat = new Vampire(0, 30, 0.6, 0.6);
+let BloodHound = new Vampire(0, 100, 2, 0.8);
+let VampireSlave = new Vampire(0, 400, 10, 1);
+let NightWalker = new Vampire(0, 1000, 30, 5);
+let Badabook = new Vampire(0, 3000, 100, 20);
 
 const vampireTypes = {
     "mosquito": Mosquito,
