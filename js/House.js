@@ -15,7 +15,7 @@ export default class HousePar {
             return (this.currentSize * 2) + 1;
         },
         getPercent: () =>{
-            percent = 100 * (this.currentSize + 1);
+            this.percent = 100 * (this.currentSize + 1);
         }
     }
 
