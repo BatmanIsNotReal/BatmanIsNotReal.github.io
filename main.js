@@ -96,6 +96,11 @@ load();
 //update displayed values
 function displayUpdate(){
 	
+
+	//Testing
+	
+
+
 	document.getElementById("familiarNotWorking").innerHTML = Familiars.getNotWorking();
 
 	//inventory

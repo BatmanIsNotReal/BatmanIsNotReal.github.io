@@ -49,6 +49,7 @@ export default class HousePar {
         return String(this.houseImages[this.currentSize]);
     }
 
+
     updateFire(document){
         this.fire.percent = this.fire.percent - this.fire.getRate();
 		if (this.fire.percent == 10){

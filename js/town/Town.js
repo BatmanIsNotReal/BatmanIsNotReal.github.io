@@ -5,7 +5,8 @@ export default class Town{
     constructor(townSize, xpRates, townImages, buildings){
         this.townSize = townSize;
         this.gridSize = 100; //10x10
-        this.gridData = new Array(gridSize);
+        this.gridData = new Array(this.gridSize);
+        this.newDiv = new Array(this.gridSize);
     }
 
     newGrid(){
