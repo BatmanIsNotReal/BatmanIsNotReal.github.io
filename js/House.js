@@ -43,11 +43,6 @@ export default class HousePar {
 			this.xpNext = this.xpRates[this.currentSize + 1];
 			this.currentHouse = this.houseSize[this.currentSize];
 		}
-        if (this.xp < this.xpRates[this.currentSize - 1]){
-            this.currentSize = this.currentSize - 1;
-            this.xpNext = this.xpRates[this.currentSize - 1];
-            this.currentHouse = this.houseSize[this.currentSize];
-        }
     }
 
     updateImage(){
