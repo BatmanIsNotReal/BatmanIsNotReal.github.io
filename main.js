@@ -257,6 +257,7 @@ function load(){
 	if (typeof savegame.vampireName !== "undefined") Account.vampireName = savegame.vampireName;
 	if (typeof savegame.houseName !== "undefined") Account.houseName = savegame.houseName;
 	if (typeof savegame.playerBloodPerRoundGain !== "undefined") Account.bloodPerRoundGain = savegame.playerBloodPerRoundGain;
+	if (typeof savegame.playerInfluencePerRound !== "undefined") Account.influence = savegame.playerInfluencePerRound;
 	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
 	
 }
@@ -288,7 +289,8 @@ function save(){
 		vampireName: Account.vampireName,
 		houseName: Account.houseName,
 		firePercent: House.fire.percent,
-		playerBloodPerRoundGain: Account.bloodPerRoundGain
+		playerBloodPerRoundGain: Account.bloodPerRoundGain,
+		playerInfluencePerRound: Account.influence,
 	}
 	localStorage.setItem("save", JSON.stringify(save));
 }
