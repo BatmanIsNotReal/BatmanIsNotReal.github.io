@@ -91,11 +91,11 @@ export default class Inventory{
         this.addWood(this.newWoodPerRound);
     }
 
-    updateOne(familiar, account){
+    updateOne(Familiar, account){
         this.getBloodAmmount();
-        this.getBloodPerRound(familiar, account);
-        this.getHumanFoodPerRound(familiar);
-        this.getWoodPerRound(familiar);
+        this.getBloodPerRound(Familiar, account);
+        this.getHumanFoodPerRound(Familiar);
+        this.getWoodPerRound(Familiar);
     }
 
     updateTen(){

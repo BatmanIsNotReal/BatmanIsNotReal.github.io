@@ -78,7 +78,7 @@ export default class Familiar{
         if (house.xp >= this.cost){
             this.addFamiliar();
             house.useXp(this.cost);
-            inventory.getHumanFoodPerRound();
+            inventory.getHumanFoodPerRound(this);
         }
     }
 
