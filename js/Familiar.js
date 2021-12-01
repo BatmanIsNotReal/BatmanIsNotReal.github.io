@@ -11,6 +11,7 @@ export default class Familiar{
         this.woodGather = woodGather;
         this.woodGatherGain = woodGatherGain;
         this.notWorking = notWorking;
+        this.maxLimit = 4;
     }
 
     //Getters
@@ -38,6 +39,10 @@ export default class Familiar{
     addFamiliar(){
         this.ammount = this.ammount + 1;
         this.notWorking = this.notWorking + 1;
+    }
+
+    addMaxLimit(ammount){
+        this.maxLimit = this.maxLimit + ammount;
     }
 
     addGather(n){

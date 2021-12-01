@@ -1,4 +1,5 @@
 import Grass from "./buildings/Grass";
+import Hut from "./buildings/Hut";
 
 export default class Building{
     constructor(name, description, capacity, imgsrc){
@@ -7,7 +8,6 @@ export default class Building{
         this.capacity = capacity;
         this.imgsrc = imgsrc;
 
-        this.grass = new Grass();
     }
 
     update(document, id){

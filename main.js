@@ -4,7 +4,7 @@ import Vampire from './js/Vampire.js';
 import Familiar from './js/Familiar.js';
 import HousePar from './js/House.js';
 import Timers from './js/Timers.js';
-
+import * as Town from './js/town/Town.js';
 
 
 //Init data
@@ -12,9 +12,14 @@ const houseSize = ["small hut", "respectable hut", "lesser house", "decent house
 const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
 const houseImages = ["src/smallHut.png", "src/house2.png"];
 
+const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
+
+
+
 //game basics - inventory, player 
 let Inv = new Inventory();
 let Account = new Player("john", "house");
+let myTown = new Town(townSize, xpRates);
 
 //vampires vars
 let Mosquito = new Vampire(0, 10, 0.1, 0.1);
@@ -44,21 +49,43 @@ const Timer = new Timers();
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
 
+var modal = document.getElementById("myModal");
+var span = document.getElementsByClassName("close")[0];
 const drinkBloodButton = document.getElementById("drinkBlood");
 const buyVampireButtons = document.getElementsByClassName("buy-vamp-button");
 const adoptFamiliarButton = document.getElementById("adoptFamiliar");
 const addGatherButtons = document.getElementsByClassName("add-gather-button");
 const removeGatherButtons = document.getElementsByClassName("remove-gather-button");
 
+const buyBuildingButtons = document.getElementsByClassName("buy-building-button");
+
+const tiles = document.getElementsByClassName("tile");
+
 const addWoodButton = document.getElementById("addWoodFire");
 
 const restartButton = document.getElementById("restart");
 
+//buy vampire check
 for (let i = 0; i < buyVampireButtons.length; i++) {
 	buyVampireButtons[i].addEventListener("click", (event) => {
 		vampireTypes[event.target.id].addVampire(Inv, Account);
 	})
 }
+
+// open modal box
+for (let i = 0; i < tiles.length; i++){
+	tiles[i].addEventListener("click", () => {modal.style.display = "block"; console.log(tiles[i].id)});
+}
+span.addEventListener("click", () => {modal.style.display = "none"});
+window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
+
+//buy buildings check
+for (let i = 0; i < buyBuildingButtons.length; i++){
+	buyBuildingButtons[i].addEventListener("click", (event) => {
+		myTown.buyHut(Inv, Familiars, document);
+	})
+}
+
 
 addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv);})
 
@@ -305,6 +332,7 @@ function deleteSave(){
 	localStorage.removeItem("save");
 	
 }
+
 
 
 //random event timer

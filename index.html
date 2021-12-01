@@ -5,6 +5,7 @@
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> 
 	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
 	<div class="button drink-button" id="drinkBlood"><i class="fas fa-tint"></i></div>
@@ -53,28 +54,44 @@
 			<div class="flex-row house-art-container">
 				<table style="background-color: rgb(128, 64, 18); margin-top:0;">
 					<tr>
-						<td class="tile"> <img src="src/grass.png" id="tile1"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile1"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile2"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile3"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile4"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile5"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile6"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile7"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile8"></img></td>
 					</tr>
 					<tr>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile9"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile10"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile11"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile12"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile13"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile14"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile15"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile16"></img></td>
 					</tr>
 					<tr>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/smallHut.jpg" width="64px" height="64px" id="house"></img></td>
-						<td class="tile"> <img src="src/bonFire.webp" width="32px" height="32px"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile17"></img></td>
+						<td> <img src="src/smallHut.jpg" width="64px" height="64px" id="house"></img></td>
+						<td> <img src="src/bonFire.webp" width="32px" height="32px"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile18"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile19"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile20"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile21"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile22"></img></td>
 					</tr>
 					<tr>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
-						<td class="tile"> <img src="src/grass.png"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile23"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile24"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile25"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile26"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile27"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile28"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile29"></img></td>
+						<td> <img src="src/grass.png" class="tile" id="tile30"></img></td>
 					</tr>
 				</table>
 				<!-- <image src="src/smallHut.png" width="250" height="250" id="house"></image> -->
@@ -256,6 +273,28 @@
 		Actions
 		</div>
 	</div>
+
+	<!-- The Modal -->
+	<div id="myModal" class="modal">
+
+	<!-- Modal content -->
+	<div class="modal-content">
+	  <span class="close">&times;</span>
+	  <div class="item5 grid-item">
+		<h3 class="grid-item-title">Build</h3>
+		<div class="button buy-building-button" id="buyHut" style="margin-top:15;" >Buy hut
+			<div class="hover" style="left: calc(var(--cursorX) + 150px);
+			top: calc(var(--cursorY) + 100px);">
+				<p>Has place for 4 familiars</p>
+				<p>price wood: <span id="buildingHutCost"></p>
+			</div>
+		</div>
+	</div>
+
+
+	</div>
+  
+  </div>
 	<script src="main.js" type="module"></script>
 	<script src="cursortracker.js"></script>
 </body>
