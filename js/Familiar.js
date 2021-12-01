@@ -26,6 +26,10 @@ export default class Familiar{
         return this.bloodGather;
     }
 
+    getWoodGather(){
+        return this.woodGather;
+    }
+
     getCost(){
         return this.cost;
     }

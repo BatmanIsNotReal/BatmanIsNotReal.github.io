@@ -120,6 +120,10 @@ function displayUpdate(){
 	document.getElementById("newBloodPerRound").innerHTML = Inv.getBloodPerRound(Familiars, Account);
 	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.getNewBloodPerRound();
 	
+	document.getElementById("woodGather").innerHTML = Familiars.getWoodGather();
+	document.getElementById("newWoodPerRound").innerHTML = Inv.getWoodPerRound(Familiars);
+	document.getElementById("newWoodPerRoundStat").innerHTML = Inv.getNewWoodPerRound();
+	
 	document.getElementById("mosquitoCount").innerHTML = Mosquito.getAmmount();
 	document.getElementById("mosquitoCost").innerHTML = Mosquito.getCost();
 	
