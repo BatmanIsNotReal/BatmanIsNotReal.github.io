@@ -9,12 +9,19 @@ export default class Inventory{
         }
         this.newHumanFoodPerRound = 0;
         this.newBloodPerRound = 0;
+        this.newWoodPerRound = 0;
     }
 
     //Getters
     getHumanFoodPerRound(familiar){
         var n = (familiar.foodGather * familiar.foodGatherGain);
         this.newHumanFoodPerRound = n;
+        return n;
+    }
+
+    getWoodPerRound(familiar){
+        var n = (familiar.woodGather * familiar.woodGatherGain);
+        this.newWoodPerRound = n;
         return n;
     }
 
@@ -32,6 +39,10 @@ export default class Inventory{
         return this.newBloodPerRound;
     }
 
+    getNewWoodPerRound(){
+        return this.newWoodPerRound;
+    }
+
     getBloodAmmount(){
         return Math.floor(this.items.blood);
     }
@@ -45,12 +56,17 @@ export default class Inventory{
     }
 
     //Adders
-    addBloodPerRound(gain){
-        this.newBloodPerRound = this.newBloodPerRound + gain;
-    }
 
     addBlood(ammount){
         this.items.blood = this.items.blood + ammount;
+    }
+
+    addHumanFood(ammount){
+        this.items.humanFood = this.items.humanFood + ammount;
+    }
+
+    addWood(ammount){
+        this.items.wood = this.items.wood + ammount;
     }
 
     //Use/consume
@@ -69,17 +85,20 @@ export default class Inventory{
     
 
     //Updates
-    updateBlood(){
+    updateItems(){
         this.addBlood(this.newBloodPerRound);
+        this.addHumanFood(this.newHumanFoodPerRound);
+        this.addWood(this.newWoodPerRound);
     }
 
     updateOne(familiar, account){
         this.getBloodAmmount();
         this.getBloodPerRound(familiar, account);
         this.getHumanFoodPerRound(familiar);
+        this.getWoodPerRound(familiar);
     }
 
     updateTen(){
-        this.updateBlood();
+        this.updateItems();
     }
 }

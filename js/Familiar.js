@@ -1,13 +1,15 @@
 
 
 export default class Familiar{
-    constructor(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain, notWorking){
+    constructor(ammount, cost, foodGather, foodGatherGain, bloodGather, bloodGatherGain, woodGather, woodGatherGain, notWorking){
         this.ammount = ammount;
         this.cost = cost;
         this.foodGather = foodGather;
         this.foodGatherGain = foodGatherGain;
         this.bloodGather = bloodGather;
         this.bloodGatherGain = bloodGatherGain;
+        this.woodGather = woodGather;
+        this.woodGatherGain = woodGatherGain;
         this.notWorking = notWorking;
     }
 
@@ -42,6 +44,9 @@ export default class Familiar{
             }else if (n == 'bloodGather'){
                 this.bloodGather++;
                 this.notWorking--;
+            }else if (n == 'woodGather'){
+                this.woodGather++;
+                this.notWorking--;
             }
         }
     }
@@ -55,6 +60,11 @@ export default class Familiar{
         }else if (n == 'bloodGather'){
             if (this.bloodGather >= 1){
                 this.bloodGather--;
+                this.notWorking++;
+            }
+        }else if (n == 'woodGather'){
+            if (this.woodGather >= 1){
+                this.woodGather--;
                 this.notWorking++;
             }
         }

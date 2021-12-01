@@ -36,7 +36,7 @@ const vampireTypes = {
 }
 
 //familiar vars
-let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0);
+let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0, 2, 0);
 
 //Timers
 const Timer = new Timers();
