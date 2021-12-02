@@ -112,9 +112,11 @@ export default class Familiar{
     }
 
     addWoodToFire(inv, house){
-        if (inv.items.wood >= 1){
-            house.addWoodToFire(inv, this.fireGuard);
-        }
+        if(this.fireGuard > 0){
+            if (inv.items.wood >= 1){
+                house.addWoodToFire(inv, this.fireGuard);
+            }
+    }
     }
 
     // gatherFood(inventory){
