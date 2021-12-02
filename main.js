@@ -311,6 +311,7 @@ function load(){
 	if (typeof savegame.bloodVictimGather !== "undefined") Familiars.bloodGather = savegame.bloodVictimGather;
 	if (typeof savegame.woodGather !== "undefined") Familiars.woodGather = savegame.woodGather;
 	if (typeof savegame.familiarNotWorking !== "undefined") Familiars.notWorking = savegame.familiarNotWorking;
+	if (typeof savegame.familiarLimit !== "undefined") Familiars.maxLimit = savegame.familiarLimit;
 	if (typeof savegame.xp !== "undefined") House.xp = savegame.xp;
 	if (typeof savegame.currentSize !== "undefined") House.currentSize = savegame.currentSize;
 	if (typeof savegame.currentHouse !== "undefined") House.currentHouse = savegame.currentHouse;
@@ -346,6 +347,7 @@ function save(){
 		bloodVictimGather: Familiars.bloodGather,
 		woodGather: Familiars.woodGather,
 		familiarNotWorking: Familiars.notWorking,
+		familiarLimit: Familiars.maxLimit,
 		humanFoodPerTurn: Inv.newHumanFoodPerRound,
 		xp: House.xp,
 		currentSize: House.currentSize,
