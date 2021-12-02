@@ -43,10 +43,6 @@
 			<h1 style="font-family: 'VT323', monospace; font-size: 50px;"><image src="src/skullCandle.gif" height="100" width="50"></image> VAMPIRE HOUSE <image src="src/skullCandle.gif" height="100" width="50"></image></h1>
 			<p style="font-family: 'VT323', monospace; font-size: 25px;">Autosave in:  </p> <span id="tenSecTimer" style="font-size:25px;"></span>
 			<p class="button" id="restart">restart</p> 
-			<audio>
-				<source src="./music/vampireHouseAnthem.wav" type="audio/wav" id="music"> 
-				Your browser does not support the audio tag.
-			  </audio> 
 		</div>
 		<!-- info on house and xp -->
 		<div class="item6 grid-item">
@@ -265,6 +261,20 @@
 						</div>
 						<div class="button remove-gather-button" id="woodGather">-
 							<div class="hover">-Wood/10 sec: 2</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Fire guard -->
+			<div class="fireGuard">
+				<p>fire guards: <span id="fireGuard"></p>
+				<div class="flex-row">
+					<div class="flex-row">
+						<div class="button add-gather-button" id="fireGuard">+
+							<div class="hover">+Wood to fire/min: 1</div>
+						</div>
+						<div class="button remove-gather-button" id="fireGuard">-
+							<div class="hover">-Wood to fire/min: 1</div>
 						</div>
 					</div>
 				</div>

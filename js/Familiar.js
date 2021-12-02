@@ -11,6 +11,7 @@ export default class Familiar{
         this.woodGather = woodGather;
         this.woodGatherGain = woodGatherGain;
         this.notWorking = notWorking;
+        this.fireGuard = 0;
         this.maxLimit = 4;
     }
 
@@ -60,6 +61,9 @@ export default class Familiar{
             }else if (n == 'woodGather'){
                 this.woodGather++;
                 this.notWorking--;
+            }else if (n == 'fireGuard'){
+                this.fireGuard++;
+                this.notWorking--;
             }
         }
     }
@@ -78,6 +82,11 @@ export default class Familiar{
         }else if (n == 'woodGather'){
             if (this.woodGather >= 1){
                 this.woodGather--;
+                this.notWorking++;
+            }
+        }else if(n == 'fireGuard'){
+            if (this.fireGuard >= 1){
+                this.fireGuard--;
                 this.notWorking++;
             }
         }
@@ -102,6 +111,12 @@ export default class Familiar{
         }
     }
 
+    addWoodToFire(inv, house){
+        if (inv.items.wood >= 1){
+            house.addWoodToFire(inv, this.fireGuard);
+        }
+    }
+
     // gatherFood(inventory){
     //     inventory.newHumanFoodPerRound = (this.foodGather * this.foodGatherGain);
     // }
@@ -112,8 +127,12 @@ export default class Familiar{
 
     //Misc
 
-    update(Inv, town){
+    update(Inv){
         this.eat(Inv);
         this.getMaxLimit();
+    }
+
+    updateMin(house, inv){
+        this.addWoodToFire(inv, house);
     }
 }

@@ -42,6 +42,8 @@ export default class Town{
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
         }
+
+        this.buildSound = new Audio('music\sounds\buildSound.mp3');
     }
 
     buyHut(inventory, familiar, document, id){
@@ -53,6 +55,7 @@ export default class Town{
                 inventory.useWood(this.Buildings.Hut.cost);
                 document.getElementById(id).src = String(this.Buildings.Hut.imgsrc);
                 this.tiles[id] = 1;
+                this.buildSound.play();
             }else{
                 alert("There is already a hut on this land");
             }

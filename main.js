@@ -14,19 +14,7 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 
-const myAudio = new Audio('./music/vampireHouseAnthem.wav'); 
-if (typeof myAudio.loop == 'boolean')
-{
-    myAudio.loop = true;
-}
-else
-{
-    myAudio.addEventListener('ended', function() {
-        this.currentTime = 0;
-        this.play();
-    }, false);
-}
-myAudio.play();
+
 
 //game basics - inventory, player 
 let Inv = new Inventory();
@@ -109,7 +97,7 @@ for (let i = 0; i < buyBuildingButtons.length; i++){
 }
 
 
-addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv);})
+addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
 
 drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
 
@@ -177,6 +165,8 @@ function displayUpdate(){
 	document.getElementById("woodGather").innerHTML = Familiars.getWoodGather();
 	document.getElementById("newWoodPerRound").innerHTML = Inv.getWoodPerRound(Familiars);
 	document.getElementById("newWoodPerRoundStat").innerHTML = Inv.getNewWoodPerRound();
+
+	document.getElementById("fireGuard").innerHTML = Familiars.fireGuard;
 	
 	document.getElementById("mosquitoCount").innerHTML = Mosquito.getAmmount();
 	document.getElementById("mosquitoCost").innerHTML = Mosquito.getCost();
@@ -254,7 +244,7 @@ window.setInterval(function(){
 //every 10 seconds
 window.setInterval(function(){
 	//Familiars
-	Familiars.update(Inv, myTown);
+	Familiars.update(Inv, House);
 
 	//Inventory
 	Inv.updateTen();
@@ -269,6 +259,20 @@ window.setInterval(function(){
 	//save
 	save();
 }, 10000);
+
+//every minute
+window.setInterval(function(){
+	//Familiars
+	Familiars.updateMin(House, Inv);
+	//Inventory
+
+	//House
+
+	//Player
+
+	//Vampire
+
+}, 60000)
 
 
 function validateForm(){
@@ -322,6 +326,7 @@ function load(){
 	if (typeof savegame.humanFoodGather !== "undefined") Familiars.foodGather = savegame.humanFoodGather;
 	if (typeof savegame.bloodVictimGather !== "undefined") Familiars.bloodGather = savegame.bloodVictimGather;
 	if (typeof savegame.woodGather !== "undefined") Familiars.woodGather = savegame.woodGather;
+	if (typeof savegame.fireGuard !== "undefined") Familiars.fireGuard = savegame.fireGuard;
 	if (typeof savegame.familiarNotWorking !== "undefined") Familiars.notWorking = savegame.familiarNotWorking;
 	if (typeof savegame.familiarLimit !== "undefined") Familiars.maxLimit = savegame.familiarLimit;
 	if (typeof savegame.xp !== "undefined") House.xp = savegame.xp;
@@ -358,6 +363,7 @@ function save(){
 		humanFoodGather: Familiars.foodGather,
 		bloodVictimGather: Familiars.bloodGather,
 		woodGather: Familiars.woodGather,
+		fireGuard: Familiars.fireGuard,
 		familiarNotWorking: Familiars.notWorking,
 		familiarLimit: Familiars.maxLimit,
 		humanFoodPerTurn: Inv.newHumanFoodPerRound,
