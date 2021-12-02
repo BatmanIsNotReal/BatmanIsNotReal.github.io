@@ -28,7 +28,12 @@ let VampireBat = new Vampire(0, 30, 0.6, 0.6);
 let BloodHound = new Vampire(0, 100, 2, 0.8);
 let VampireSlave = new Vampire(0, 400, 10, 1);
 let NightWalker = new Vampire(0, 1000, 30, 5);
-let Badabook = new Vampire(0, 3000, 100, 20);
+let Badabook = new Vampire(0, 3000, 100, 8);
+let Draugr = new Vampire(0, 10000, 350, 12);
+let Strigoi = new Vampire(0, 30000, 700, 18);
+
+let Overloard = new Vampire(0, 1000000, 3000, 40);
+
 
 const vampireTypes = {
     "mosquito": Mosquito,
@@ -38,6 +43,9 @@ const vampireTypes = {
     "vampireSlave": VampireSlave,
     "nightWalker": NightWalker,
 	"badabook": Badabook,
+	"draugr": Draugr,
+	"strigoi": Strigoi,
+	"overloard": Overloard,
 }
 
 //familiar vars
@@ -178,6 +186,15 @@ function displayUpdate(){
 	
 	document.getElementById("badabookCount").innerHTML = Badabook.getAmmount();
 	document.getElementById("badabookCost").innerHTML = Badabook.getCost();
+
+	document.getElementById("draugrCount").innerHTML = Draugr.getAmmount();
+	document.getElementById("draugrCost").innerHTML = Draugr.getCost();
+
+	document.getElementById("strigoiCount").innerHTML = Strigoi.getAmmount();
+	document.getElementById("strigoiCost").innerHTML = Strigoi.getCost();
+
+	document.getElementById("overloardCount").innerHTML = Overloard.getAmmount();
+	document.getElementById("overloardCost").innerHTML = Overloard.getCost();
 	
 	document.getElementById("fireLeft").innerHTML = House.fire.percent;
 	
@@ -264,7 +281,7 @@ function newGame(){
 }
 
 function load(){
-	document.body.style.zoom="75%";
+	document.body.style.zoom="60%";
 	House.updateFire(document);
 	var savegame = JSON.parse(localStorage.getItem("save"));
 	if (savegame == null) savegame = ""; newGame();
@@ -284,6 +301,9 @@ function load(){
 	if (typeof savegame.vampireSlaveAmmount !== "undefined") VampireSlave.ammount = savegame.vampireSlaveAmmount;
 	if (typeof savegame.nightWalkerAmmount !== "undefined") NightWalker.ammount = savegame.nightWalkerAmmount;
 	if (typeof savegame.badabookAmmount !== "undefined") Badabook.ammount = savegame.badabookAmmount;
+	if (typeof savegame.draugrAmmount !== "undefined") Draugr.ammount = savegame.draugrAmmount;
+	if (typeof savegame.strigoiAmmount !== "undefined") Strigoi.ammount = savegame.strigoiAmmount;
+	if (typeof savegame.overloardAmmount !== "undefined") Overloard.ammount = savegame.overloardAmmount;
 	if (typeof savegame.familiarAmmount !== "undefined") Familiars.ammount = savegame.familiarAmmount;
 	if (typeof savegame.newHumanFoodPerRound !== "undefined") Inv.newHumanFoodPerRound = savegame.newHumanFoodPerRound;
 	if (typeof savegame.newBloodPerRound !== "undefined") Inv.newBloodPerRound = savegame.newBloodPerRound;
@@ -316,6 +336,9 @@ function save(){
 		vampireSlaveAmmount: VampireSlave.ammount,
 		nightWalkerAmmount: NightWalker.ammount,
 		badabookAmmount: Badabook.ammount,
+		draugrAmmount: Draugr.ammount,
+		strigoiAmmount: Strigoi.ammount,
+		overloardAmmount: Overloard.ammount,
 		familiarAmmount: Familiars.ammount,
 		newHumanFoodPerRound: Inv.newHumanFoodPerRound,
 		newBloodPerRound: Inv.newBloodPerRound,
