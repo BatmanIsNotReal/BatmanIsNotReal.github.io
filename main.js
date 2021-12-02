@@ -4,7 +4,7 @@ import Vampire from './js/Vampire.js';
 import Familiar from './js/Familiar.js';
 import HousePar from './js/House.js';
 import Timers from './js/Timers.js';
-import * as Town from './js/town/Town.js';
+import Town from './js/town/Town.js';
 
 
 //Init data
@@ -51,6 +51,7 @@ let House = new HousePar(houseSize, xpRates, houseImages);
 
 var modal = document.getElementById("myModal");
 var span = document.getElementsByClassName("close")[0];
+let currentTile = "";
 const drinkBloodButton = document.getElementById("drinkBlood");
 const buyVampireButtons = document.getElementsByClassName("buy-vamp-button");
 const adoptFamiliarButton = document.getElementById("adoptFamiliar");
@@ -74,7 +75,7 @@ for (let i = 0; i < buyVampireButtons.length; i++) {
 
 // open modal box
 for (let i = 0; i < tiles.length; i++){
-	tiles[i].addEventListener("click", () => {modal.style.display = "block"; console.log(tiles[i].id)});
+	tiles[i].addEventListener("click", () => {currentTile = tiles[i].id; modal.style.display = "block"; console.log(tiles[i].id)});
 }
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
@@ -82,7 +83,8 @@ window.addEventListener("click", (event) => {if (event.target == modal){modal.st
 //buy buildings check
 for (let i = 0; i < buyBuildingButtons.length; i++){
 	buyBuildingButtons[i].addEventListener("click", (event) => {
-		myTown.buyHut(Inv, Familiars, document);
+		myTown.buyHut(Inv, Familiars, document, currentTile, event.target.id);
+		modal.style.display = "none";
 	})
 }
 
@@ -183,6 +185,11 @@ function displayUpdate(){
 	
 	document.getElementById("vName").innerHTML = Account.vampireName;
 	document.getElementById("hName").innerHTML = Account.houseName;
+	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
+
+	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
+
+
 
 	//Timers
 	document.getElementById("tenSecTimer").innerHTML = Timer.resetTime;

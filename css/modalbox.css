@@ -13,6 +13,12 @@
     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
   }
   
+  .tile:hover{
+    outline: 4px solid black;
+    outline-offset: -3px;
+    z-index: 4;
+  }
+
   /* Modal Content */
   .modal-content {
     background-color: #343131;;

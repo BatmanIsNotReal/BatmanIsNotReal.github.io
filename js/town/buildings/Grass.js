@@ -1,8 +1,10 @@
-import {Building} from '../Building.js';
+import Building from "../Building.js";
 
-export default class Grass extends Building{
+export default class Grass{
     constructor(name, description, capacity, imgsrc){
-        super(name, description, capacity);
+        this.name = name;
+        this.description = description;
+        this.capacity = capacity;
         this.imgsrc = imgsrc; 
         
     }

@@ -1,8 +1,10 @@
-import {Building} from '../Building.js';
+import Building from "../Building.js";
 
-export default class Hut extends Building{
+export default class Hut{
     constructor(name, description, capacity, imgsrc, cost){
-        super(name, description, capacity);
+        this.name = name;
+        this.description = description;
+        this.capacity = capacity;
         this.ammount = 0;
         this.cost = cost;
         this.imgsrc = imgsrc; 
