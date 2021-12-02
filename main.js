@@ -242,7 +242,7 @@ window.setInterval(function(){
 //every 10 seconds
 window.setInterval(function(){
 	//Familiars
-	Familiars.update(Inv);
+	Familiars.update(Inv, myTown);
 
 	//Inventory
 	Inv.updateTen();

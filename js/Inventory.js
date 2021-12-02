@@ -5,7 +5,7 @@ export default class Inventory{
         this.items = {
             blood: 10,
             humanFood: 10,
-            wood: 20,
+            wood: 4000,
         }
         this.newHumanFoodPerRound = 0;
         this.newBloodPerRound = 0;

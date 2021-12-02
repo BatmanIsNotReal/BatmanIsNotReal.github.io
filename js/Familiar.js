@@ -35,6 +35,10 @@ export default class Familiar{
         return this.cost;
     }
 
+    getMaxLimit(){
+        return this.maxLimit;
+    }
+
     //Adders
     addFamiliar(){
         this.ammount = this.ammount + 1;
@@ -108,7 +112,8 @@ export default class Familiar{
 
     //Misc
 
-    update(Inv){
+    update(Inv, town){
         this.eat(Inv);
+        this.getMaxLimit();
     }
 }
