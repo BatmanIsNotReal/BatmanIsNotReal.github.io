@@ -299,6 +299,7 @@ function load(){
 	if (typeof savegame.playerBloodPerRoundGain !== "undefined") Account.bloodPerRoundGain = savegame.playerBloodPerRoundGain;
 	if (typeof savegame.playerInfluencePerRound !== "undefined") Account.influence = savegame.playerInfluencePerRound;
 	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
+	if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
 	
 }
 
@@ -331,6 +332,7 @@ function save(){
 		firePercent: House.fire.percent,
 		playerBloodPerRoundGain: Account.bloodPerRoundGain,
 		playerInfluencePerRound: Account.influence,
+		tiles: myTown.tiles,
 	}
 	localStorage.setItem("save", JSON.stringify(save));
 }

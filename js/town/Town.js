@@ -61,6 +61,10 @@ export default class Town{
         }
     }
 
+    getTiles(){
+        return this.tiles;
+    }
+
     // newGrid(document){
     //     for (i = 0; i < this.gridSize; i++){
     //         document.getElementById("tile1").src = ;
