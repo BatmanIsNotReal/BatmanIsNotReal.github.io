@@ -65,6 +65,20 @@ export default class Town{
         return this.tiles;
     }
 
+    updateTileImages(document){
+        for (var name in this.tiles){
+            if(this.tiles[name] < 1){
+                document.getElementById(name).src = String(this.Buildings.Grass.imgsrc);
+            }else{
+                document.getElementById(name).src = String(this.Buildings.Hut.imgsrc);
+            }
+        }
+    }
+
+    update(document){
+        this.updateTileImages(document);
+    }
+
     // newGrid(document){
     //     for (i = 0; i < this.gridSize; i++){
     //         document.getElementById("tile1").src = ;

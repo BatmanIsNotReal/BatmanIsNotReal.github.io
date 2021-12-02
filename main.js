@@ -189,7 +189,7 @@ function displayUpdate(){
 
 	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
 
-
+	myTown.updateTileImages(document);
 
 	//Timers
 	document.getElementById("tenSecTimer").innerHTML = Timer.resetTime;
