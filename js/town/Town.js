@@ -40,7 +40,7 @@ export default class Town{
         }
         this.Buildings ={
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
-            Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
+            Hut: new Hut("Hut", "a small hut", 4, '../../../src/house2.png', 100),
         }
 
         this.buildSound = new Audio('music\sounds\buildSound.mp3');
