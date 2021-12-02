@@ -1,6 +1,8 @@
 import * as Building from './Building.js';
 import Grass from './buildings/Grass.js';
 import Hut from './buildings/Hut.js';
+import Rock from './buildings/Rock.js';
+import Water from './buildings/Water.js';
 
 export default class Town{
     constructor(townSize, xpRates){
@@ -37,9 +39,59 @@ export default class Town{
             tile28: 0,
             tile29: 0,
             tile30: 0,
+            tile31: 0,
+            tile32: 0,
+            tile33: 0,
+            tile34: 0,
+            tile35: 0,
+            tile36: 0,
+            tile37: 0,
+            tile38: 0,
+            tile39: 0,
+            tile40: 0,
+            tile41: 0,
+            tile42: 0,
+            tile43: 0,
+            tile44: 0,
+            tile45: 0,
+            tile46: 0,
+            tile47: 0,
+            tile48: 0,
+            tile49: 0,
+            tile50: 0,
+            tile51: 0,
+            tile52: 0,
+            tile53: 0,
+            tile54: 0,
+            tile55: 0,
+            tile56: 0,
+            tile57: 0,
+            tile58: 0,
+            tile59: 0,
+            tile60: 0,
+            tile61: 0,
+            tile62: 0,
+            tile63: 0,
+            tile64: 0,
+            tile65: 0,
+            tile66: 0,
+            tile67: 0,
+            tile68: 0,
+            tile69: 0,
+            tile70: 0,
+            tile71: 0,
+            tile72: 0,
+            tile73: 0,
+            tile74: 0,
+            tile75: 0,
+            tile76: 0,
+            tile77: 0,
+            tile78: 0,
         }
         this.Buildings ={
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
+            Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
+            Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
         }
 
@@ -68,18 +120,47 @@ export default class Town{
         return this.tiles;
     }
 
+    newTileMap(document){
+        for (var name in this.tiles){
+            var n = this.getRandomInt(1, 100);
+            if (n > 1 && n < 50){
+                this.tiles[name] = 0;
+            }
+            if (n > 50 && n < 75){
+                this.tiles[name] = 2;
+            }
+            if (n > 75 && n < 100){
+                this.tiles[name] = 3;
+            }
+        }
+    }
+
+    getRandomInt(min, max){
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+
     updateTileImages(document){
         for (var name in this.tiles){
             if(this.tiles[name] < 1){
                 document.getElementById(name).src = String(this.Buildings.Grass.imgsrc);
-            }else{
+            }
+            if (this.tiles[name] == 1){
                 document.getElementById(name).src = String(this.Buildings.Hut.imgsrc);
+            }
+            if (this.tiles[name] == 2){
+                document.getElementById(name).src = String(this.Buildings.Water.imgsrc);
+            }
+            if (this.tiles[name] == 3){
+                document.getElementById(name).src = String(this.Buildings.Rock.imgsrc);
             }
         }
     }
 
     update(document){
         this.updateTileImages(document);
+        
     }
 
     // newGrid(document){

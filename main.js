@@ -21,6 +21,10 @@ let Inv = new Inventory();
 let Account = new Player("john", "house");
 let myTown = new Town(townSize, xpRates);
 
+if (Account.influence == 0){
+	myTown.newTileMap(document);
+}
+
 //vampires vars
 let Mosquito = new Vampire(0, 10, 0.1, 0.1);
 let VampireRat = new Vampire(0, 20, 0.3, 0.3);
@@ -339,6 +343,9 @@ function load(){
 	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
 	if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
 	
+	if (Inv.bloodAmmount == 10){
+		myTown.newTileMap(document);
+	}
 }
 
 function save(){
