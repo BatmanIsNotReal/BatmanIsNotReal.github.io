@@ -14,7 +14,19 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 
-
+const myAudio = new Audio('./music/vampireHouseAnthem.wav'); 
+if (typeof myAudio.loop == 'boolean')
+{
+    myAudio.loop = true;
+}
+else
+{
+    myAudio.addEventListener('ended', function() {
+        this.currentTime = 0;
+        this.play();
+    }, false);
+}
+myAudio.play();
 
 //game basics - inventory, player 
 let Inv = new Inventory();

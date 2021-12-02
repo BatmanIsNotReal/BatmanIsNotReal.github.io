@@ -56,6 +56,9 @@ export default class HousePar {
 
     updateFire(document){
         this.fire.percent = this.fire.percent - this.fire.getRate();
+        if(this.fire.percent < 1){
+            this.fire.percent = 0;
+        }
 		if (this.fire.percent == 10){
 			alert("The fire is running out!");
 		}
