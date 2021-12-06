@@ -17,6 +17,7 @@ export default class updateBox{
         var newNode = new updateNode(textnode, this.Nodes.length - 1);
         this.Nodes.push(newNode);
         var node = document.createElement("LI");
+        node.setAttribute("id", "LI");
         var text = document.createTextNode(this.Nodes[this.Nodes.length - 1].text);
         node.appendChild(text);
         document.getElementById("townUpdates").appendChild(node);
