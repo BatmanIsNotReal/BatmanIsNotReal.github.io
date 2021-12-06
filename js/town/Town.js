@@ -94,7 +94,7 @@ export default class Town{
             Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
             Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
-            Mine: new Mine("Mine", "a mine", 10, "to come", 1000),
+            Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000),
         }
 
         this.buildSound = new Audio('music\sounds\buildSound.mp3');
@@ -112,10 +112,10 @@ export default class Town{
                 this.buildSound.play();
             }else if(this.tiles[id] == 1){
                 alert("There is already a hut on this land");
-            }else if (this.tiled[id] == 2){
+            }else if (this.tiles[id] == 2){
                 alert("There is water here");
             }
-            else if (this.tiled[id] == 3){
+            else if (this.tiles[id] == 3){
                 alert("You cannot build a hut here");
             }
         }else{
@@ -129,10 +129,10 @@ export default class Town{
                 alert("you need to build a mine in a mountain");
             }else if(this.tiles[id] == 1){
                 alert("There is already a hut on this land");
-            }else if (this.tiled[id] == 2){
+            }else if (this.tiles[id] == 2){
                 alert("There is water here");
             }
-            else if (this.tiled[id] == 3){
+            else if (this.tiles[id] == 3){
                 console.log(document.getElementById(id).src);
                 familiar.addMaxLimit(this.Buildings.Mine.capacity);
                 inventory.useWood(this.Buildings.Mine.cost);
