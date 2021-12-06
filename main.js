@@ -230,6 +230,7 @@ function displayUpdate(){
 
 	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
 	document.getElementById("buildingMineCost").innerHTML = myTown.Buildings.Mine.cost;
+	document.getElementById("buildingFarmCost").innerHTML = myTown.Buildings.Farm.cost;
 
 	myTown.updateTileImages(document);
 
