@@ -157,6 +157,7 @@ function displayUpdate(){
 	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
 	document.getElementById("bloodCount").innerHTML = Inv.getBloodAmmount();
 	document.getElementById("woodCount").innerHTML = Inv.getWoodAmmount();
+	document.getElementById("ironCount").innerHTML = Inv.getIronAmmount();
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
