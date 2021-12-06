@@ -106,6 +106,10 @@ for (let i = 0; i < buyBuildingButtons.length; i++){
 			myTown.buyMine(Inv, Familiars, document, currentTile, event.target.id);
 			modal.style.display = "none";
 		}
+		if(event.target.id == "buyFarm"){
+			myTown.buyFarm(Inv, Familiars, document, currentTile, event.target.id);
+			modal.style.display = "none";
+		}
 	})
 }
 //mine

@@ -48,15 +48,6 @@ export default class Mine{
         return Math.floor(Math.random() * (max - min) + min);
     }
 
-    townUpdatesAdd(textnode, document){
-        if(document.getElementById("townUpdates").length > 8){
-            document.getElementById("townUpdates").removeChild("LI");
-        }
-        var node = document.createElement("LI");
-        var textNode = document.createTextNode(textnode);
-        node.appendChild(textNode);
-        document.getElementById("townUpdates").appendChild(node);
-    }
 
     updateTen(inv, document, updatebox){
         this.checkForLoot(inv, document, updatebox);
