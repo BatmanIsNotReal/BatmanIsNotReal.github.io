@@ -93,12 +93,21 @@ span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
 //buy buildings check
+//hut
 for (let i = 0; i < buyBuildingButtons.length; i++){
 	buyBuildingButtons[i].addEventListener("click", (event) => {
-		myTown.buyHut(Inv, Familiars, document, currentTile, event.target.id);
-		modal.style.display = "none";
+		if(event.target.id == "buyHut"){
+			myTown.buyHut(Inv, Familiars, document, currentTile, event.target.id);
+			modal.style.display = "none";
+		}
+		if(event.target.id == "buyMine"){
+			myTown.buyMine(Inv, Familiars, document, currentTile, event.target.id);
+			modal.style.display = "none";
+		}
 	})
 }
+//mine
+
 
 
 addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})

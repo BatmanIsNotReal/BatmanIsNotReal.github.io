@@ -6,6 +6,9 @@ export default class Inventory{
             blood: 10,
             humanFood: 10,
             wood: 20,
+            iron: 0,
+            bronze: 0,
+            gold: 0,
         }
         this.newHumanFoodPerRound = 0;
         this.newBloodPerRound = 0;
@@ -55,6 +58,18 @@ export default class Inventory{
         return this.items.wood;
     }
 
+    getIronAmmount(){
+        return this.items.iron;
+    }
+
+    getBronzeAmmount(){
+        return this.items.bronze;
+    }
+
+    getGoldAmmount(){
+        return this.items.gold;
+    }
+
     //Adders
 
     addBlood(ammount){
@@ -69,6 +84,18 @@ export default class Inventory{
         this.items.wood = this.items.wood + ammount;
     }
 
+    addIron(ammount){
+        this.items.iron = this.items.iron + ammount;
+    }
+
+    addBronze(ammount){
+        this.items.bronze = this.items.bronze + ammount;
+    }
+
+    addGold(ammount){
+        this.items.gold = this.items.gold + ammount;
+    }
+
     //Use/consume
     useBlood(ammount){
         this.items.blood = this.items.blood - ammount;
@@ -80,6 +107,18 @@ export default class Inventory{
 
     useWood(ammount){
         this.items.wood = this.items.wood - ammount;
+    }
+
+    useIron(ammount){
+        this.items.iron = this.items.iron - ammount;
+    }
+
+    useBronze(ammount){
+        this.items.bronze = this.items.bronze - ammount;
+    }
+
+    useGold(ammount){
+        this.items.gold = this.items.gold - ammount;
     }
 
     
