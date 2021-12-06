@@ -1,4 +1,4 @@
-import updateNode from "./updateNode";
+import updateNode from "./updateNode.js";
 
 export default class updateBox{
     constructor(maxUpdateNodes, updateNodesAmmount){
