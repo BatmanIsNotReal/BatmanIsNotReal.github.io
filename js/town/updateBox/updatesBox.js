@@ -19,6 +19,6 @@ export default class updateBox{
         var node = document.createElement("LI");
         var text = document.createTextNode(this.Nodes[this.Nodes.length - 1].text);
         node.appendChild(text);
-        document.getElementById(this.Nodes[this.Nodes.length - 1].id).appendChild(node);
+        document.getElementById("townUpdates").appendChild(node);
     }
 }
