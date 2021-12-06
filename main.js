@@ -5,6 +5,7 @@ import Familiar from './js/Familiar.js';
 import HousePar from './js/House.js';
 import Timers from './js/Timers.js';
 import Town from './js/town/Town.js';
+import UpdateBox from './js/town/updateBox/updatesBox.js';
 
 
 //Init data
@@ -14,7 +15,7 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 
-
+const updateBox = new UpdateBox(10, 0);
 
 //game basics - inventory, player 
 let Inv = new Inventory();
@@ -274,7 +275,7 @@ window.setInterval(function(){
 	//Vampire
 
 	//Town
-	myTown.updateTen(Inv, document);
+	myTown.updateTen(Inv, document, updateBox);
 	//save
 	save();
 }, 10000);

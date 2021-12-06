@@ -16,26 +16,26 @@ export default class Mine{
 
     }
 
-    checkForLoot(inv, document){
+    checkForLoot(inv, document, updatebox){
         for (let i = 0; i < this.ammount; i++){
             var chance = this.getRandomInt(0, 1000);
             console.log(chance);
             if (chance <= 300){
                 //your miners discovered an ore of iron
                 var ammount = this.getRandomInt(10, 30);
-                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
+                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
                 inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
                 var ammount = this.getRandomInt(5, 20);
-                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
+                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
                 inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
                 var ammount = this.getRandomInt(2, 12);
-                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
+                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
                 inv.addGold(ammount);
             }
         }
@@ -58,6 +58,6 @@ export default class Mine{
     }
 
     updateTen(inv, document){
-        this.checkForLoot(inv, document);
+        this.checkForLoot(inv, document, updatebox);
     }
 }
