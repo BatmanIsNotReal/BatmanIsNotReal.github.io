@@ -14,12 +14,11 @@ export default class updateBox{
             d.removeChild(d_nested);
         }
         //add new node
-        this.updateNodesAmmount++;
-        var newNode = new updateNode(textnode, this.updateNodesAmmount);
+        var newNode = new updateNode(textnode, this.Nodes.length);
         this.Nodes.push(newNode);
         var node = document.createElement("LI");
-        var text = document.createTextLode(this.Nodes[this.updateNodesAmmount].text);
+        var text = document.createTextLode(this.Nodes[this.Nodes.length].text);
         node.appendChild(text);
-        document.getElementById(this.Nodes[this.updateNodesAmmount].id).appendChild(node);
+        document.getElementById(this.Nodes[this.Nodes.length].id).appendChild(node);
     }
 }
