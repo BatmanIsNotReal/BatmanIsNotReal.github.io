@@ -57,7 +57,7 @@ export default class Mine{
         document.getElementById("townUpdates").appendChild(node);
     }
 
-    updateTen(inv, document){
+    updateTen(inv, document, updatebox){
         this.checkForLoot(inv, document, updatebox);
     }
 }
