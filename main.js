@@ -323,6 +323,7 @@ function newGame(){
 }
 
 function load(){
+	updateBox.townUpdatesAdd("-- Welcome back --", document);
 	document.body.style.zoom="60%";
 	House.updateFire(document);
 	var savegame = JSON.parse(localStorage.getItem("save"));
