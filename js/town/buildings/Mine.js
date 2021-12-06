@@ -9,6 +9,7 @@ export default class Mine{
         this.ammount = 0;
         this.cost = cost;
         this.imgsrc = imgsrc; 
+        this.workers = 0;
     }
 
     displayMenu(){
