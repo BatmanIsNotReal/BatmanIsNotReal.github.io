@@ -107,6 +107,7 @@ export default class Town{
                 console.log(String(this.Buildings.Grass.imgsrc));
                 familiar.addMaxLimit(this.Buildings.Hut.capacity);
                 inventory.useWood(this.Buildings.Hut.cost);
+                this.Buildings.Hut.ammount++;
                 document.getElementById(id).src = String(this.Buildings.Hut.imgsrc);
                 this.tiles[id] = 1;
                 
@@ -136,6 +137,7 @@ export default class Town{
                 alert("There is water here");
             }
             else if (this.tiles[id] == 3){
+                this.Buildings.Mine.ammount++;
                 console.log(document.getElementById(id).src);
                 familiar.addMaxLimit(this.Buildings.Mine.capacity);
                 inventory.useWood(this.Buildings.Mine.cost);
