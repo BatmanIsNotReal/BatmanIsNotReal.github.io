@@ -120,7 +120,7 @@ addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
 
 drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
 
-adoptFamiliarButton.addEventListener("click", () => { Familiars.adopt(House, Inv); })
+adoptFamiliarButton.addEventListener("click", () => { Familiars.adopt(House, Inv, updateBox, document); })
 
 for (let i = 0; i < addGatherButtons.length; i++){
 	addGatherButtons[i].addEventListener("click", () => { Familiars.addGather(event.target.id); } )

@@ -92,12 +92,13 @@ export default class Familiar{
         }
     }
 
-    adopt(house, inventory){
+    adopt(house, inventory, updatebox, document){
         if (house.xp >= this.cost){
             if (this.ammount < this.maxLimit){
                 this.addFamiliar();
                 house.useXp(this.cost);
                 inventory.getHumanFoodPerRound(this);
+                updatebox.townUpdatesAdd("You've adopted a familiar. \n It can do much hard labour, but remember to feed it.", document);
             }
         }
     }
