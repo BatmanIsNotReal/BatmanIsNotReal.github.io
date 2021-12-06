@@ -205,8 +205,8 @@ export default class Town{
         
     }
 
-    updateTen(inv){
-        this.Buildings.Mine.updateTen(inv);
+    updateTen(inv, document){
+        this.Buildings.Mine.updateTen(inv, document);
     }
 
     // newGrid(document){

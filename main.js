@@ -274,7 +274,7 @@ window.setInterval(function(){
 	//Vampire
 
 	//Town
-	myTown.updateTen(Inv);
+	myTown.updateTen(Inv, document);
 	//save
 	save();
 }, 10000);

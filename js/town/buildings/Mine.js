@@ -15,24 +15,27 @@ export default class Mine{
 
     }
 
-    checkForLoot(inv){
+    checkForLoot(inv, document){
         for (let i = 0; i < this.ammount; i++){
             var chance = this.getRandomInt(0, 1000);
             console.log(chance);
             if (chance <= 300){
                 //your miners discovered an ore of iron
-                alert("Your miners have found iron!");
-                inv.addIron(this.getRandomInt(10, 100));
+                var ammount = this.getRandomInt(10, 100);
+                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.");
+                inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
-                alert("Your miners have found bronze!");
-                inv.addBronze(this.getRandomInt(5, 25));
+                var ammount = this.getRandomInt(5, 25);
+                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.");
+                inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
-                alert("Your miners have found gold!");
-                inv.addGold(this.getRandomInt(2, 20));
+                var ammount = this.getRandomInt(2, 20);
+                this.townUpdatesAdd("Your miners have found " + ammount + " nuggets of gold.");
+                inv.addGold(ammount);
             }
         }
     }
@@ -43,7 +46,14 @@ export default class Mine{
         return Math.floor(Math.random() * (max - min) + min);
     }
 
-    updateTen(inv){
-        this.checkForLoot(inv);
+    townUpdatesAdd(textnode, document){
+        var node = document.createElement("LI");
+        var textNode = document.createTextNode(textnode);
+        node.appendChild(textNode);
+        document.getElementById("townUpdates").appendChild(node);
+    }
+
+    updateTen(inv, document){
+        this.checkForLoot(inv, document);
     }
 }
