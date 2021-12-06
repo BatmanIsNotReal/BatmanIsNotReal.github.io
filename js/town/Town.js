@@ -118,6 +118,9 @@ export default class Town{
             else if (this.tiles[id] == 3){
                 alert("You cannot build a hut here");
             }
+            else if (this.tiles[id] == 4){
+                alert("There is already a mine here");
+            }
         }else{
             alert("You dont have enough wood!");
         }
@@ -137,8 +140,11 @@ export default class Town{
                 familiar.addMaxLimit(this.Buildings.Mine.capacity);
                 inventory.useWood(this.Buildings.Mine.cost);
                 document.getElementById(id).src = String(this.Buildings.Mine.imgsrc);
-                this.tiles[id] = 1;
+                this.tiles[id] = 4;
                 this.buildSound.play();
+            }
+            else if (this.tiles[id] == 4){
+                alert("There is already a mine here");
             }
         }else{
             alert("You dont have enough wood!");
@@ -185,6 +191,9 @@ export default class Town{
             }
             if (this.tiles[name] == 3){
                 document.getElementById(name).src = String(this.Buildings.Rock.imgsrc);
+            }
+            if (this.tiles[name] == 4){
+                document.getElementById(name).src = String(this.Buildings.Mine.imgsrc);
             }
         }
     }
