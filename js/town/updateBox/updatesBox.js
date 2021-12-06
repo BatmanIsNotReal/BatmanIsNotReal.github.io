@@ -14,7 +14,7 @@ export default class updateBox{
             d.removeChild(d_nested);
         }
         //add new node
-        var newNode = new updateNode(textnode, this.Nodes.length);
+        var newNode = new updateNode(textnode, this.Nodes.length - 1);
         this.Nodes.push(newNode);
         var node = document.createElement("LI");
         var text = document.createTextNode(this.Nodes[this.Nodes.length - 1].text);
