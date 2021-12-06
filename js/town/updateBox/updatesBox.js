@@ -17,7 +17,7 @@ export default class updateBox{
         var newNode = new updateNode(textnode, this.Nodes.length);
         this.Nodes.push(newNode);
         var node = document.createElement("LI");
-        var text = document.createTextLode(this.Nodes[this.Nodes.length].text);
+        var text = document.createTextLode(this.Nodes[this.Nodes.length - 1].text);
         node.appendChild(text);
         document.getElementById(this.Nodes[this.Nodes.length].id).appendChild(node);
     }
