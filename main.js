@@ -15,12 +15,14 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 
 const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 
-const updateBox = new UpdateBox(10, 0);
+let updateBox = new UpdateBox(10, 0);
 
 //game basics - inventory, player 
 let Inv = new Inventory();
 let Account = new Player("john", "house");
 let myTown = new Town(townSize, xpRates);
+
+let updateBox = new UpdateBox(10, 0);
 
 if (Account.influence == 0){
 	myTown.newTileMap(document);
