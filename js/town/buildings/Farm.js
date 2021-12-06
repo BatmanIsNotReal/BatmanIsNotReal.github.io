@@ -14,9 +14,9 @@ export default class Farm{
 
     checkForLoot(inv, document, updatebox){
         for (let i = 0; i < this.ammount; i++){
-            var chance = this.getRandomInt(0, 1);
+            var chance = this.getRandomInt(0, 10);
             console.log(chance);
-            if (chance < 1){
+            if (chance < 7){
                 //no food
                 var ammount = this.getRandomInt(10, 30);
                 updatebox.townUpdatesAdd("Your farmers have produced " + ammount + " of human food.", document);
@@ -34,6 +34,6 @@ export default class Farm{
     }
 
     updateTen(inv, document, updatebox){
-
+        this.checkForLoot(inv, document, updatebox);
     }
 }
