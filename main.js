@@ -328,6 +328,13 @@ function load(){
 	if (typeof savegame.bloodAmmount !== "undefined") Inv.items.blood = savegame.bloodAmmount;
 	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.items.humanFood = savegame.humanFoodAmmount;
 	if (typeof savegame.woodAmmount !== "undefined") Inv.items.wood = savegame.woodAmmount;
+	if (typeof savegame.ironAmmount !== "undefined") Inv.items.iron = savegame.ironAmmount;
+	if (typeof savegame.bronzeAmmount !== "undefined") Inv.items.bronze = savegame.bronzeAmmount;
+	if (typeof savegame.goldAmmount !== "undefined") Inv.items.gold = savegame.goldAmmount;
+	
+	if (typeof savegame.hutAmmount !== "undefined") myTown.Buildings.Hut.ammount = savegame.hutAmmount;
+	if (typeof savegame.mineAmmount !== "undefined") myTown.Buildings.Mine.ammount = savegame.mineAmmount;
+
 	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
 	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
 	if (typeof savegame.vampireRatAmmount !== "undefined") VampireRat.ammount = savegame.vampireRatAmmount;
@@ -368,6 +375,13 @@ function save(){
 		bloodAmmount: Inv.items.blood,
 		humanFoodAmmount: Inv.items.humanFood,
 		woodAmmount: Inv.items.wood,
+		ironAmmount: Inv.items.iron,
+		bronzeAmmount: Inv.items.bronze,
+		goldAmmount: Inv.items.gold,
+
+		hutAmmount: myTown.Buildings.Hut.ammount,
+		mineAmmount: myTown.Buildings.Mine.ammount,
+
 		vampiresAmmount: Account.vampiresAmmount,
 		mosquitoAmmount: Mosquito.ammount,
 		vampireRatAmmount: VampireRat.ammount,
