@@ -109,7 +109,7 @@ export default class Town{
                 inventory.useWood(this.Buildings.Hut.cost);
                 document.getElementById(id).src = String(this.Buildings.Hut.imgsrc);
                 this.tiles[id] = 1;
-                this.buildSound.play();
+                
             }else if(this.tiles[id] == 1){
                 alert("There is already a hut on this land");
             }else if (this.tiles[id] == 2){
@@ -141,7 +141,7 @@ export default class Town{
                 inventory.useWood(this.Buildings.Mine.cost);
                 document.getElementById(id).src = String(this.Buildings.Mine.imgsrc);
                 this.tiles[id] = 4;
-                this.buildSound.play();
+                
             }
             else if (this.tiles[id] == 4){
                 alert("There is already a mine here");
