@@ -270,6 +270,8 @@ window.setInterval(function(){
 
 	//Vampire
 
+	//Town
+	myTown.updateTen(Inv);
 	//save
 	save();
 }, 10000);

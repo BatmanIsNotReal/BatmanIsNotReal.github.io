@@ -15,17 +15,22 @@ export default class Mine{
 
     }
 
-    checkForLoot(inv, town){
+    checkForLoot(inv){
         var chance = this.getRandomInt(0, 1000);
         if (chance <= 300){
             //your miners discovered an ore of iron
-            
+            alert("Your miners have found iron!");
+            inv.addIron(this.getRandomInt(10, 100));
         }
         if (chance <= 100){
             //your miners discovered a branch of bronze
+            alert("Your miners have found bronze!");
+            inv.addBronze(this.getRandomInt(5, 25));
         }
         if (chance <=25){
             //your miners discovered a branch of gold
+            alert("Your miners have found gold!");
+            inv.addGold(this.getRandomInt(2, 20));
         }
     }
 
@@ -35,7 +40,7 @@ export default class Mine{
         return Math.floor(Math.random() * (max - min) + min);
     }
 
-    updateTen(){
-        checkForLoot();
+    updateTen(inv){
+        checkForLoot(inv);
     }
 }

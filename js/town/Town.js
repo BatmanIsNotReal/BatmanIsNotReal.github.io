@@ -203,6 +203,10 @@ export default class Town{
         
     }
 
+    updateTen(inv){
+        this.Buildings.Mine.updateTen(inv);
+    }
+
     // newGrid(document){
     //     for (i = 0; i < this.gridSize; i++){
     //         document.getElementById("tile1").src = ;
