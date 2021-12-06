@@ -16,7 +16,7 @@ export default class Farm{
         for (let i = 0; i < this.ammount; i++){
             var chance = this.getRandomInt(0, 10);
             console.log(chance);
-            if (chance < 7){
+            if (chance < 5){
                 //no food
                 var ammount = this.getRandomInt(10, 30);
                 updatebox.townUpdatesAdd("Your farmers have produced " + ammount + " of human food.", document);
