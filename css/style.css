@@ -7,6 +7,7 @@
 @import url("flex.css");
 @import url("griditem.css");
 @import url("modalbox.css");
+@import url("updatebox.css");
 
 body{
 	background-color:0d0c0c;
