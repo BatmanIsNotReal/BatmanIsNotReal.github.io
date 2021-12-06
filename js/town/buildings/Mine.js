@@ -22,19 +22,19 @@ export default class Mine{
             if (chance <= 300){
                 //your miners discovered an ore of iron
                 var ammount = this.getRandomInt(10, 100);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.");
+                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
                 inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
                 var ammount = this.getRandomInt(5, 25);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.");
+                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
                 inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
                 var ammount = this.getRandomInt(2, 20);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nuggets of gold.");
+                this.townUpdatesAdd("Your miners have found " + ammount + " nuggets of gold.", document);
                 inv.addGold(ammount);
             }
         }
