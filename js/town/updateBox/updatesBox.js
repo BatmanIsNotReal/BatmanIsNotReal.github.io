@@ -8,9 +8,9 @@ export default class updateBox{
     }
 
     townUpdatesAdd(textnode, document){
-        if (this.updateNodesAmmount == this.maxUpdateNodes){
+        if (this.Nodes.length == this.maxUpdateNodes){
             let d = document.getElementById("townUpdates");
-            let d_nested = document.getElementById(this.Nodes[1].id);
+            let d_nested = document.getElementById(this.Nodes[0].id);
             d.removeChild(d_nested);
         }
         //add new node
