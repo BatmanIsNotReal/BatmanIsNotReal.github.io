@@ -158,6 +158,8 @@ function displayUpdate(){
 	document.getElementById("bloodCount").innerHTML = Inv.getBloodAmmount();
 	document.getElementById("woodCount").innerHTML = Inv.getWoodAmmount();
 	document.getElementById("ironCount").innerHTML = Inv.getIronAmmount();
+	document.getElementById("bronzeCount").innerHTML = Inv.getBronzeAmmount();
+	document.getElementById("goldCount").innerHTML = Inv.getGoldAmmount();
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
