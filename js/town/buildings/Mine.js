@@ -19,6 +19,7 @@ export default class Mine{
         var chance = this.getRandomInt(0, 1000);
         if (chance <= 300){
             //your miners discovered an ore of iron
+            
         }
         if (chance <= 100){
             //your miners discovered a branch of bronze

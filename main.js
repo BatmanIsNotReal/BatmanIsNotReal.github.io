@@ -220,6 +220,7 @@ function displayUpdate(){
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
 
 	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
+	document.getElementById("buildingMineCost").innerHTML = myTown.Buildings.Mine.cost;
 
 	myTown.updateTileImages(document);
 
