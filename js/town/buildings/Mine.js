@@ -1,4 +1,5 @@
 import Building from "../Building.js";
+import updateBox from "../updateBox/updatesBox.js";
 
 export default class Mine{
     constructor(name, description, capacity, imgsrc, cost){
@@ -21,20 +22,20 @@ export default class Mine{
             console.log(chance);
             if (chance <= 300){
                 //your miners discovered an ore of iron
-                var ammount = this.getRandomInt(10, 100);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
+                var ammount = this.getRandomInt(10, 30);
+                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
                 inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
-                var ammount = this.getRandomInt(5, 25);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
+                var ammount = this.getRandomInt(5, 20);
+                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
                 inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
-                var ammount = this.getRandomInt(2, 20);
-                this.townUpdatesAdd("Your miners have found " + ammount + " nuggets of gold.", document);
+                var ammount = this.getRandomInt(2, 12);
+                updateBox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
                 inv.addGold(ammount);
             }
         }
@@ -47,6 +48,9 @@ export default class Mine{
     }
 
     townUpdatesAdd(textnode, document){
+        if(document.getElementById("townUpdates").length > 8){
+            document.getElementById("townUpdates").removeChild("LI");
+        }
         var node = document.createElement("LI");
         var textNode = document.createTextNode(textnode);
         node.appendChild(textNode);
