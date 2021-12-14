@@ -151,6 +151,7 @@ export default class Town{
                 familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
                 inventory.useWood(this.Buildings.LumberMill.cost);
                 document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
+                this.tiles[id] = 7;
             }
         }else{
             alert("You dont have enough wood!");
@@ -235,6 +236,9 @@ export default class Town{
             }
             if (this.tiles[name] == 5){
                 document.getElementById(name).src = String(this.Buildings.Farm.imgsrc);
+            }
+            if (this.tiles[name] == 6){
+                document.getElementById(name).src = String(this.Buildings.Forest.imgsrc);
             }
         }
         
