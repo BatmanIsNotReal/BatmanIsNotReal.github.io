@@ -322,6 +322,7 @@ function newGame(){
 
 function load(){
 	myTown.createTiles(document);
+	let tiles = document.getElementsByClassName("tile");
 	updateBox.townUpdatesAdd("-- Welcome back --", document);
 	document.body.style.zoom="60%";
 	House.updateFire(document);
