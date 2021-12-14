@@ -131,7 +131,7 @@ export default class Town{
                 current++;
                 table.appendChild(g);
                 console.log(id);
-                let image = document.createElement('image');
+                let image = document.createElement('img');
                 image.setAttribute("id", id);
                 image.setAttribute("width", 64);
                 image.setAttribute("height", 64);
@@ -142,8 +142,8 @@ export default class Town{
     }
 
     newTileMap(document){
-        for (var name in this.tiles){
-            var n = this.getRandomInt(1, 100);
+        for (let name in this.tiles){
+            let n = this.getRandomInt(1, 100);
             if (n > 1 && n < 50){
                 this.tiles[name] = 0;
             }
@@ -165,7 +165,7 @@ export default class Town{
     }
 
     updateTileImages(document){
-        for (var name in this.tiles){
+        for (let name in this.tiles){
             if(this.tiles[name] < 1){
                 document.getElementById(name).src = String(this.Buildings.Grass.imgsrc);
             }
