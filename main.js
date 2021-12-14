@@ -260,7 +260,7 @@ window.setInterval(function(){
 	//Vampire
 
 	//map
-	tiles = document.getElementsByClassName("tile");
+	
 
 	
 	
