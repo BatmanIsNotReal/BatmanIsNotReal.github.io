@@ -6,6 +6,10 @@
 	pointer-events: none;
 }
 
+.header {
+	width: 100%;
+}
+
 .item1 {grid-area: header;}
 .item2 {grid-area: storage;}
 .item3 {grid-area: vampires;}
@@ -16,18 +20,12 @@
 .item8 {grid-area: upgrade;}
 .item9 {grid-area: action;}
 
-.grid-container{
-	display: grid;
-	grid-template-areas:
-		'header header header header header header'
-		'stats house house house house familiar'
-		'vampires vampires vampires2 vampires2 storage storage'
-		'upgrade upgrade upgrade action action action';
-		
-	gap: 0.5em;
+/* .grid-container{
+	width: 100%;
+	display: flex;
+	flex-direction: row;
 	background-color: #0d0c0c;
-	padding: 10px;
-}
+} */
 
 #overlay{
 	position:fixed;
@@ -40,13 +38,6 @@
 	z-index: 2;
 	cursor: pointer;
 }
-
-.item10 {grid-area: header;}
-.item11 {grid-area: image;}
-.item12 {grid-area: vampireName;}
-.item13 {grid-area: houseName;}
-.item14 {grid-area: confirmButton;}
-
 
 .grid-container-signup{
 	display: grid;
@@ -70,6 +61,6 @@
 
 .tile > div{
 	border:1px solid rgb(73, 48, 2);
-  }
+}
 
 

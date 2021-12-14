@@ -11,35 +11,34 @@
     overflow: auto; /* Enable scroll if needed */
     background-color: rgb(0,0,0); /* Fallback color */
     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-  }
-  
-  .tile:hover{
-    outline: 4px solid black;
-    outline-offset: -3px;
-    z-index: 4;
-  }
+}
 
-  /* Modal Content */
-  .modal-content {
-    background-color: #343131;;
-    margin: auto;
-    margin-top:13%;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 50%;
-  }
-  
-  /* The Close Button */
-  .close {
-    color: #aaaaaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  
-  .close:hover,
-  .close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-  }
+.tile:hover{
+  outline: 4px solid black;
+  outline-offset: -3px;
+  z-index: 4;
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #343131;;
+  margin: auto;
+  margin-top:13%;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 50%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}

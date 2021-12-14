@@ -12,6 +12,8 @@
 body{
 	background-color:0d0c0c;
     touch-action: manipulation;
+    margin: 0;
+    padding: 0;
 }
 
 * {
@@ -20,4 +22,5 @@ body{
     -moz-user-select:none;
     -ms-user-select:none;
     user-select:none;
+
 }
