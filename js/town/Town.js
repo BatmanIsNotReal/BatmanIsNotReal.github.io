@@ -185,6 +185,7 @@ export default class Town{
                 g.appendChild(image);
             }
         }
+        console.log("tiles created");
     }
 
     newTileMap(document){
@@ -206,7 +207,7 @@ export default class Town{
                 this.tiles[name] = 6;
             }
 
-            console.log(this.tiles[name] + "newtilemap");
+            
         }
         
     }
