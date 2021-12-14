@@ -136,7 +136,7 @@ restartButton.addEventListener("click", () => {deleteSave();})
 
 load();
 
-if (Account.influence < 1){
+if (Inv.bloodAmmount == 10){
 	myTown.newTileMap(document);
 }
 //Drinking blood
