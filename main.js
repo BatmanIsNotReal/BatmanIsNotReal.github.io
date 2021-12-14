@@ -112,6 +112,10 @@ for (let i = 0; i < buyBuildingButtons.length; i++){
 			myTown.buyFarm(Inv, Familiars, document, currentTile, event.target.id);
 			modal.style.display = "none";
 		}
+		if(event.target.id == "buyLumberMill"){
+			myTown.buyLumberMill(Inv, Familiars, document, currentTile, event.target.id);
+			modal.style.display = "none";
+		}
 	})
 }
 //mine
