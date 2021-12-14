@@ -259,6 +259,9 @@ window.setInterval(function(){
 
 	//Vampire
 
+	//map
+	tiles = document.getElementsByClassName("tile");
+
 	
 	
 }, 1000);

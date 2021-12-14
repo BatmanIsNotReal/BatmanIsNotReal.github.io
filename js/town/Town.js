@@ -5,6 +5,8 @@ import Hut from './buildings/Hut.js';
 import Mine from './buildings/Mine.js';
 import Rock from './terrain/Rock.js';
 import Water from './terrain/Water.js';
+import Forest from './terrain/Forest.js';
+import LumberMill from './buildings/LumberMill.js';
 
 export default class Town{
     constructor(townSize, xpRates){
@@ -16,9 +18,11 @@ export default class Town{
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
             Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
             Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
+            Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000),
             Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.jpg', 500),
+            LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600),
         }
 
         this.buildSound = new Audio('music\sounds\buildSound.mp3');
@@ -49,6 +53,9 @@ export default class Town{
             else if (this.tiles[id] == 5){
                 alert("There is already a farm here");
             }
+            else if (this.tiles[id] == 6){
+                alert("There is a forest here");
+            }
         }else{
             alert("You dont have enough wood!");
         }
@@ -78,6 +85,9 @@ export default class Town{
             else if (this.tiles[id] == 5){
                 alert("There is already a farm here");
             }
+            else if (this.tiles[id] == 6){
+                alert("There is a forest here");
+            }
         }else{
             alert("You dont have enough wood!");
         }
@@ -106,6 +116,41 @@ export default class Town{
             }
             else if (this.tiles[id] == 5){
                 alert("there is already a farm here");
+            }
+            else if (this.tiles[id] == 6){
+                alert("There is a forest here");
+            }
+        }else{
+            alert("You dont have enough wood!");
+        }
+    }
+
+    buyLumberMill(inventory, familiar, document, id){
+        if (inventory.items.wood >= this.Buildings.LumberMill.cost){
+            if(this.tiles[id] < 1){
+                alert("This is not grassland");
+                this.tiles[id] = 5;
+            }else if(this.tiles[id] == 1){
+                alert("There is already a hut on this land");
+            }else if (this.tiles[id] == 2){
+                alert("There is water here");
+            }
+            else if (this.tiles[id] == 3){
+                alert("There is already a mine here");
+                
+            }
+            else if (this.tiles[id] == 4){
+                alert("There is already a mine here");
+            }
+            else if (this.tiles[id] == 5){
+                alert("there is already a farm here");
+            }
+            else if (this.tiles[id] == 6){
+                this.Buildings.LumberMill.ammount++;
+                console.log(document.getElementById(id).src);
+                familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
+                inventory.useWood(this.Buildings.LumberMill.cost);
+                document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
             }
         }else{
             alert("You dont have enough wood!");
@@ -147,12 +192,19 @@ export default class Town{
             if (n > 1 && n < 50){
                 this.tiles[name] = 0;
             }
-            if (n > 50 && n < 75){
+            //Water
+            if (n > 50 && n < 70){
                 this.tiles[name] = 2;
             }
-            if (n > 75 && n < 100){
+            //Rock
+            if (n > 70 && n < 80){
                 this.tiles[name] = 3;
             }
+            //Forest
+            if (n > 80 && n < 100){
+                this.tiles[name] = 6;
+            }
+
             console.log(this.tiles[name] + "newtilemap");
         }
         
