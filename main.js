@@ -379,7 +379,7 @@ function load(){
 	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
 	if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
 	
-	if (Inv.bloodAmmount == 10){
+	if (Account.influence == 0){
 		myTown.newTileMap(document);
 	}
 }
