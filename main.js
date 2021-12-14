@@ -52,6 +52,9 @@ const vampireTypes = {
 	"overloard": Overloard,
 }
 
+//Map
+myTown.createTiles(document);
+
 //familiar vars
 let Familiars = new Familiar(0, 500, 0, 2, 0, 2, 0, 2, 0);
 
@@ -73,7 +76,7 @@ const removeGatherButtons = document.getElementsByClassName("remove-gather-butto
 const buyBuildingButtons = document.getElementsByClassName("buy-building-button");
 
 const tiles = document.getElementsByClassName("tile");
-console.log("read tiles");
+
 
 const addWoodButton = document.getElementById("addWoodFire");
 
@@ -325,7 +328,6 @@ function newGame(){
 }
 
 function load(){
-	myTown.createTiles(document);
 	
 	updateBox.townUpdatesAdd("-- Welcome back --", document);
 	document.body.style.zoom="60%";
