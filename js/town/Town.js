@@ -11,84 +11,6 @@ export default class Town{
         this.townSize = townSize;
         this.xpRates = xpRates;
         this.tiles = {
-            tile1: 0,
-            tile2: 0,
-            tile3: 0,
-            tile4: 0,
-            tile5: 0,
-            tile6: 0,
-            tile7: 0,
-            tile8: 0,
-            tile9: 0,
-            tile10: 0,
-            tile11: 0,
-            tile12: 0,
-            tile13: 0,
-            tile14: 0,
-            tile15: 0,
-            tile16: 0,
-            tile17: 0,
-            tile18: 0,
-            tile19: 0,
-            tile20: 0,
-            tile21: 0,
-            tile22: 0,
-            tile23: 0,
-            tile24: 0,
-            tile25: 0,
-            tile26: 0,
-            tile27: 0,
-            tile28: 0,
-            tile29: 0,
-            tile30: 0,
-            tile31: 0,
-            tile32: 0,
-            tile33: 0,
-            tile34: 0,
-            tile35: 0,
-            tile36: 0,
-            tile37: 0,
-            tile38: 0,
-            tile39: 0,
-            tile40: 0,
-            tile41: 0,
-            tile42: 0,
-            tile43: 0,
-            tile44: 0,
-            tile45: 0,
-            tile46: 0,
-            tile47: 0,
-            tile48: 0,
-            tile49: 0,
-            tile50: 0,
-            tile51: 0,
-            tile52: 0,
-            tile53: 0,
-            tile54: 0,
-            tile55: 0,
-            tile56: 0,
-            tile57: 0,
-            tile58: 0,
-            tile59: 0,
-            tile60: 0,
-            tile61: 0,
-            tile62: 0,
-            tile63: 0,
-            tile64: 0,
-            tile65: 0,
-            tile66: 0,
-            tile67: 0,
-            tile68: 0,
-            tile69: 0,
-            tile70: 0,
-            tile71: 0,
-            tile72: 0,
-            tile73: 0,
-            tile74: 0,
-            tile75: 0,
-            tile76: 0,
-            tile77: 0,
-            tile78: 0,
         }
         this.Buildings ={
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
@@ -192,8 +114,31 @@ export default class Town{
 
 
 
-    getTiles(){
-        return this.tiles;
+    //getTiles(){
+      //  return this.tiles;
+    //}
+
+    createTiles(document){
+        let table = document.getElementById("map");
+        let current = 0;
+        for (let a = 0; a < 10; a++){
+            let t = document.createElement('tr');
+            table.appendChild(t);
+            for (let i = 0; i < 10; i++){
+                let g = document.createElement('td');
+                let id = "tile"+current;
+                this.tiles["tile"+current] = 0;
+                current++;
+                table.appendChild(g);
+                console.log(id);
+                let image = document.createElement('image');
+                image.setAttribute("id", id);
+                image.setAttribute("width", 64);
+                image.setAttribute("height", 64);
+                image.setAttribute("class", "tile");
+                g.appendChild(image);
+            }
+        }
     }
 
     newTileMap(document){
@@ -208,7 +153,9 @@ export default class Town{
             if (n > 75 && n < 100){
                 this.tiles[name] = 3;
             }
+            console.log(this.tiles[name] + "newtilemap");
         }
+        
     }
 
     getRandomInt(min, max){
@@ -238,6 +185,7 @@ export default class Town{
                 document.getElementById(name).src = String(this.Buildings.Farm.imgsrc);
             }
         }
+        console.log(this.tiles + "updateTileImages");
     }
 
     update(document){

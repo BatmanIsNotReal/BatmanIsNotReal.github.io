@@ -20,9 +20,10 @@
 	display: grid;
 	grid-template-areas:
 		'header header header header header header'
-		'vampires vampires vampires2 vampires2 familiar familiar'
-		'stats stats house house storage storage'
+		'stats house house house house familiar'
+		'vampires vampires vampires2 vampires2 storage storage'
 		'upgrade upgrade upgrade action action action';
+		
 	gap: 0.5em;
 	background-color: #0d0c0c;
 	padding: 10px;

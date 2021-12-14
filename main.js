@@ -23,9 +23,7 @@ let myTown = new Town(townSize, xpRates);
 
 let updateBox = new UpdateBox(10, 0);
 
-if (Account.influence == 0){
-	myTown.newTileMap(document);
-}
+
 
 //vampires vars
 let Mosquito = new Vampire(0, 10, 0.1, 0.1);
@@ -222,7 +220,7 @@ function displayUpdate(){
 	
 	document.getElementById("fireLeft").innerHTML = House.fire.percent;
 	
-	document.getElementById("house").src = House.updateImage();
+	//document.getElementById("house").src = House.updateImage();
 	
 	document.getElementById("vName").innerHTML = Account.vampireName;
 	document.getElementById("hName").innerHTML = Account.houseName;
@@ -323,6 +321,7 @@ function newGame(){
 }
 
 function load(){
+	myTown.createTiles(document);
 	updateBox.townUpdatesAdd("-- Welcome back --", document);
 	document.body.style.zoom="60%";
 	House.updateFire(document);
