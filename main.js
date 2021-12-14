@@ -180,7 +180,7 @@ function displayUpdate(){
 	//document.getElementById("bloodPerTurn").innerHTML = bloodPerTurn;
 	//document.getElementById("humanFoodPerTurn").innerHTML = humanFoodPerTurn;
 	
-	document.getElementById("currentHouse").innerHTML = House.getCurrentHouse();
+	//document.getElementById("currentHouse").innerHTML = House.getCurrentHouse();
 	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
