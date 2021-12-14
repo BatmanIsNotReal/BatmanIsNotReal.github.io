@@ -172,6 +172,8 @@ export default class Town{
             table.appendChild(t);
             for (let i = 0; i < 10; i++){
                 let g = document.createElement('td');
+                g.setAttribute("width", "64");
+                g.setAttribute("height", "64");
                 let id = "tile"+current;
                 this.tiles["tile"+current] = 0;
                 current++;
