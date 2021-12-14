@@ -326,7 +326,7 @@ function validateForm(){
 
 function newGame(){
 	//document.getElementById("overlay").style.display="grid";
-	Account.playedBefore = true;
+	myTown.newTileMap(document);
 }
 
 function load(){
@@ -381,9 +381,6 @@ function load(){
 	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
 	if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
 	
-	if (Inv.bloodAmmount == 10){
-		myTown.newTileMap(document);
-	}
 }
 
 function save(){
