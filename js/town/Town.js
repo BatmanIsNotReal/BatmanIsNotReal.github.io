@@ -1,10 +1,10 @@
 import * as Building from './Building.js';
 import Farm from './buildings/Farm.js';
-import Grass from './buildings/Grass.js';
+import Grass from './terrain/Grass.js';
 import Hut from './buildings/Hut.js';
 import Mine from './buildings/Mine.js';
-import Rock from './buildings/Rock.js';
-import Water from './buildings/Water.js';
+import Rock from './terrain/Rock.js';
+import Water from './terrain/Water.js';
 
 export default class Town{
     constructor(townSize, xpRates){
