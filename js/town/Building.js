@@ -1,4 +1,4 @@
-import Grass from "./buildings/Grass.js";
+import Grass from "./terrain/Grass.js";
 import Hut from "./buildings/Hut.js";
 
 export default class Building{

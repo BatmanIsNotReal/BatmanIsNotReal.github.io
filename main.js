@@ -72,7 +72,7 @@ const removeGatherButtons = document.getElementsByClassName("remove-gather-butto
 
 const buyBuildingButtons = document.getElementsByClassName("buy-building-button");
 
-const tiles = document.getElementsByClassName("tile");
+let tiles = document.getElementsByClassName("tile");
 
 const addWoodButton = document.getElementById("addWoodFire");
 
