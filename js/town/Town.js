@@ -185,7 +185,7 @@ export default class Town{
                 document.getElementById(name).src = String(this.Buildings.Farm.imgsrc);
             }
         }
-        console.log(this.tiles + "updateTileImages");
+        
     }
 
     update(document){
