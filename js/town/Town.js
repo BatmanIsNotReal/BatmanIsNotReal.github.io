@@ -129,7 +129,6 @@ export default class Town{
         if (inventory.items.wood >= this.Buildings.LumberMill.cost){
             if(this.tiles[id] < 1){
                 alert("This is not grassland");
-                this.tiles[id] = 5;
             }else if(this.tiles[id] == 1){
                 alert("There is already a hut on this land");
             }else if (this.tiles[id] == 2){
