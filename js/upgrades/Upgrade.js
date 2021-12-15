@@ -1,7 +1,7 @@
-import Farm from "../town/buildings/Farm";
-import IronAxe from "./tools/ironAxe";
-import IronHoe from "./tools/IronHoe";
-import IronPick from "./tools/IronPick";
+import Farm from "../town/buildings/Farm.js";
+import IronAxe from "./tools/ironAxe.js";
+import IronHoe from "./tools/IronHoe.js";
+import IronPick from "./tools/IronPick.js";
 
 export default class Upgrade{
     constructor(){
