@@ -6,6 +6,7 @@ import HousePar from './js/House.js';
 import Timers from './js/Timers.js';
 import Town from './js/town/Town.js';
 import UpdateBox from './js/town/updateBox/updatesBox.js';
+import Upgrade from './js/upgrades/Upgrade.js';
 
 
 //Init data
@@ -20,6 +21,7 @@ const townSize = ["small hut", "respectable hut", "lesser house", "decent house"
 let Inv = new Inventory();
 let Account = new Player("john", "house");
 let myTown = new Town(townSize, xpRates);
+const Upgrades = new Upgrade();
 
 let updateBox = new UpdateBox(10, 0);
 
@@ -240,6 +242,9 @@ function displayUpdate(){
 	document.getElementById("buildingMineCost").innerHTML = myTown.Buildings.Mine.cost;
 	document.getElementById("buildingFarmCost").innerHTML = myTown.Buildings.Farm.cost;
 	document.getElementById("buildingLumberMillCost").innerHTML = myTown.Buildings.LumberMill.cost;
+
+	document.getElementById("ironHoeCost").innerHTML = Upgrades.tools.ironHoe.cost;
+
 
 	myTown.updateTileImages(document);
 
