@@ -244,6 +244,8 @@ function displayUpdate(){
 	document.getElementById("buildingLumberMillCost").innerHTML = myTown.Buildings.LumberMill.cost;
 
 	document.getElementById("ironHoeCost").innerHTML = Upgrades.tools.ironHoe.cost;
+	document.getElementById("ironAxeCost").innerHTML = Upgrades.tools.ironAxe.cost;
+	document.getElementById("ironPickCost").innerHTML = Upgrades.tools.ironPick.cost;
 
 
 	myTown.updateTileImages(document);

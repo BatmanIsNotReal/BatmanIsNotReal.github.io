@@ -21,4 +21,22 @@ export default class Upgrade{
             updatebox.townUpdatesAdd("Your blacksmith has produced an iron hoe. Your farms are more efficient.", document);
         }
     }
+
+    buyIronAxe(inv, updatebox){
+        if (inv.items.getIronAmmount() >= this.tools.ironAxe.cost){
+            inv.useIron(this.tools.ironAxe.cost);
+            this.tools.ironAxe.ammount++;
+            Farm.gain = [(Farm.gain[0]+(Farm.gain[0]/100*this.tools.ironAxe.gainPercent)), (Farm.gain[1]/100*this.tools.ironAxe.gainPercent)];
+            updatebox.townUpdatesAdd("Your blacksmith has produced an iron axe. Your farms are more efficient.", document);
+        }
+    }
+
+    buyIronPick(inv, updatebox){
+        if (inv.items.getIronAmmount() >= this.tools.ironPick.cost){
+            inv.useIron(this.tools.ironPick.cost);
+            this.tools.ironPick.ammount++;
+            Farm.gain = [(Farm.gain[0]+(Farm.gain[0]/100*this.tools.ironPick.gainPercent)), (Farm.gain[1]/100*this.tools.ironPick.gainPercent)];
+            updatebox.townUpdatesAdd("Your blacksmith has produced an iron pick. Your farms are more efficient.", document);
+        }
+    }
 }
