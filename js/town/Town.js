@@ -75,6 +75,7 @@ export default class Town{
                     this.Buildings.Mine.ammount++;
                     console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.Mine.capacity);
+                    familiar.notWorking = familiar.notWorking - this.Buildings.Mine.workersRequired;
                     inventory.useWood(this.Buildings.Mine.cost);
                     document.getElementById(id).src = String(this.Buildings.Mine.imgsrc);
                     this.tiles[id] = 4;
@@ -104,6 +105,7 @@ export default class Town{
                     this.Buildings.Farm.ammount++;
                     console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.Farm.capacity);
+                    familiar.notWorking = familiar.notWorking - this.Buildings.Farm.workersRequired;
                     inventory.useWood(this.Buildings.Farm.cost);
                     document.getElementById(id).src = String(this.Buildings.Farm.imgsrc);
                     this.tiles[id] = 5;
@@ -158,6 +160,7 @@ export default class Town{
                     this.Buildings.LumberMill.ammount++;
                     console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
+                    familiar.notWorking = familiar.notWorking - this.Buildings.LumberMill.workersRequired;
                     inventory.useWood(this.Buildings.LumberMill.cost);
                     document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
                     this.tiles[id] = 7;
