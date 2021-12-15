@@ -77,6 +77,8 @@ const removeGatherButtons = document.getElementsByClassName("remove-gather-butto
 
 const buyBuildingButtons = document.getElementsByClassName("buy-building-button");
 
+const buyUpgradeButtons = document.getElementsByClassName("buy-upgrade-button");
+
 const tiles = document.getElementsByClassName("tile");
 
 
@@ -99,7 +101,6 @@ span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
 //buy buildings check
-//hut
 for (let i = 0; i < buyBuildingButtons.length; i++){
 	buyBuildingButtons[i].addEventListener("click", (event) => {
 		if(event.target.id == "buyHut"){
@@ -120,7 +121,21 @@ for (let i = 0; i < buyBuildingButtons.length; i++){
 		}
 	})
 }
-//mine
+
+//Buy upgrades check
+for (let i = 0; i < buyUpgradeButtons.length; i++){
+	buyUpgradeButtons[i].addEventListener("click", (event) =>{
+		if (event.target.id == "ironHoe"){
+			Upgrades.buyIronHoe(Inv, updateBox);
+		}
+		if (event.target.id == "ironAxe"){
+			Upgrades.buyIronAxe(Inv, updateBox);
+		}
+		if (event.target.id == "ironPick"){
+			Upgrades.buyIronPick(Inv, updateBox);
+		}
+	})
+}
 
 
 
