@@ -17,7 +17,7 @@ export default class Upgrade{
         if (inv.getIronAmmount() >= this.tools.ironHoe.cost){
             inv.useIron(this.tools.ironHoe.cost);
             this.tools.ironHoe.ammount++;
-            farm.gain = [(farm.gain[0]+(farm.gain[0]/100*this.tools.ironHoe.gainPercent)), (farm.gain[1]/100*this.tools.ironHoe.gainPercent)];
+            farm.gain = (farm.gain+(farm.gain/100*this.tools.ironHoe.gainPercent));
             updatebox.townUpdatesAdd("Your blacksmith has produced an iron hoe. Your farms are more efficient.", document);
         }
     }
@@ -26,7 +26,7 @@ export default class Upgrade{
         if (inv.getIronAmmount() >= this.tools.ironAxe.cost){
             inv.useIron(this.tools.ironAxe.cost);
             this.tools.ironAxe.ammount++;
-            lumbermill.gain = [(lumbermill.gain[0]+(lumbermill.gain[0]/100*this.tools.ironAxe.gainPercent)), (lumbermill.gain[1]/100*this.tools.ironAxe.gainPercent)];
+            lumbermill.gain = (lumbermill.gain+(lumbermill.gain/100*this.tools.ironHoe.gainPercent));
             updatebox.townUpdatesAdd("Your blacksmith has produced an iron axe. Your farms are more efficient.", document);
         }
     }
@@ -35,7 +35,7 @@ export default class Upgrade{
         if (inv.getIronAmmount() >= this.tools.ironPick.cost){
             inv.useIron(this.tools.ironPick.cost);
             this.tools.ironPick.ammount++;
-            mine.gain = [(mine.gain[0]+(mine.gain[0]/100*this.tools.ironPick.gainPercent)), (mine.gain[1]/100*this.tools.ironPick.gainPercent)];
+            mine.gain = mine.gain+(mine.gain/100*this.tools.ironHoe.gainPercent));
             updatebox.townUpdatesAdd("Your blacksmith has produced an iron pick. Your farms are more efficient.", document);
         }
     }

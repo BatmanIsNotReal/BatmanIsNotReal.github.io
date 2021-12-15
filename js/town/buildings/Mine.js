@@ -10,6 +10,7 @@ export default class Mine{
         this.cost = cost;
         this.imgsrc = imgsrc; 
         this.workers = 0;
+        this.gain = 1;
     }
 
     displayMenu(){
@@ -23,19 +24,19 @@ export default class Mine{
             console.log(chance);
             if (chance <= 300){
                 //your miners discovered an ore of iron
-                var ammount = this.getRandomInt(10, 30);
+                var ammount = this.getRandomInt(10*this.gain, 30*this.gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
                 inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
-                var ammount = this.getRandomInt(5, 20);
+                var ammount = this.getRandomInt(5*this.gain, 20*this.gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
                 inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
-                var ammount = this.getRandomInt(2, 12);
+                var ammount = this.getRandomInt(2*this.gain, 12*this.gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
                 inv.addGold(ammount);
             }

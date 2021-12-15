@@ -10,6 +10,7 @@ export default class LumberMill{
         this.cost = cost;
         this.imgsrc = imgsrc; 
         this.workers = 0;
+        this.gain = 1;
     }
 
     checkForLoot(inv, document, updatebox){
@@ -17,7 +18,7 @@ export default class LumberMill{
             var chance = this.getRandomInt(0, 10);
             console.log(chance);
             if (chance < 5){
-                var ammount = this.getRandomInt(10, 30);
+                var ammount = this.getRandomInt(10*this.gain, 30*this.gain);
                 updatebox.townUpdatesAdd("Your lumber mill produced " + ammount + " wood.", document);
                 inv.addWood(ammount);
             }
