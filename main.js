@@ -258,6 +258,10 @@ function displayUpdate(){
 	document.getElementById("buildingFarmCost").innerHTML = myTown.Buildings.Farm.cost;
 	document.getElementById("buildingLumberMillCost").innerHTML = myTown.Buildings.LumberMill.cost;
 
+	document.getElementById("buildingFarmFamiliarsRequired").innerHTML = myTown.Buildings.Farm.workersRequired;
+	document.getElementById("buildingMineFamiliarsRequired").innerHTML = myTown.Buildings.Mine.workersRequired;
+	document.getElementById("buildingLumberMillFamiliarsRequired").innerHTML = myTown.Buildings.LumberMill.workersRequired;
+
 	document.getElementById("ironHoeCost").innerHTML = Upgrades.tools.ironHoe.cost;
 	document.getElementById("ironAxeCost").innerHTML = Upgrades.tools.ironAxe.cost;
 	document.getElementById("ironPickCost").innerHTML = Upgrades.tools.ironPick.cost;

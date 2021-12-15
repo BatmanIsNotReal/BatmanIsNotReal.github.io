@@ -20,9 +20,9 @@ export default class Town{
             Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
-            Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000),
-            Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.jpg', 500),
-            LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600),
+            Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
+            Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.jpg', 500, 5),
+            LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600, 5),
         }
 
         this.buildSound = new Audio('music\sounds\buildSound.mp3');
@@ -63,97 +63,103 @@ export default class Town{
 
     buyMine(inventory, familiar, document, id){
         if (inventory.items.wood >= this.Buildings.Mine.cost){
-            if(this.tiles[id] < 1){
-                alert("you need to build a mine in a mountain");
-            }else if(this.tiles[id] == 1){
-                alert("There is already a hut on this land");
-            }else if (this.tiles[id] == 2){
-                alert("There is water here");
+            if (familiar.getNotWorking() >= this.Buildings.Mine.workersRequired){
+                if(this.tiles[id] < 1){
+                    alert("you need to build a mine in a mountain");
+                }else if(this.tiles[id] == 1){
+                    alert("There is already a hut on this land");
+                }else if (this.tiles[id] == 2){
+                    alert("There is water here");
+                }
+                else if (this.tiles[id] == 3){
+                    this.Buildings.Mine.ammount++;
+                    console.log(document.getElementById(id).src);
+                    familiar.addMaxLimit(this.Buildings.Mine.capacity);
+                    inventory.useWood(this.Buildings.Mine.cost);
+                    document.getElementById(id).src = String(this.Buildings.Mine.imgsrc);
+                    this.tiles[id] = 4;
+                    
+                }
+                else if (this.tiles[id] == 4){
+                    alert("There is already a mine here");
+                }
+                else if (this.tiles[id] == 5){
+                    alert("There is already a farm here");
+                }
+                else if (this.tiles[id] == 6){
+                    alert("There is a forest here");
+                }
+            }else{
+                alert("You dont have enough wood!");
             }
-            else if (this.tiles[id] == 3){
-                this.Buildings.Mine.ammount++;
-                console.log(document.getElementById(id).src);
-                familiar.addMaxLimit(this.Buildings.Mine.capacity);
-                inventory.useWood(this.Buildings.Mine.cost);
-                document.getElementById(id).src = String(this.Buildings.Mine.imgsrc);
-                this.tiles[id] = 4;
-                
-            }
-            else if (this.tiles[id] == 4){
-                alert("There is already a mine here");
-            }
-            else if (this.tiles[id] == 5){
-                alert("There is already a farm here");
-            }
-            else if (this.tiles[id] == 6){
-                alert("There is a forest here");
-            }
-        }else{
-            alert("You dont have enough wood!");
         }
     }
 
     buyFarm(inventory, familiar, document, id){
         if (inventory.items.wood >= this.Buildings.Farm.cost){
-            if(this.tiles[id] < 1){
-                this.Buildings.Farm.ammount++;
-                console.log(document.getElementById(id).src);
-                familiar.addMaxLimit(this.Buildings.Farm.capacity);
-                inventory.useWood(this.Buildings.Farm.cost);
-                document.getElementById(id).src = String(this.Buildings.Farm.imgsrc);
-                this.tiles[id] = 5;
-            }else if(this.tiles[id] == 1){
-                alert("There is already a hut on this land");
-            }else if (this.tiles[id] == 2){
-                alert("There is water here");
+            if (familiar.getNotWorking() >= this.Buildings.Farm.workersRequired){
+                if(this.tiles[id] < 1){
+                    this.Buildings.Farm.ammount++;
+                    console.log(document.getElementById(id).src);
+                    familiar.addMaxLimit(this.Buildings.Farm.capacity);
+                    inventory.useWood(this.Buildings.Farm.cost);
+                    document.getElementById(id).src = String(this.Buildings.Farm.imgsrc);
+                    this.tiles[id] = 5;
+                }else if(this.tiles[id] == 1){
+                    alert("There is already a hut on this land");
+                }else if (this.tiles[id] == 2){
+                    alert("There is water here");
+                }
+                else if (this.tiles[id] == 3){
+                    alert("There is already a mine here");
+                    
+                }
+                else if (this.tiles[id] == 4){
+                    alert("There is already a mine here");
+                }
+                else if (this.tiles[id] == 5){
+                    alert("there is already a farm here");
+                }
+                else if (this.tiles[id] == 6){
+                    alert("There is a forest here");
+                }
+            }else{
+                alert("You dont have enough wood!");
             }
-            else if (this.tiles[id] == 3){
-                alert("There is already a mine here");
-                
-            }
-            else if (this.tiles[id] == 4){
-                alert("There is already a mine here");
-            }
-            else if (this.tiles[id] == 5){
-                alert("there is already a farm here");
-            }
-            else if (this.tiles[id] == 6){
-                alert("There is a forest here");
-            }
-        }else{
-            alert("You dont have enough wood!");
         }
     }
 
     buyLumberMill(inventory, familiar, document, id){
         if (inventory.items.wood >= this.Buildings.LumberMill.cost){
-            if(this.tiles[id] < 1){
-                alert("This is not grassland");
-            }else if(this.tiles[id] == 1){
-                alert("There is already a hut on this land");
-            }else if (this.tiles[id] == 2){
-                alert("There is water here");
+            if (familiar.getNotWorking() >= this.Buildings.LumberMill.workersRequired){
+                if(this.tiles[id] < 1){
+                    alert("This is not grassland");
+                }else if(this.tiles[id] == 1){
+                    alert("There is already a hut on this land");
+                }else if (this.tiles[id] == 2){
+                    alert("There is water here");
+                }
+                else if (this.tiles[id] == 3){
+                    alert("There is already a mine here");
+                    
+                }
+                else if (this.tiles[id] == 4){
+                    alert("There is already a mine here");
+                }
+                else if (this.tiles[id] == 5){
+                    alert("there is already a farm here");
+                }
+                else if (this.tiles[id] == 6){
+                    this.Buildings.LumberMill.ammount++;
+                    console.log(document.getElementById(id).src);
+                    familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
+                    inventory.useWood(this.Buildings.LumberMill.cost);
+                    document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
+                    this.tiles[id] = 7;
+                }
+            }else{
+                alert("You dont have enough wood!");
             }
-            else if (this.tiles[id] == 3){
-                alert("There is already a mine here");
-                
-            }
-            else if (this.tiles[id] == 4){
-                alert("There is already a mine here");
-            }
-            else if (this.tiles[id] == 5){
-                alert("there is already a farm here");
-            }
-            else if (this.tiles[id] == 6){
-                this.Buildings.LumberMill.ammount++;
-                console.log(document.getElementById(id).src);
-                familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
-                inventory.useWood(this.Buildings.LumberMill.cost);
-                document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
-                this.tiles[id] = 7;
-            }
-        }else{
-            alert("You dont have enough wood!");
         }
     }
 

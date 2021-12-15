@@ -2,14 +2,14 @@ import Building from "../Building.js";
 import updateBox from "../updateBox/updatesBox.js";
 
 export default class LumberMill{
-    constructor(name, description, capacity, imgsrc, cost){
+    constructor(name, description, capacity, imgsrc, cost, workersRequired){
         this.name = name;
         this.description = description;
         this.capacity = capacity;
         this.ammount = 0;
         this.cost = cost;
         this.imgsrc = imgsrc; 
-        this.workers = 0;
+        this.workersRequired = workersRequired;
         this.gain = 1;
     }
 
