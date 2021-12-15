@@ -90,8 +90,10 @@ export default class Town{
                     alert("There is a forest here");
                 }
             }else{
-                alert("You dont have enough wood!");
+                alert("you dont have enough familiars.");
             }
+        }else{
+             alert("You dont have enough wood!");
         }
     }
 
@@ -123,9 +125,12 @@ export default class Town{
                 else if (this.tiles[id] == 6){
                     alert("There is a forest here");
                 }
-            }else{
-                alert("You dont have enough wood!");
             }
+            else{
+                alert("you dont have enough familiars.");
+            }
+        }else{
+            alert("You dont have enough wood!");
         }
     }
 
@@ -158,8 +163,10 @@ export default class Town{
                     this.tiles[id] = 7;
                 }
             }else{
-                alert("You dont have enough wood!");
+                alert("you dont have enough familiars.");
             }
+        }else{
+             alert("You dont have enough wood!");
         }
     }
 
