@@ -35,7 +35,7 @@ export default class Upgrade{
         if (inv.getIronAmmount() >= this.tools.ironPick.cost){
             inv.useIron(this.tools.ironPick.cost);
             this.tools.ironPick.ammount++;
-            mine.gain = mine.gain+(mine.gain/100*this.tools.ironHoe.gainPercent));
+            mine.gain = (mine.gain+(mine.gain/100*this.tools.ironHoe.gainPercent));
             updatebox.townUpdatesAdd("Your blacksmith has produced an iron pick. Your farms are more efficient.", document);
         }
     }
