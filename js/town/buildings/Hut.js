@@ -10,7 +10,25 @@ export default class Hut{
         this.imgsrc = imgsrc; 
     }
 
-    getTest(){
-        alert("yes");
+    checkNewChild(familiar, updatebox){
+        for (let i = 0; i < this.ammount; i++){
+            let n = getRandomInt(0, 100);
+            if (n < 5){
+                familiar.addFamiliar();
+                updatebox.townUpdatesAdd("A human child has been born. It will be in your service.", document);
+            }
+        }
     }
+
+
+    getRandomInt(min, max){
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    updateTen(familiar, updatebox){
+        this.checkNewChild(familiar, updatebox);
+    }
+
 }

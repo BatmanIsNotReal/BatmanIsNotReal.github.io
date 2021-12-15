@@ -315,7 +315,7 @@ window.setInterval(function(){
 	//Vampire
 
 	//Town
-	myTown.updateTen(Inv, document, updateBox);
+	myTown.updateTen(Inv, document, updateBox, Familiars);
 	//save
 	save();
 }, 10000);

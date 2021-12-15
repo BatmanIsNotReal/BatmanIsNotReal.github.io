@@ -247,10 +247,12 @@ export default class Town{
 
     update(document){
         this.updateTileImages(document);
+
         
     }
 
-    updateTen(inv, document, updatebox){
+    updateTen(inv, document, updatebox, familiar){
+        this.Buildings.Hut.updateTen(familiar, updatebox);
         this.Buildings.Mine.updateTen(inv, document, updatebox);
         this.Buildings.Farm.updateTen(inv, document, updatebox);
         this.Buildings.LumberMill.updateTen(inv, document, updatebox);
