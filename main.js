@@ -183,6 +183,7 @@ function displayUpdate(){
 
 
 	document.getElementById("familiarNotWorking").innerHTML = Familiars.getNotWorking();
+	document.getElementById("familiarAmmount").innerHTML = Familiars.ammount;
 
 	//inventory
 	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
