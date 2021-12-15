@@ -126,13 +126,13 @@ for (let i = 0; i < buyBuildingButtons.length; i++){
 for (let i = 0; i < buyUpgradeButtons.length; i++){
 	buyUpgradeButtons[i].addEventListener("click", (event) =>{
 		if (event.target.id == "ironHoe"){
-			Upgrades.buyIronHoe(Inv, updateBox);
+			Upgrades.buyIronHoe(Inv, updateBox, myTown.Buildings.Farm);
 		}
 		if (event.target.id == "ironAxe"){
-			Upgrades.buyIronAxe(Inv, updateBox);
+			Upgrades.buyIronAxe(Inv, updateBox, myTown.Buildings.LumberMill);
 		}
 		if (event.target.id == "ironPick"){
-			Upgrades.buyIronPick(Inv, updateBox);
+			Upgrades.buyIronPick(Inv, updateBox, myTown.Buildings.Mine);
 		}
 	})
 }
