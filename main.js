@@ -262,6 +262,10 @@ function displayUpdate(){
 	document.getElementById("ironAxeCost").innerHTML = Upgrades.tools.ironAxe.cost;
 	document.getElementById("ironPickCost").innerHTML = Upgrades.tools.ironPick.cost;
 
+	document.getElementById("ironHoeAmmount").innerHTML = Upgrades.tools.ironHoe.ammount;
+	document.getElementById("ironAxeAmmount").innerHTML = Upgrades.tools.ironAxe.ammount;
+	document.getElementById("ironPickAmmount").innerHTML = Upgrades.tools.ironPick.ammount;
+
 
 	myTown.updateTileImages(document);
 
