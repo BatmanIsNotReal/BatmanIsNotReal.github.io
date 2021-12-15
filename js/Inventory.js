@@ -3,12 +3,12 @@ import Familiar from './Familiar.js';
 export default class Inventory{
     constructor(){
         this.items = {
-            blood: 1000,
-            humanFood: 1000,
-            wood: 3000,
-            iron: 1000,
-            bronze: 1000,
-            gold: 1000,
+            blood: 10,
+            humanFood: 10,
+            wood: 30,
+            iron: 0,
+            bronze: 0,
+            gold: 0,
         }
         this.newHumanFoodPerRound = 0;
         this.newBloodPerRound = 0;
