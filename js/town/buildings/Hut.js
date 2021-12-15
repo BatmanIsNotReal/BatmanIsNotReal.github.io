@@ -13,7 +13,7 @@ export default class Hut{
     checkNewChild(familiar, updatebox){
         for (let i = 0; i < this.ammount; i++){
             let n = this.getRandomInt(0, 100);
-            if (n < 5){
+            if (n < 2){
                 if (familiar.ammount < familiar.maxLimit){
                     familiar.addFamiliar();
                     updatebox.townUpdatesAdd("A human child has been born. It will be in your service.", document);
