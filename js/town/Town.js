@@ -12,6 +12,8 @@ export default class Town{
     constructor(townSize, xpRates){
         this.townSize = townSize;
         this.xpRates = xpRates;
+        this.mapWidth = 20;
+        this.mapHeight = 20;
         this.tiles = {
         }
         this.Buildings ={
@@ -182,10 +184,10 @@ export default class Town{
     createTiles(document){
         let table = document.getElementById("map");
         let current = 0;
-        for (let a = 0; a < 10; a++){
+        for (let a = 0; a < this.mapHeight; a++){
             let t = document.createElement('tr');
             table.appendChild(t);
-            for (let i = 0; i < 10; i++){
+            for (let i = 0; i < this.mapWidth; i++){
                 let g = document.createElement('td');
                 let id = "tile"+current;
                 this.tiles["tile"+current] = 0;
