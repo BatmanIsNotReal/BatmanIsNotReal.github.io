@@ -5,6 +5,7 @@ export default class EventHandler{
         this.events = {
             1: new Event("witches about", "a witch has been spotted roaming around the storage.", "SEARCH", "IGNORE",),
             2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
+            3: new Event("sirens", "a group of sirens have emerged from the waters. Three of your familiars have dissapeared.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
         }
     }
 
