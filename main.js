@@ -314,6 +314,7 @@ window.setInterval(function(){
 //every 10 seconds
 window.setInterval(function(){
 
+	eventHandler.getRandomEvent(document);
 	//Familiars
 	Familiars.update(Inv, House);
 
@@ -346,7 +347,7 @@ window.setInterval(function(){
 	//Vampire
 
 	//Events
-	eventHandler.getRandomEvent(document);
+	
 
 }, 60000)
 
