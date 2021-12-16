@@ -28,7 +28,7 @@ export default class EventHandler{
         let rand = this.getRandomInt(1, Object.keys(this.events).length);
         console.log(rand);
         
-        const container = document.getElementById("modal-event");
+       
         const header = document.createElement("h3");
         header.innerHTML = this.events[rand].header;
 
