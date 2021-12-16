@@ -4,11 +4,12 @@ export default class EventHandler{
     constructor(){
         this.events = {
             1: new Event("witches about", "a witch has been spotted roaming around the storage.", "SEARCH", "IGNORE",),
+            2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
         }
     }
 
     getRandomEvent(document){
-        var event = this.events[Object.keys(this.events).length].text;
+        var event = this.events[this.getRandomInt(1, Object.keys(this.events).length)].text;
         console.log("event happened");
         alert(event);
     }
