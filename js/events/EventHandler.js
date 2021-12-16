@@ -51,8 +51,13 @@ export default class EventHandler{
         container.appendChild(optionOne);
         container.appendChild(optionTwo);
 
-        optionOne.addEventListener("click", () => {this.events[rand].conOne(); modaleventbox.display = "none"});
-        optionTwo.addEventListener("click", () => {this.events[rand].conTwo(); modaleventbox.display = "none"});
+        optionOne.addEventListener("click", () => {
+            this.events[rand].conOne();
+            modaleventbox.style.display = "none"
+        });
+        optionTwo.addEventListener("click", () => {
+            this.events[rand].conTwo();
+            modaleventbox.style.display = "none"});
 
         console.log("event happened");
         
