@@ -6,13 +6,13 @@ export default class EventHandler{
             1: new Event("witches about", "a witch has been spotted roaming around the storage.", "SEARCH", "IGNORE", 
                 function conOne(){
                     if (this.getRandomInt(0, 100) < 50){
-                        alert("you found and killed the witch");
+                        this.conOneText = "you found and killed the witch";
                     }else{
-                        alert("you found nothing. The witch thief is gone");
+                        this.conOneText = "you found nothing. The witch thief is gone";
                     }
                 },
                 function conTwo(){
-                    alert("You ignore the witch, and loose some stuff");
+                    this.conTwoText = "You ignore the witch, and loose some stuff";
                 }),
             2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
             3: new Event("sirens", "a group of sirens have emerged from the waters. Three of your familiars have dissapeared.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
@@ -54,11 +54,12 @@ export default class EventHandler{
         optionOne.addEventListener("click", () => {
             this.events[rand].conOne();
             modaleventbox.style.display = "none"
+            this.messageBox(this.events[rand].conOneText);
         });
         optionTwo.addEventListener("click", () => {
             this.events[rand].conTwo();
             modaleventbox.style.display = "none"});
-
+            this.messageBox(this.events[rand].conTwoText);
         console.log("event happened");
         
     }
@@ -67,6 +68,26 @@ export default class EventHandler{
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min) + min);
+    }
+
+    messageBox(msg){
+        const container = document.getElementById("inner-content-event");
+        removeAllChildren(container);
+        
+        const modaleventbox = document.getElementById("modal-event");
+        modaleventbox.style.display = "block";
+        const text = document.createElement("p");
+        const button = document.createElement("button");
+        text.innerHTML = msg;
+        button.innerHTML = "close";
+
+        container.appendChild(text);
+        container.appendChild(button);
+
+        button.addEventListener("click", () => {
+            modaleventbox.style.display = "none";
+        });
+
     }
 }
 

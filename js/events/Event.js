@@ -6,6 +6,8 @@ export default class Event{
         this.optionTwo = optionTwo;
         this.conOne = conOne;
         this.conTwo = conTwo;
+        this.conOneText = "";
+        this.conTwoText = "";
     }
 
     getRandomInt(min, max){
