@@ -76,8 +76,9 @@ export default class EventHandler{
         });
         optionTwo.addEventListener("click", () => {
             this.events[rand].conTwo();
-            modaleventbox.style.display = "none"});
+            modaleventbox.style.display = "none";
             this.messageBox(this.events[rand].conTwoText);
+        });
         console.log("event happened");
         
     }
