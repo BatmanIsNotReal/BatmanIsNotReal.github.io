@@ -7,6 +7,7 @@ import Timers from './js/Timers.js';
 import Town from './js/town/Town.js';
 import UpdateBox from './js/town/updateBox/updatesBox.js';
 import Upgrade from './js/upgrades/Upgrade.js';
+import EventHandler from './js/events/EventHandler.js';
 
 
 //Init data
@@ -24,6 +25,8 @@ let myTown = new Town(townSize, xpRates);
 const Upgrades = new Upgrade();
 
 let updateBox = new UpdateBox(10, 0);
+
+let eventHandler = new EventHandler();
 
 
 
@@ -310,6 +313,9 @@ window.setInterval(function(){
 
 //every 10 seconds
 window.setInterval(function(){
+	//Testing
+	eventHandler.getRandomEvent(document);
+
 	//Familiars
 	Familiars.update(Inv, House);
 
