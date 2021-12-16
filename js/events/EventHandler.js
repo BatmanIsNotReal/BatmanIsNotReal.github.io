@@ -14,8 +14,26 @@ export default class EventHandler{
                 function conTwo(){
                     this.conTwoText = "You ignore the witch, and loose some stuff";
                 }),
-            2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
-            3: new Event("sirens", "a group of sirens have emerged from the waters. Three of your familiars have dissapeared.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",),
+            2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",function conOne(){
+                if (this.getRandomInt(0, 100) < 50){
+                    this.conOneText = "you hung the familiar by the neck.";
+                }else{
+                    this.conOneText = "the familiar has escaped. Hopefully he got a scare.";
+                }
+            },
+            function conTwo(){
+                this.conTwoText = "You let the familiar be. It's harmless anyway.";
+            }),
+            3: new Event("sirens", "a group of sirens have emerged from the waters. Three of your familiars have dissapeared.", "SEARCH FOR THE SIRENS", "LET IT PASS",function conOne(){
+                if (this.getRandomInt(0, 100) < 50){
+                    this.conOneText = "you found the sirens and retrieved your familiars.";
+                }else{
+                    this.conOneText = "you found nothing. The familiars are lost";
+                }
+            },
+            function conTwo(){
+                this.conTwoText = "You ignore it, and loose some familiars";
+            }),
         }
     }
 
