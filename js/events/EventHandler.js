@@ -8,9 +8,9 @@ export default class EventHandler{
     }
 
     getRandomEvent(document){
-        var event = this.events[this.getRandomInt(0, Object.keys(this.events).length)];
+        var event = this.events[this.getRandomInt(0, Object.keys(this.events).length)].text;
         console.log("event happened");
-        alert(event.text);
+        alert(event);
     }
 
     getRandomInt(min, max){
