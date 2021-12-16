@@ -10,11 +10,11 @@ export default class EventHandler{
     }
 
     getRandomEvent(document){
-        var len = Object.keys(this.events).length;
+        let len = Object.keys(this.events).length;
         console.log(len);
-        var rand = this.getRandomInt(1, Object.keys(this.events).length);
+        let rand = this.getRandomInt(1, Object.keys(this.events).length);
         console.log(rand);
-        var event = this.events[rand].text;
+        let event = this.events[rand].text;
         console.log("event happened");
         alert(event);
     }
