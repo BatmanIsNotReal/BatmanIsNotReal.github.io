@@ -11,7 +11,9 @@ export default class EventHandler{
     getRandomEvent(document){
         let len = Object.keys(this.events).length;
         console.log(len);
-        let event = this.events[this.getRandomInt(1, Object.keys(this.events).length)].text;
+        let rand = this.getRandomInt(1, Object.keys(this.events).length);
+        console.log(rand);
+        let event = this.events[rand].text;
         console.log("event happened");
         alert(event);
     }
