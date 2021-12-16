@@ -20,15 +20,20 @@ export default class EventHandler{
     }
 
     getRandomEvent(){
-        const container = document.getElementById("modal-event");
+        const container = document.getElementById("inner-content-event");
         removeAllChildren(container);
         
+        const modaleventbox = document.getElementById("modal-event");
+
+        modaleventbox.style.display = "block";
+
+
         let len = Object.keys(this.events).length;
         console.log(len);
         let rand = this.getRandomInt(1, Object.keys(this.events).length);
         console.log(rand);
         
-       
+        
         const header = document.createElement("h3");
         header.innerHTML = this.events[rand].header;
 
@@ -46,8 +51,8 @@ export default class EventHandler{
         container.appendChild(optionOne);
         container.appendChild(optionTwo);
 
-        optionOne.addEventListener("click", () => {this.events[rand].conOne();});
-        optionTwo.addEventListener("click", () => {this.events[rand].conTwo();});
+        optionOne.addEventListener("click", () => {this.events[rand].conOne(); modaleventbox.display = "none"});
+        optionTwo.addEventListener("click", () => {this.events[rand].conTwo(); modaleventbox.display = "none"});
 
         console.log("event happened");
         
