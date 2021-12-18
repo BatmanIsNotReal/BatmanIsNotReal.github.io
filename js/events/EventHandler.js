@@ -1,14 +1,15 @@
 import Event from "./Event.js";
 
 export default class EventHandler{
-    constructor(){
+    constructor(inventory){
         this.events = {
             1: new Event("witches about", "a witch has been spotted roaming around the storage.", "SEARCH", "IGNORE", 
-                function conOne(){
+                function conOne(inventory){
                     if (this.getRandomInt(0, 100) < 50){
                         this.conOneText = "you found and killed the witch";
                     }else{
                         this.conOneText = "you found nothing. The witch thief is gone";
+                        inventory.useRandomItems(this.getRandomInt(10, 20));
                     }
                 },
                 function conTwo(){

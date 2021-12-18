@@ -26,7 +26,7 @@ const Upgrades = new Upgrade();
 
 let updateBox = new UpdateBox(10, 0);
 
-let eventHandler = new EventHandler();
+let eventHandler = new EventHandler(Inv);
 
 
 
@@ -170,12 +170,12 @@ load();
 // 	setTimeout(function() {document.getElementById(elementID).disabled = false;}, time);
 // }
 
-// //random number getter
-// function getRandomInt(min, max){
-// 	min = Math.ceil(min);
-// 	max = Math.floor(max);
-// 	return Math.floor(Math.random() * (max - min) + min);
-// }
+//random number getter
+ function getRandomInt(min, max){
+ 	min = Math.ceil(min);
+ 	max = Math.floor(max);
+ 	return Math.floor(Math.random() * (max - min) + min);
+ }
 
 //update displayed values
 function displayUpdate(){
@@ -314,7 +314,6 @@ window.setInterval(function(){
 //every 10 seconds
 window.setInterval(function(){
 
-	eventHandler.getRandomEvent(document);
 	//Familiars
 	Familiars.update(Inv, House);
 
@@ -336,6 +335,10 @@ window.setInterval(function(){
 
 //every minute
 window.setInterval(function(){
+	//Event handler - every minute has a 10% chance of triggering an event
+	if (getRandomInt(0, 100) < 10){
+		eventHandler.getRandomEvent(document);
+	}
 	//Familiars
 	Familiars.updateMin(House, Inv);
 	//Inventory

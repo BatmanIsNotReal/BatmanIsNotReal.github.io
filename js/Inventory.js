@@ -121,7 +121,12 @@ export default class Inventory{
         this.items.gold = this.items.gold - ammount;
     }
 
-    
+    useRandomItems(ammount){
+        for (i = 0; i < ammount; i++){
+            let n = this.getRandomInt(0, Object.keys(this.items).length);
+            this.items[n]--;
+        }
+    }
 
     //Updates
     updateItems(){
@@ -139,5 +144,11 @@ export default class Inventory{
 
     updateTen(){
         this.updateItems();
+    }
+
+    getRandomInt(min, max){
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min) + min);
     }
 }
