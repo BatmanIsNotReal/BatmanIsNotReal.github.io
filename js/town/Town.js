@@ -189,6 +189,8 @@ export default class Town{
             table.appendChild(t);
             for (let i = 0; i < this.mapWidth; i++){
                 let g = document.createElement('td');
+                g.setAttribute("width", 32);
+                g.setAttribute("height", 32);
                 let id = "tile"+current;
                 this.tiles["tile"+current] = 0;
                 current++;
@@ -196,8 +198,8 @@ export default class Town{
                 console.log(id);
                 let image = document.createElement('img');
                 image.setAttribute("id", id);
-                image.setAttribute("width", 64);
-                image.setAttribute("height", 64);
+                image.setAttribute("width", 32);
+                image.setAttribute("height", 32);
                 image.setAttribute("class", "tile");
                 g.appendChild(image);
             }
