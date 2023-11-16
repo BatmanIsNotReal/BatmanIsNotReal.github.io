@@ -196,8 +196,8 @@ export default class Town{
                 console.log(id);
                 let image = document.createElement('img');
                 image.setAttribute("id", id);
-                image.setAttribute("width", 32);
-                image.setAttribute("height", 32);
+                image.setAttribute("width", 64);
+                image.setAttribute("height", 64);
                 image.setAttribute("class", "tile");
                 g.appendChild(image);
             }
