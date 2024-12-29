@@ -148,7 +148,7 @@ for (let i = 0; i < buyUpgradeButtons.length; i++){
 
 
 
-addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
+//addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
 
 drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
 
