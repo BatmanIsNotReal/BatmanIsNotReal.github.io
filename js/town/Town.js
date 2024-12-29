@@ -12,7 +12,7 @@ export default class Town{
     constructor(townSize, xpRates){
         this.townSize = townSize;
         this.xpRates = xpRates;
-        this.mapWidth = 30;
+        this.mapWidth = 40;
         this.mapHeight = 10;
         this.tiles = {
         }
