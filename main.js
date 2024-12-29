@@ -28,6 +28,13 @@ let updateBox = new UpdateBox(10, 0);
 
 let eventHandler = new EventHandler(Inv);
 
+let bgMusic = new Audio('https://ai-music-generator.ai/song/b9f82958-6c96-41f2-b373-2e67154e0661');
+bgMusic.loop = true;
+bgMusic.addEventListener("canplay", (event) =>{
+	bgMusic.play();
+})
+
+
 
 
 //vampires vars
@@ -273,7 +280,6 @@ function displayUpdate(){
 	document.getElementById("ironHoeAmmount").innerHTML = Upgrades.tools.ironHoe.ammount;
 	document.getElementById("ironAxeAmmount").innerHTML = Upgrades.tools.ironAxe.ammount;
 	document.getElementById("ironPickAmmount").innerHTML = Upgrades.tools.ironPick.ammount;
-
 
 	myTown.updateTileImages(document);
 
