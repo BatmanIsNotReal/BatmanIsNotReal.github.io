@@ -8,7 +8,7 @@ import Town from './js/town/Town.js';
 import UpdateBox from './js/town/updateBox/updatesBox.js';
 import Upgrade from './js/upgrades/Upgrade.js';
 import EventHandler from './js/events/EventHandler.js';
-
+import MusicHandler from './js/MusicHandler.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -28,8 +28,9 @@ let updateBox = new UpdateBox(10, 0);
 
 let eventHandler = new EventHandler(Inv);
 
-let bgMusic = new Audio('music\bgMusic.mp3');
-bgMusic.loop = true;
+let musicHandler = new MusicHandler();
+
+musicHandler.playBackgroundMusic();
 
 
 
@@ -295,10 +296,6 @@ window.setInterval(function(){
 	Timer.countDownTenSec();
 	
 	displayUpdate();
-
-	bgMusic.addEventListener("canplay", (event) =>{
-		bgMusic.play();
-	});
 	
 	//Familiars
 
