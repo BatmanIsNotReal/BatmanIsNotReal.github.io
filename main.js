@@ -397,6 +397,7 @@ function load(){
 	
 	if (typeof savegame.hutAmmount !== "undefined") myTown.Buildings.Hut.ammount = savegame.hutAmmount;
 	if (typeof savegame.mineAmmount !== "undefined") myTown.Buildings.Mine.ammount = savegame.mineAmmount;
+	if (typeof savegame.farmAmmount !== "undefined") myTown.Buildings.Farm.ammount = savegame.farmAmmount;
 
 	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
 	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
@@ -441,6 +442,7 @@ function save(){
 
 		hutAmmount: myTown.Buildings.Hut.ammount,
 		mineAmmount: myTown.Buildings.Mine.ammount,
+		farmAmmount: myTown.Buildings.Farm.ammount,
 
 		vampiresAmmount: Account.vampiresAmmount,
 		mosquitoAmmount: Mosquito.ammount,
