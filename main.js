@@ -99,6 +99,7 @@ const restartButton = document.getElementById("restart");
 for (let i = 0; i < buyVampireButtons.length; i++) {
 	buyVampireButtons[i].addEventListener("click", (event) => {
 		vampireTypes[event.target.id].addVampire(Inv, Account);
+		musicHandler.playBuildSound();
 	})
 }
 
