@@ -8,7 +8,7 @@ export default class EventHandler{
                     if (this.getRandomInt(0, 100) < 50){
                         this.conOneText = "you found and killed the witch";
                     }else{
-                        this.conOneText = "you found nothing. The witch thief is gone";
+                        this.conOneText = "you found nothing. The witch thief escaped with stolen goods";
                         inventory.useRandomItems(this.getRandomInt(10, 20));
                     }
                 },
