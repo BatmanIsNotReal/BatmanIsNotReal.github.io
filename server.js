@@ -12,7 +12,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-const PORT = Number(process.env.PORT) || 8000;
+const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || "0.0.0.0";
 const TRUST_PROXY = process.env.TRUST_PROXY === "1";
 
