@@ -1,16 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+body {
+	font-family: var(--font-body);
+	font-size: 1.35rem;
+	line-height: 1.25;
+}
+
+/* Form controls don't inherit fonts on their own */
+input,
+button,
+textarea {
+	font: inherit;
+}
+
+h1,
+h3 {
+	font-family: var(--font-display);
+	font-weight: normal;
+}
 
 h3 {
-	margin: 0.5em
+	margin: 0.5em;
+	font-size: 0.75rem;
+	line-height: 1.5;
 }
 
 p {
-	margin: 0.5em;
-}
-* {
-	font-family: 'Press Start 2P', cursive;
+	margin: 0.4em 0.5em;
 }
 
-#text{
+label {
+	color: var(--bone-dim);
+}
+
+.text {
 	padding: 10px;
 }

@@ -1,0 +1,30 @@
+/* Design tokens: change the look of the whole game from here. */
+:root {
+	/* Palette */
+	--ink: #120d0f;          /* page background, deepest shadows */
+	--crypt: #1d1417;        /* panel background */
+	--stone: #2c2024;        /* raised surfaces: buttons, shop cards */
+	--line: #6e4a3b;         /* panel borders */
+	--gold: #c9a45f;         /* titles, accents */
+	--blood-deep: #3a0810;   /* title bars, pressed states */
+	--blood: #8c1325;        /* hover states */
+	--blood-bright: #c41e35; /* strong accents */
+	--bone: #eadfce;         /* main text */
+	--bone-dim: #a99a8b;     /* secondary text */
+
+	/* Type: pixel font for headings and buttons, readable font for numbers and text */
+	--font-display: 'Press Start 2P', monospace;
+	--font-body: 'VT323', monospace;
+
+	/* Layout */
+	--gap: 1rem;
+
+	/* Stacking order */
+	--z-modal: 10;
+	--z-overlay: 20;
+	--z-tooltip: 50;
+
+	/* Defaults for the tooltip position; cursortracker.js overrides these */
+	--cursorX: 0px;
+	--cursorY: 0px;
+}

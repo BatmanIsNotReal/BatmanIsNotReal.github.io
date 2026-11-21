@@ -1,34 +1,39 @@
-.hover{
+.hover {
 	display: none;
 }
 
 .button:hover .hover,
-.hover-parent:hover .hover
-{
+.hover-parent:hover .hover {
 	position: fixed;
-	padding: 0.5em;
-	background-color: gray;
+	z-index: var(--z-tooltip);
 	display: flex;
-	justify-content: space-evenly;
 	flex-direction: column;
-	outline: lightgray 2px solid;
-	color: white;
-	font-size:15px;
+	justify-content: space-evenly;
+	align-items: center;
+	max-width: 18rem;
+	padding: 0.5rem 0.75rem;
+	font-family: var(--font-body);
+	font-size: 1.15rem;
+	line-height: 1.2;
+	text-align: center;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--gold);
+	box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
 	pointer-events: none;
 	left: calc(var(--cursorX) + 20px);
 	top: calc(var(--cursorY) + 20px);
-	border-radius: 10px;
-	align-items: center;
 }
 
-.blood{
-	cursor: help;
+.button .hover p,
+.hover p {
+	margin: 0.15rem 0;
+	font-family: var(--font-body);
+	font-size: inherit;
+	color: var(--bone);
 }
 
-.humanFood{
-	cursor: help;
-}
-
-.currentHouse{
+/* Only rows that actually have a tooltip get the help cursor */
+.hover-parent:has(> .hover) {
 	cursor: help;
 }

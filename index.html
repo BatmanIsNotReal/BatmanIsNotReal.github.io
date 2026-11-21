@@ -1,384 +1,420 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Vampire House</title>
+
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
+
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet"> 
-	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
+	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
 	<script src="https://chitchatter.im/sdk.js"></script>
 </head>
+
 <body>
 
+	<!-- Big "drink blood" button (fixed in the corner) -->
 	<div class="button drink-button" id="drinkBlood">
 		<i class="fas fa-tint"></i>
 	</div>
+
+	<!-- Sign-up overlay -->
 	<div id="overlay">
-		<div class="grid-container-signup">
-			<div class="item10">
-				<div id="text"> Welcome to vampire house</div>
-			</div>
-			<div class="item11">
-				<div id="text"> <img src="sPlayerDown.png" width="25" height= "100";></div>
-			</div>
-			<div class="item12">
-				<div id="text">
-					<form name="signUp" onsubmit="validateForm()" method="post">
+		<form name="signUp" onsubmit="validateForm()" method="post">
+			<div class="grid-container-signup">
+				<div class="item10">
+					<div class="text" id="text">Welcome to vampire house</div>
+				</div>
+				<div class="item11">
+					<div class="text"><img src="sPlayerDown.png" width="25" height="100" alt=""></div>
+				</div>
+				<div class="item12">
+					<div class="text">
 						<label for="vName">Vampire name:</label><br>
-						<input type="text" id="vName" name="vName" value=""><br>
+						<input type="text" id="vName" name="vName" value="">
+					</div>
+				</div>
+				<div class="item13">
+					<div class="text">
+						<label for="hName">House name:</label><br>
+						<input type="text" id="hName" name="hName" value="">
+					</div>
+				</div>
+				<div class="item14">
+					<div class="text">
+						<input type="submit" value="awaken">
+					</div>
 				</div>
 			</div>
-			<div class="item13">
-				<div id="text">
-						<label for="vName">House name:</label><br>
-						<input type="text" id="hName" name="hName" value=""><br>
-				</div>
-			</div>
-			<div class="item14">
-				<div id="text">
-					<input type="submit" value="awaken"><br>
-				</div>
-			</div>
-		</div>
+		</form>
 	</div>
+
+	<!-- Header -->
 	<div class="grid-item header">
-		<h1 style="font-family: 'VT323', monospace; font-size: 50px;"><img src="src/skullCandle.gif" height="100" width="50"></img> VAMPIRE HOUSE <img src="src/skullCandle.gif" height="100" width="50"></img></h1>
-		<p style="font-family: 'VT323', monospace; font-size: 25px;">Autosave in:  </p> <span id="tenSecTimer" style="font-size:25px;"></span>
-		<p class="button" id="restart">restart</p> 
-		<!-- PLAY MUSIC -->
+		<h1>
+			<img src="src/skullCandle.gif" width="50" height="100" alt="">
+			VAMPIRE HOUSE
+			<img src="src/skullCandle.gif" width="50" height="100" alt="">
+		</h1>
+		<p>Autosave in: <span id="tenSecTimer"></span></p>
+		<p class="button" id="restart">restart</p>
+
+		<!-- Music -->
 		<p>
-		<audio controls autoplay loop>
-        	<source src="music\medieval-ambient.mp3"
-        	type="audio/mp3">
-    	</audio>
-	</p>
+			<audio controls autoplay loop>
+				<source src="music/medieval-ambient.mp3" type="audio/mpeg">
+			</audio>
+		</p>
+
 		<p>version 0.0.5.2.9</p>
 	</div>
-	<!-- info on vampire and familiar count -->
+
 	<div class="flex-row">
+
+		<!-- Left column: storage, stats, upgrades -->
 		<div class="flex-column right">
+
 			<div class="grid-item">
-				<!-- storage info -->
 				<h3 class="grid-item-title">Storage</h3>
+
 				<div class="blood hover-parent">
-					<p>Blood: <span id="bloodCount"></p>
+					<p>Blood: <span id="bloodCount"></span></p>
 					<div class="hover">
 						<p>blood/10 sec: <span id="newBloodPerRound"></span></p>
 					</div>
 				</div>
+
 				<div class="humanFood hover-parent">
-					<p>Human food: <span id="humanFoodCount"></p>
+					<p>Human food: <span id="humanFoodCount"></span></p>
 					<div class="hover">
 						<p>Food/10 sec: <span id="newHumanFoodPerRound"></span></p>
 					</div>
 				</div>
+
 				<div class="wood hover-parent">
 					<p>Wood: <span id="woodCount"></span></p>
 					<div class="hover">
 						<p>Wood/10 sec: <span id="newWoodPerRound"></span></p>
 					</div>
 				</div>
+
 				<div class="iron hover-parent">
-					<p>Iron: <span id="ironCount"></p>
+					<p>Iron: <span id="ironCount"></span></p>
 				</div>
+
 				<div class="bronze hover-parent">
-					<p>Bronze: <span id="bronzeCount"></p>
+					<p>Bronze: <span id="bronzeCount"></span></p>
 				</div>
+
 				<div class="iron hover-parent">
-					<p>Gold: <span id="goldCount"></p>
+					<p>Gold: <span id="goldCount"></span></p>
 				</div>
 			</div>
-			<!-- stats -->
+
 			<div class="grid-item">
 				<h3 class="grid-item-title">Stats</h3>
-				<p>Influence: <span id="xpReturnDisplayStat"> </p>
-				<p>blood/10 sec: <span id="newBloodPerRoundStat"> </p>
-				<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"> </p>
-				<p>wood/10 sec: <span id="newWoodPerRoundStat"> </p>
+				<p>Influence: <span id="xpReturnDisplayStat"></span></p>
+				<p>blood/10 sec: <span id="newBloodPerRoundStat"></span></p>
+				<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"></span></p>
+				<p>wood/10 sec: <span id="newWoodPerRoundStat"></span></p>
 			</div>
+
 			<div class="grid-item">
 				<h3 class="grid-item-title">Upgrades</h3>
+
 				<div class="button buy-upgrade-button" id="ironHoe">Buy iron hoe
 					<p>Iron hoes: <span id="ironHoeAmmount"></span></p>
 					<div class="hover">
 						<p>+human food/10 sec: +10%</p>
-						<p>price iron: <span id="ironHoeCost"></p>
+						<p>price iron: <span id="ironHoeCost"></span></p>
 					</div>
 				</div>
+
 				<div class="button buy-upgrade-button" id="ironAxe">Buy iron axe
 					<p>Iron axes: <span id="ironAxeAmmount"></span></p>
 					<div class="hover">
 						<p>+wood/10 sec: +10%</p>
-						<p>price iron: <span id="ironAxeCost"></p>
+						<p>price iron: <span id="ironAxeCost"></span></p>
 					</div>
 				</div>
+
 				<div class="button buy-upgrade-button" id="ironPick">Buy iron pick
 					<p>Iron picks: <span id="ironPickAmmount"></span></p>
 					<div class="hover">
 						<p>+mining/10 sec: +10%</p>
-						<p>price iron: <span id="ironPickCost"></p>
+						<p>price iron: <span id="ironPickCost"></span></p>
 					</div>
 				</div>
 			</div>
+
 		</div>
+
+		<!-- Middle column: map, updates, shops, chat -->
 		<div class="flex-column main">
+
 			<div class="grid-item map">
 				<div class="currentHouse">
 					<h3 class="grid-item-title">World map - Familiars: <span id="familiarAmmount"></span></h3>
 				</div>
-				<!-- <div class="hover">vampires = influence</p> </div> -->
-				<div class="flex-column house-art-container" style="display: flex; align-items: center; justify-content: center;">
-					<table id="map" style="background-color: rgb(128, 64, 18); margin-top:0; width: 1200px;">
-						
-					</table>
-					<!-- <image src="src/smallHut.png" width="250" height="250" id="house"></image> -->
-					<div class="button" id="addWoodFire" style="margin-left: 15px; margin-bottom:auto;">Add wood</div>
-					<div style="margin-left: 5px; margin-bottom:auto;">
-						<p>Room for familiars: <span id="familiarLimit"></span> </p>
-					</div>
-					
-					<!-- <image src="src/bonFire.webp" width="50" height="50"></image> -->
+
+				<div class="flex-column house-art-container">
+					<table id="map"></table>
+					<div class="button" id="addWoodFire">Add wood</div>
+					<p>Room for familiars: <span id="familiarLimit"></span></p>
 				</div>
+
 				<div class="progress-bar">
-					<div class="progress-bar-inner" id="#fireProgressBar"> <span id="fireLeft"></span></div>
-				</div> 
+					<div class="progress-bar-inner" id="#fireProgressBar"><span id="fireLeft"></span></div>
+				</div>
 			</div>
+
 			<fieldset class="updateBox" id="townUpdates">
-				<legend style="padding-top: 30px;">Updates</legend>
+				<legend>Updates</legend>
 			</fieldset>
+
 			<div class="grid-item">
-				<!-- drink blood, adopt familiar -->
-					<h3 class="grid-item-title">Vampire animals</h3>
-					<div class="item2">
-						<!-- mosquito -->
-						<div class="mosquito">
-							<p> mosquito: <span id="mosquitoCount"> </p>
-							<div class="button buy-vamp-button" id="mosquito">Buy mosquito
-								<div class="hover">
-									<p>+blood/10 sec: 0.1</p>
-									<p>price blood: <span id="mosquitoCost"></p>
-								</div>
-							</div>
-						</div>
-						<!-- vampire rat -->
-						<div class="vampireRat">
-							<p> vampire rats: <span id="vampireRatCount"> </p>
-							<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
-								<div class="hover">
-									<p>+blood/10 sec: 0.3</p>
-									<p>price blood: <span id="vampireRatCost"></p>
-								</div>
-							</div>
-						</div>
-						<!-- vampire bat -->
-						<div class="vampireBat">
-							<p>vampire bats: <span id="vampireBatCount">
-							<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
-								<div class="hover">
-									<p>+blood/10 sec: 0.6</p>
-									<p>price blood: <span id="vampireBatCost"></p>
-								</div>
-							</div>
-						</div>
-						<!-- blood hound -->
-						<div class="bloodHound">
-							<p> bloodhounds: <span id="bloodHoundCount"> </p>
-							<div class="button buy-vamp-button" id="bloodHound">bloodhound
-								<div class="hover">
-									<p>+blood/10 sec: 2</p>
-									<p>price blood: <span id="bloodHoundCost"></p>
-								</div>
+				<h3 class="grid-item-title">Vampire animals</h3>
+				<div class="item2">
+
+					<div class="mosquito">
+						<p>mosquito: <span id="mosquitoCount"></span></p>
+						<div class="button buy-vamp-button" id="mosquito">Buy mosquito
+							<div class="hover">
+								<p>+blood/10 sec: 0.1</p>
+								<p>price blood: <span id="mosquitoCost"></span></p>
 							</div>
 						</div>
 					</div>
+
+					<div class="vampireRat">
+						<p>vampire rats: <span id="vampireRatCount"></span></p>
+						<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
+							<div class="hover">
+								<p>+blood/10 sec: 0.3</p>
+								<p>price blood: <span id="vampireRatCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="vampireBat">
+						<p>vampire bats: <span id="vampireBatCount"></span></p>
+						<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
+							<div class="hover">
+								<p>+blood/10 sec: 0.6</p>
+								<p>price blood: <span id="vampireBatCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="bloodHound">
+						<p>bloodhounds: <span id="bloodHoundCount"></span></p>
+						<div class="button buy-vamp-button" id="bloodHound">Buy bloodhound
+							<div class="hover">
+								<p>+blood/10 sec: 2</p>
+								<p>price blood: <span id="bloodHoundCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+				</div>
 			</div>
+
 			<div class="grid-item">
-				<!-- drink blood, get monsters -->
-					<h3 class="grid-item-title">Vampires</h3>
-					<div class="item2">
-						<!-- vampire slave -->
-						<div class="vampireSlave">
-							<p>vampire slaves: <span id="vampireSlaveCount"></p>
-							<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
-								<div class="hover">
-									<p>+blood/10 sec: 10</p>
-									<p>price blood: <span id="vampireSlaveCost"></p>
-								</div>
-							</div>
-						</div>
-						<!-- nightwalker -->
-						<div class="nightWalker">
-							<p>nightwalkers: <span id="nightWalkerCount"></p>
-							<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
-								<div class="hover">
-									<p>+blood/10 sec: 30</p>
-									<p>price blood: <span id="nightWalkerCost"></p>
-								</div>
-							</div>
-						</div>
-						<!-- badabook -->
-						<div class="badabook">
-							<p> badabooks: <span id="badabookCount"> </p>
-							<div class="button buy-vamp-button" id="badabook" >Buy badabook
-								<div class="hover">
-									<p>+blood/10 sec: 100</p>
-									<p>price blood: <span id="badabookCost"></p>
-								</div>
-							</div>
-						</div>
-						<div class="draugr">
-							<p> draugr: <span id="draugrCount"> </p>
-							<div class="button buy-vamp-button" id="draugr" >Buy draugr
-								<div class="hover">
-									<p>+blood/10 sec: 350</p>
-									<p>price blood: <span id="draugrCost"></p>
-								</div>
-							</div>
-						</div>
-						<div class="strigoi">
-							<p> strigoi: <span id="strigoiCount"> </p>
-							<div class="button buy-vamp-button" id="strigoi" >Buy strigoi
-								<div class="hover">
-									<p>+blood/10 sec: 700</p>
-									<p>price blood: <span id="strigoiCost"></p>
-								</div>
-							</div>
-						</div>
-						<div class="overloard">
-							<p> overloards: <span id="overloardCount"> </p>
-							<div class="button buy-vamp-button" id="overloard" >Buy overloard
-								<div class="hover">
-									<p>+blood/10 sec: 3000</p>
-									<p>price blood: <span id="overloardCost"></p>
-								</div>
+				<h3 class="grid-item-title">Vampires</h3>
+				<div class="item2">
+
+					<div class="vampireSlave">
+						<p>vampire slaves: <span id="vampireSlaveCount"></span></p>
+						<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
+							<div class="hover">
+								<p>+blood/10 sec: 10</p>
+								<p>price blood: <span id="vampireSlaveCost"></span></p>
 							</div>
 						</div>
 					</div>
+
+					<div class="nightWalker">
+						<p>nightwalkers: <span id="nightWalkerCount"></span></p>
+						<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
+							<div class="hover">
+								<p>+blood/10 sec: 30</p>
+								<p>price blood: <span id="nightWalkerCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="badabook">
+						<p>badabooks: <span id="badabookCount"></span></p>
+						<div class="button buy-vamp-button" id="badabook">Buy badabook
+							<div class="hover">
+								<p>+blood/10 sec: 100</p>
+								<p>price blood: <span id="badabookCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="draugr">
+						<p>draugr: <span id="draugrCount"></span></p>
+						<div class="button buy-vamp-button" id="draugr">Buy draugr
+							<div class="hover">
+								<p>+blood/10 sec: 350</p>
+								<p>price blood: <span id="draugrCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="strigoi">
+						<p>strigoi: <span id="strigoiCount"></span></p>
+						<div class="button buy-vamp-button" id="strigoi">Buy strigoi
+							<div class="hover">
+								<p>+blood/10 sec: 700</p>
+								<p>price blood: <span id="strigoiCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+					<div class="overloard">
+						<p>overloards: <span id="overloardCount"></span></p>
+						<div class="button buy-vamp-button" id="overloard">Buy overloard
+							<div class="hover">
+								<p>+blood/10 sec: 3000</p>
+								<p>price blood: <span id="overloardCost"></span></p>
+							</div>
+						</div>
+					</div>
+
+				</div>
 			</div>
 
 			<div class="grid-item">
 				<h3 class="grid-item-title">chat</h3>
-				<chat-room width="100%" height="400" room="359d0c92-f28c-46cf-a498-e01239e4efe0" />
+				<chat-room width="100%" height="400" room="359d0c92-f28c-46cf-a498-e01239e4efe0"></chat-room>
 			</div>
 
+		</div>
 
+		<!-- Right column: command familiars -->
+		<div class="flex-column right">
+			<div class="grid-item">
+				<h3 class="grid-item-title">Command familiars</h3>
+				<p>familiars not working: <span id="familiarNotWorking"></span></p>
 
+				<div class="adoptFamiliar">
+					<div class="button" id="adoptFamiliar">Adopt a familiar
+						<div class="hover">
+							<p>consumes: 1 food/10 sec</p>
+							<p>price influence: <span id="familiarCost"></span></p>
+						</div>
+					</div>
+				</div>
 
+				<!-- Gathering human food -->
+				<div class="humanFoodGather">
+					<p>human food gatherers: <span id="humanFoodGather"></span></p>
+					<div class="flex-row">
+						<div class="button add-gather-button" id="humanFoodGather">+
+							<div class="hover">+Food/10 sec: 2</div>
+						</div>
+						<div class="button remove-gather-button" id="humanFoodGather">-
+							<div class="hover">-Food/10 sec: 2</div>
+						</div>
+					</div>
+				</div>
 
-			</div>
-			<div class="flex-row">
-				<div class="grid-item">
-				<div class="flex-column right">
-				<!-- info on vampire and familiar count -->
-					<h3 class="grid-item-title">Command familiars</h3>
-					<p>familiars not working: <span id="familiarNotWorking"></p>
-					<div class="adoptFamiliar">
-						<div class="button" id="adoptFamiliar">Adopt a familiar
-							<div class="hover"><p>consumes: 1 food/10 sec</p> <p>price influence: <span id="familiarCost"></p></div>
+				<!-- Gathering victims for blood -->
+				<div class="bloodVictimGather">
+					<p>blood victim gatherers: <span id="bloodVictimGather"></span></p>
+					<div class="flex-row">
+						<div class="button add-gather-button" id="bloodGather">+
+							<div class="hover">+Blood/10 sec: 2</div>
+						</div>
+						<div class="button remove-gather-button" id="bloodGather">-
+							<div class="hover">-Blood/10 sec: 2</div>
 						</div>
 					</div>
-					<!-- gathering human food -->
-					<div class="humanFoodGather">
-						<p> human food gatherers: <span id="humanFoodGather"></p>
-						<div class="flex-row">
-							<div class="flex-row">
-								<div class="button add-gather-button" id="humanFoodGather">+
-									<div class="hover">+Food/10 sec: 2</div>
-								</div>
-								<div class="button remove-gather-button" id="humanFoodGather">-
-									<div class="hover">-Food/10 sec: 2</div>
-								</div>
-							</div>
+				</div>
+
+				<!-- Gathering wood -->
+				<div class="woodGather">
+					<p>wood gatherers: <span id="woodGather"></span></p>
+					<div class="flex-row">
+						<div class="button add-gather-button" id="woodGather">+
+							<div class="hover">+Wood/10 sec: 2</div>
+						</div>
+						<div class="button remove-gather-button" id="woodGather">-
+							<div class="hover">-Wood/10 sec: 2</div>
 						</div>
 					</div>
-					<!-- gathering victims for blood -->
-					<div class="bloodVictimGather">
-						<p>blood victim gatherers: <span id="bloodVictimGather"></p>
-						<div class="flex-row">
-							<div class="flex-row">
-								<div class="button add-gather-button" id="bloodGather">+
-									<div class="hover">+Blood/10 sec: 2</div>
-								</div>
-								<div class="button remove-gather-button" id="bloodGather">-
-									<div class="hover">-Blood/10 sec: 2</div>
-								</div>
-							</div>
+				</div>
+
+				<!-- Fire guards -->
+				<div class="fireGuard">
+					<p>fire guards: <span id="fireGuard"></span></p>
+					<div class="flex-row">
+						<div class="button add-gather-button" id="fireGuard">+
+							<div class="hover">+Wood to fire/min: 1</div>
+						</div>
+						<div class="button remove-gather-button" id="fireGuard">-
+							<div class="hover">-Wood to fire/min: 1</div>
 						</div>
 					</div>
-					<!-- gathering wood -->
-					<div class="woodGather">
-						<p>wood gatherers: <span id="woodGather"></p>
-						<div class="flex-row">
-							<div class="flex-row">
-								<div class="button add-gather-button" id="woodGather">+
-									<div class="hover">+Wood/10 sec: 2</div>
-								</div>
-								<div class="button remove-gather-button" id="woodGather">-
-									<div class="hover">-Wood/10 sec: 2</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<!-- Fire guard -->
-					<div class="fireGuard">
-						<p>fire guards: <span id="fireGuard"></p>
-						<div class="flex-row">
-							<div class="flex-row">
-								<div class="button add-gather-button" id="fireGuard">+
-									<div class="hover">+Wood to fire/min: 1</div>
-								</div>
-								<div class="button remove-gather-button" id="fireGuard">-
-									<div class="hover">-Wood to fire/min: 1</div>
-								</div>
-							</div>
-						</div>
-					</div>
+				</div>
 			</div>
 		</div>
 
 	</div>
+
+	<!-- Build menu -->
 	<div id="myModal" class="modal">
 		<div class="modal-content">
 			<div id="close" class="close">&times;</div>
 			<h3>Build</h3>
+
 			<div class="button buy-building-button" id="buyHut">Buy hut
 				<div class="hover">
 					<p>Has place for 4 familiars</p>
-					<p>price wood: <span id="buildingHutCost"></p>
+					<p>price wood: <span id="buildingHutCost"></span></p>
 				</div>
 			</div>
+
 			<div class="button buy-building-button" id="buyFarm">Buy farm
 				<div class="hover">
 					<p>Has place for 5 familiars</p>
-					<p>price wood: <span id="buildingFarmCost"></p>
-					<p>familiars required: <span id="buildingFarmFamiliarsRequired"></p>
+					<p>price wood: <span id="buildingFarmCost"></span></p>
+					<p>familiars required: <span id="buildingFarmFamiliarsRequired"></span></p>
 				</div>
 			</div>
+
 			<div class="button buy-building-button" id="buyMine">Buy mine
 				<div class="hover">
 					<p>Has place for 10 familiars</p>
-					<p>price wood: <span id="buildingMineCost"></p>
-					<p>familiars required: <span id="buildingMineFamiliarsRequired"></p>
+					<p>price wood: <span id="buildingMineCost"></span></p>
+					<p>familiars required: <span id="buildingMineFamiliarsRequired"></span></p>
 				</div>
 			</div>
-			<div class="button buy-building-button" id="buyLumberMill" >Buy lumber mill
+
+			<div class="button buy-building-button" id="buyLumberMill">Buy lumber mill
 				<div class="hover">
 					<p>Has place for 5 familiars</p>
-					<p>price wood: <span id="buildingLumberMillCost"></p>
-					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></p>
+					<p>price wood: <span id="buildingLumberMillCost"></span></p>
+					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></span></p>
 				</div>
 			</div>
 		</div>
 	</div>
 
+	<!-- Event popup (filled in by main.js) -->
 	<div id="modal-event" class="modal">
-		<div id="inner-content-event" class="modal-content">
-
-		</div>
+		<div id="inner-content-event" class="modal-content"></div>
 	</div>
 
 	<script src="main.js" type="module"></script>
 	<script src="cursortracker.js"></script>
 </body>
+
 </html>

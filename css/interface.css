@@ -1,66 +1,113 @@
-:root::before {
-	--cursorX: 0px;
-	--cursorY: 0px;
-	width: 100%;
-	height: 100%;
-	pointer-events: none;
+/* Pixel art should stay crisp when scaled */
+img {
+	image-rendering: pixelated;
 }
 
+/* ---------- Header ---------- */
 .header {
 	width: 100%;
+	align-items: center;
+	margin-bottom: var(--gap);
 }
 
-.item1 {grid-area: header;}
-.item2 {grid-area: storage;}
-.item3 {grid-area: vampires;}
-.item4 {grid-area: familiar;}
-.item5 {grid-area: stats;}
-.item6 {grid-area: house;}
-.item7 {grid-area: vampires2;}
-.item8 {grid-area: upgrade;}
-.item9 {grid-area: action;}
-
-/* .grid-container{
-	width: 100%;
+.header h1 {
 	display: flex;
-	flex-direction: row;
-	background-color: #0d0c0c;
-} */
-
-#overlay{
-	position:fixed;
-	display: none;
-	width: 25%;
-	height: 50%;
-	top: 25%;
-	left: 37%;
-	background-color: black;
-	z-index: 2;
-	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	margin: 0.5rem 0 0;
+	line-height: 1;
+	letter-spacing: 0.06em;
+	font-family: var(--font-body);
+	font-size: 3.125rem;
+	color: var(--bone);
+	text-shadow: 3px 3px 0 var(--blood);
 }
 
-.grid-container-signup{
+.header > h1 + p {
+	font-family: var(--font-body);
+	font-size: 1.5625rem;
+}
+
+.header > p:last-child {
+	color: var(--bone-dim);
+}
+
+#tenSecTimer {
+	color: var(--gold);
+}
+
+audio {
+	width: min(100%, 22rem);
+}
+
+/* ---------- Sign-up overlay ---------- */
+#overlay {
+	position: fixed;
+	display: none; /* shown by main.js */
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: min(92vw, 30rem);
+	background-color: var(--ink);
+	border: 3px solid var(--line);
+	box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.7); /* dims the page behind it */
+	z-index: var(--z-overlay);
+}
+
+.grid-container-signup {
 	display: grid;
+	grid-template-columns: auto 1fr;
 	grid-template-areas:
-		'header header header header header header'
-		'image image vampireName vampireName vampireName vampireName'
-		'image image houseName houseName houseName houseName'
-		'confirmButton confirmButton confirmButton confirmButton confirmButton confirmButton';
-	grid-gap: 5px;
-	background-color: #0d0c0c;
-	padding: 10px;
+		'title title'
+		'image name'
+		'image house'
+		'confirm confirm';
+	gap: 0.5rem;
+	padding: 0.75rem;
 }
 
-.grid-container-signup > div{
-	background-color: #343131;
-	text-align:center;
-	padding: 5px 0;
-	color: white;
-	font-size: 20px;
+.grid-container-signup > div {
+	padding: 0.5rem;
+	text-align: center;
+	color: var(--bone);
+	background-color: var(--crypt);
 }
 
-.tile > div{
-	border:1px solid rgb(73, 48, 2);
+.item10 { grid-area: title; }
+.item11 { grid-area: image; }
+.item12 { grid-area: name; }
+.item13 { grid-area: house; }
+.item14 { grid-area: confirm; }
+
+.grid-container-signup input[type="text"] {
+	width: 100%;
+	margin-top: 0.25rem;
+	padding: 0.4rem 0.6rem;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--line);
 }
 
+/* ---------- Map tiles ---------- */
+.tile > div {
+	border: 1px solid rgb(73, 48, 2);
+}
 
+.tile:hover {
+	outline: 3px solid var(--bone);
+	outline-offset: -3px;
+	z-index: 4;
+}
+
+.house-art-container {
+	align-items: center;
+	justify-content: center;
+}
+
+#map {
+	width: 1200px;
+	max-width: 100%;
+	margin-top: 0;
+	background-color: rgb(128, 64, 18);
+}
