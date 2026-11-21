@@ -1,0 +1,84 @@
+/* Chat panel (js/chat/Chat.js) */
+.chat-log {
+	height: 320px;
+	padding: 0.5rem 0.75rem;
+	overflow-y: auto;
+	text-align: left;
+	background-color: var(--ink);
+	border-top: 3px solid var(--ink);
+	border-bottom: 2px solid var(--stone);
+	/* The rest of the game blocks text selection; chat text should be copyable */
+	-webkit-user-select: text;
+	user-select: text;
+}
+
+.chat-message {
+	margin: 0.3rem 0;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+}
+
+.chat-time {
+	margin-right: 0.5rem;
+	font-size: 1rem;
+	color: var(--bone-dim);
+}
+
+.chat-name {
+	margin-right: 0.5rem;
+	color: var(--gold);
+}
+
+.chat-message.own .chat-name {
+	color: #e8808c;
+}
+
+.chat-empty {
+	margin: 0.5rem 0;
+	color: var(--bone-dim);
+}
+
+.chat-form {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 0.75rem 0;
+}
+
+.chat-form input {
+	min-width: 0;
+	padding: 0.35rem 0.6rem;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--line);
+}
+
+.chat-form #chatName {
+	flex: 0 0 9rem;
+}
+
+.chat-form #chatInput {
+	flex: 1 1 10rem;
+}
+
+.chat-form .button {
+	margin: 0;
+}
+
+.chat-form .button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.chat-status {
+	min-height: 1.25em;
+	margin: 0.4rem 0.75rem 0;
+	font-size: 1.1rem;
+	text-align: left;
+	color: var(--bone-dim);
+}
+
+.chat-status.error {
+	color: #e8808c;
+}

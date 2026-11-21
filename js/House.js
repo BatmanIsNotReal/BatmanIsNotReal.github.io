@@ -62,11 +62,11 @@ export default class HousePar {
 		if (this.fire.percent == 10){
 			alert("The fire is running out!");
 		}
-		document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
+		document.getElementById("fireProgressBar").style.width = this.fire.percent + "%";
     }
 
     updateFireImage(document){
-        document.getElementById("#fireProgressBar").style.width = this.fire.percent + "%";
+        document.getElementById("fireProgressBar").style.width = this.fire.percent + "%";
     }
 
     //Maintenance - house

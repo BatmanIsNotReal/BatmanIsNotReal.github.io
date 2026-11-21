@@ -13,7 +13,6 @@
 	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
 	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
-	<script src="https://chitchatter.im/sdk.js"></script>
 </head>
 
 <body>
@@ -111,7 +110,7 @@
 					<p>Bronze: <span id="bronzeCount"></span></p>
 				</div>
 
-				<div class="iron hover-parent">
+				<div class="gold hover-parent">
 					<p>Gold: <span id="goldCount"></span></p>
 				</div>
 			</div>
@@ -169,7 +168,7 @@
 				</div>
 
 				<div class="progress-bar">
-					<div class="progress-bar-inner" id="#fireProgressBar"><span id="fireLeft"></span></div>
+					<div class="progress-bar-inner" id="fireProgressBar"><span id="fireLeft"></span></div>
 				</div>
 			</div>
 
@@ -291,9 +290,15 @@
 				</div>
 			</div>
 
-			<div class="grid-item">
-				<h3 class="grid-item-title">chat</h3>
-				<chat-room width="100%" height="400" room="359d0c92-f28c-46cf-a498-e01239e4efe0"></chat-room>
+			<div class="grid-item chat">
+				<h3 class="grid-item-title">Chat</h3>
+				<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
+				<form class="chat-form" id="chatForm" autocomplete="off">
+					<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
+					<input type="text" id="chatInput" maxlength="300" aria-label="Message" placeholder="Say something…">
+					<button type="submit" class="button" id="chatSend">Send</button>
+				</form>
+				<p class="chat-status" id="chatStatus" role="status"></p>
 			</div>
 
 		</div>
@@ -317,10 +322,10 @@
 				<div class="humanFoodGather">
 					<p>human food gatherers: <span id="humanFoodGather"></span></p>
 					<div class="flex-row">
-						<div class="button add-gather-button" id="humanFoodGather">+
+						<div class="button add-gather-button" data-gather="humanFoodGather">+
 							<div class="hover">+Food/10 sec: 2</div>
 						</div>
-						<div class="button remove-gather-button" id="humanFoodGather">-
+						<div class="button remove-gather-button" data-gather="humanFoodGather">-
 							<div class="hover">-Food/10 sec: 2</div>
 						</div>
 					</div>
@@ -330,10 +335,10 @@
 				<div class="bloodVictimGather">
 					<p>blood victim gatherers: <span id="bloodVictimGather"></span></p>
 					<div class="flex-row">
-						<div class="button add-gather-button" id="bloodGather">+
+						<div class="button add-gather-button" data-gather="bloodGather">+
 							<div class="hover">+Blood/10 sec: 2</div>
 						</div>
-						<div class="button remove-gather-button" id="bloodGather">-
+						<div class="button remove-gather-button" data-gather="bloodGather">-
 							<div class="hover">-Blood/10 sec: 2</div>
 						</div>
 					</div>
@@ -343,10 +348,10 @@
 				<div class="woodGather">
 					<p>wood gatherers: <span id="woodGather"></span></p>
 					<div class="flex-row">
-						<div class="button add-gather-button" id="woodGather">+
+						<div class="button add-gather-button" data-gather="woodGather">+
 							<div class="hover">+Wood/10 sec: 2</div>
 						</div>
-						<div class="button remove-gather-button" id="woodGather">-
+						<div class="button remove-gather-button" data-gather="woodGather">-
 							<div class="hover">-Wood/10 sec: 2</div>
 						</div>
 					</div>
@@ -356,10 +361,10 @@
 				<div class="fireGuard">
 					<p>fire guards: <span id="fireGuard"></span></p>
 					<div class="flex-row">
-						<div class="button add-gather-button" id="fireGuard">+
+						<div class="button add-gather-button" data-gather="fireGuard">+
 							<div class="hover">+Wood to fire/min: 1</div>
 						</div>
-						<div class="button remove-gather-button" id="fireGuard">-
+						<div class="button remove-gather-button" data-gather="fireGuard">-
 							<div class="hover">-Wood to fire/min: 1</div>
 						</div>
 					</div>

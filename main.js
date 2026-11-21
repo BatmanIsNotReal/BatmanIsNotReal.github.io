@@ -9,6 +9,8 @@ import UpdateBox from './js/town/updateBox/updatesBox.js';
 import Upgrade from './js/upgrades/Upgrade.js';
 import EventHandler from './js/events/EventHandler.js';
 import MusicHandler from './js/MusicHandler.js';
+import Chat from './js/chat/Chat.js';
+import { CHAT_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -98,7 +100,7 @@ const restartButton = document.getElementById("restart");
 //buy vampire check
 for (let i = 0; i < buyVampireButtons.length; i++) {
 	buyVampireButtons[i].addEventListener("click", (event) => {
-		vampireTypes[event.target.id].addVampire(Inv, Account);
+		vampireTypes[event.currentTarget.id].addVampire(Inv, Account);
 		musicHandler.playBuyVamp();
 	})
 }
@@ -111,43 +113,35 @@ span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
 //buy buildings check
-for (let i = 0; i < buyBuildingButtons.length; i++){
-	buyBuildingButtons[i].addEventListener("click", (event) => {
-		if(event.target.id == "buyHut"){
-			myTown.buyHut(Inv, Familiars, document, currentTile, event.target.id);
-			modal.style.display = "none";
-		}
-		if(event.target.id == "buyMine"){
-			myTown.buyMine(Inv, Familiars, document, currentTile, event.target.id);
-			modal.style.display = "none";
-		}
-		if(event.target.id == "buyFarm"){
-			myTown.buyFarm(Inv, Familiars, document, currentTile, event.target.id);
-			modal.style.display = "none";
-		}
-		if(event.target.id == "buyLumberMill"){
-			myTown.buyLumberMill(Inv, Familiars, document, currentTile, event.target.id);
-			modal.style.display = "none";
-		}
+const buildingActions = {
+	buyHut: (id) => myTown.buyHut(Inv, Familiars, document, currentTile, id),
+	buyMine: (id) => myTown.buyMine(Inv, Familiars, document, currentTile, id),
+	buyFarm: (id) => myTown.buyFarm(Inv, Familiars, document, currentTile, id),
+	buyLumberMill: (id) => myTown.buyLumberMill(Inv, Familiars, document, currentTile, id),
+};
+
+for (const button of buyBuildingButtons){
+	button.addEventListener("click", (event) => {
+		const id = event.currentTarget.id;
+		if (!buildingActions[id]) return;
+		buildingActions[id](id);
+		modal.style.display = "none";
 	})
 }
 
 //Buy upgrades check
-for (let i = 0; i < buyUpgradeButtons.length; i++){
-	buyUpgradeButtons[i].addEventListener("click", (event) =>{
-		if (event.target.id == "ironHoe"){
-			Upgrades.buyIronHoe(Inv, updateBox, myTown.Buildings.Farm);
-		}
-		if (event.target.id == "ironAxe"){
-			Upgrades.buyIronAxe(Inv, updateBox, myTown.Buildings.LumberMill);
-		}
-		if (event.target.id == "ironPick"){
-			Upgrades.buyIronPick(Inv, updateBox, myTown.Buildings.Mine);
-		}
+const upgradeActions = {
+	ironHoe: () => Upgrades.buyIronHoe(Inv, updateBox, myTown.Buildings.Farm),
+	ironAxe: () => Upgrades.buyIronAxe(Inv, updateBox, myTown.Buildings.LumberMill),
+	ironPick: () => Upgrades.buyIronPick(Inv, updateBox, myTown.Buildings.Mine),
+};
+
+for (const button of buyUpgradeButtons){
+	button.addEventListener("click", (event) => {
+		const action = upgradeActions[event.currentTarget.id];
+		if (action) action();
 	})
 }
-
-
 
 addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
 
@@ -155,27 +149,23 @@ drinkBloodButton.addEventListener("click", () => { document.getElementById("bloo
 
 adoptFamiliarButton.addEventListener("click", () => { Familiars.adopt(House, Inv, updateBox, document); })
 
-for (let i = 0; i < addGatherButtons.length; i++){
-	addGatherButtons[i].addEventListener("click", () => { Familiars.addGather(event.target.id); } )
-	removeGatherButtons[i].addEventListener("click", () => { Familiars.removeGather(event.target.id); })
+for (const button of addGatherButtons){
+	button.addEventListener("click", (event) => Familiars.addGather(event.currentTarget.dataset.gather));
+}
+for (const button of removeGatherButtons){
+	button.addEventListener("click", (event) => Familiars.removeGather(event.currentTarget.dataset.gather));
 }
 restartButton.addEventListener("click", () => {deleteSave();})
 
-//Random events
-//const randEvents = [];
-//let randEvents[1] = "";
+//Chat (a broken chat must never stop the game from starting)
+try {
+	new Chat(CHAT_API_URL).start();
+} catch (error) {
+	console.error("Chat could not start:", error);
+}
 
 load();
 
-
-//Drinking blood
-
-//CORE GAME MECHANICS
-//cooldown function
-// function coolDown(elementID, time){
-// 	document.getElementById(elementID).disabled = true;
-// 	setTimeout(function() {document.getElementById(elementID).disabled = false;}, time);
-// }
 
 //random number getter
  function getRandomInt(min, max){
@@ -187,10 +177,6 @@ load();
 //update displayed values
 function displayUpdate(){
 	
-
-	//Testing
-	
-
 
 	document.getElementById("familiarNotWorking").innerHTML = Familiars.getNotWorking();
 	document.getElementById("familiarAmmount").innerHTML = Familiars.ammount;
@@ -205,10 +191,6 @@ function displayUpdate(){
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
-	//document.getElementById("bloodPerTurn").innerHTML = bloodPerTurn;
-	//document.getElementById("humanFoodPerTurn").innerHTML = humanFoodPerTurn;
-	
-	//document.getElementById("currentHouse").innerHTML = House.getCurrentHouse();
 	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
@@ -257,8 +239,6 @@ function displayUpdate(){
 	document.getElementById("overloardCost").innerHTML = Overloard.getCost();
 	
 	document.getElementById("fireLeft").innerHTML = House.fire.percent;
-	
-	//document.getElementById("house").src = House.updateImage();
 	
 	document.getElementById("vName").innerHTML = Account.vampireName;
 	document.getElementById("hName").innerHTML = Account.houseName;
@@ -488,15 +468,3 @@ function deleteSave(){
 	localStorage.removeItem("save");
 	
 }
-
-
-
-//random event timer
-//window.setInterval(function(){
-	//time = getRandomInt(180000, 600000);
-	//random event
-//}, time);
-
-
-
-

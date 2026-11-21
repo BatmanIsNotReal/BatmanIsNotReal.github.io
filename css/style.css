@@ -8,6 +8,7 @@
 @import url("progressbar.css");
 @import url("modalbox.css");
 @import url("updatebox.css");
+@import url("chat.css");
 @import url("responsive.css");   /* keep last so it can override the rest */
 
 *,
