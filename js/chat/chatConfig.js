@@ -5,4 +5,4 @@
 // If the game is hosted somewhere else (for example GitHub Pages) and the chat
 // server runs on another address, put the full address here, for example:
 //   export const CHAT_API_URL = "https://my-chat-server.example.com/api/chat";
-export const CHAT_API_URL = "/api/chat";
+export const CHAT_API_URL = "https://batmanisnotrealgithubio-production.up.railway.app/";
