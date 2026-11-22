@@ -52,6 +52,12 @@ img {
 	color: var(--bone-dim);
 }
 
+.online-line {
+	margin: 0.1rem 0 0;
+	font-size: 1.2rem;
+	color: var(--bone-dim);
+}
+
 .leader-line strong {
 	font-weight: normal;
 	color: var(--gold);

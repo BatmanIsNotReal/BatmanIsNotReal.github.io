@@ -9,6 +9,8 @@
 //   DATA_DIR       folder for chat.json and players.json   (default ./server-data)
 //                  On hosts that wipe the disk on every deploy, point this at a
 //                  persistent volume or the data is lost.
+//   ONLINE_WINDOW_SECONDS  how long a player counts as active after their last
+//                  sign of life                            (default 90)
 
 const http = require("http");
 const fs = require("fs");
@@ -42,6 +44,10 @@ const MAX_LEVEL = 1000;
 const LEADERBOARD_DEFAULT_ROWS = 20;
 const LEADERBOARD_MAX_ROWS = 50;
 const STAT_KEYS = ["blood", "humanFood", "wood", "iron", "bronze", "gold", "familiars", "influence"];
+
+// ---------- Active players ----------
+const ONLINE_WINDOW_MS = (Number(process.env.ONLINE_WINDOW_SECONDS) || 90) * 1000;
+const MAX_TRACKED_ONLINE = 20000;
 
 // ---------- Chat storage ----------
 let messages = [];
@@ -148,6 +154,7 @@ function createRateLimiter(limit, windowMs) {
 const isChatRateLimited = createRateLimiter(RATE_LIMIT_COUNT, RATE_LIMIT_WINDOW_MS);
 const isPlayerRateLimited = createRateLimiter(PLAYER_RATE_LIMIT_COUNT, PLAYER_RATE_LIMIT_WINDOW_MS);
 const isLeaderboardRateLimited = createRateLimiter(30, 60000);
+const isOnlineRateLimited = createRateLimiter(60, 60000);
 
 function clientIp(req) {
 	if (TRUST_PROXY) {
@@ -321,6 +328,44 @@ async function handlePlayer(req, res) {
 	return sendJson(res, 200, { ok: true });
 }
 
+// ---------- Active players API ----------
+// POST /api/online { id }  -> the player is active right now; answers { online }
+// GET  /api/online         -> { online }   (number of players seen in the last 90 seconds)
+// Only a number is kept and handed out: nothing about who is online.
+const lastSeen = new Map(); // player id -> time of the last sign of life
+
+function countOnline() {
+	const now = Date.now();
+	for (const [id, time] of lastSeen) {
+		if (now - time >= ONLINE_WINDOW_MS) lastSeen.delete(id);
+	}
+	return lastSeen.size;
+}
+
+async function handleOnline(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "GET" && req.method !== "POST") {
+		res.writeHead(405, { Allow: "GET, POST, OPTIONS" });
+		return res.end();
+	}
+	if (isOnlineRateLimited(clientIp(req))) {
+		return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	}
+
+	if (req.method === "POST") {
+		let body;
+		try {
+			body = await readJsonBody(req);
+		} catch (error) {
+			return sendJson(res, error.status || 400, { error: error.message });
+		}
+		const id = body && typeof body.id === "string" ? body.id : "";
+		if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+		if (lastSeen.has(id) || lastSeen.size < MAX_TRACKED_ONLINE) lastSeen.set(id, Date.now());
+	}
+	return sendJson(res, 200, { online: countOnline() });
+}
+
 // ---------- Leaderboard API ----------
 // GET /api/leaderboard?limit=20  ->  { players: [{ rank, vampireName, settlementName, level, influence, blood, familiars }], total }
 // Ranked by level, then influence, then blood. Player ids are never included.
@@ -458,6 +503,7 @@ const server = http.createServer((req, res) => {
 		"/api/chat": () => handleChat(req, res, url),
 		"/api/player": () => handlePlayer(req, res),
 		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
+		"/api/online": () => handleOnline(req, res),
 	}[url.pathname];
 	if (api) {
 		api().catch((error) => {

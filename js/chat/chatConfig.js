@@ -10,6 +10,9 @@ export const CHAT_API_URL = "https://batmanisnotrealgithubio-production-1a906bae
 // The player file is saved by the same server, next to the chat.
 export const PLAYER_API_URL = CHAT_API_URL.replace(/\/chat$/, "/player");
 
+// ...and the count of active players.
+export const ONLINE_API_URL = CHAT_API_URL.replace(/\/chat$/, "/online");
+
 // ...and so is the leaderboard.
 export const LEADERBOARD_API_URL = CHAT_API_URL.replace(/\/chat$/, "/leaderboard");
 

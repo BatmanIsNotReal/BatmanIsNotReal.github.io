@@ -14,7 +14,8 @@ import MapZoom from './js/MapZoom.js';
 import PlayerSync from './js/playerSync.js';
 import Leaderboard from './js/leaderboard/Leaderboard.js';
 import GifPicker from './js/chat/GifPicker.js';
-import { GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
+import OnlineCounter from './js/OnlineCounter.js';
+import { ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -181,6 +182,13 @@ document.getElementById("chatPopout")?.addEventListener("click", () => {
 
 //Player file (names and stats are also kept on the server)
 const playerSync = new PlayerSync(PLAYER_API_URL);
+
+//Players online (signed-up players count once, however many tabs they have open)
+try {
+	new OnlineCounter(ONLINE_API_URL, () => signedUp ? playerSync.id : null).start();
+} catch (error) {
+	console.error("Online counter could not start:", error);
+}
 
 //Leaderboard
 try {
