@@ -540,7 +540,12 @@ function announceLevelUp(level){
 	void levelStat.offsetWidth; // lets the flash start again if levels come quickly
 	levelStat.classList.add("level-up");
 
-	chat?.announce(levelUpMessage(level), Account.vampireName);
+	// An announcement that fails must never stop the game's round (save, town update...)
+	try {
+		chat?.announce(levelUpMessage(level), Account.vampireName);
+	} catch (error) {
+		console.error("Level-up announcement failed:", error);
+	}
 }
 
 // Short number for the chat: 1234 -> 1234, 250000 -> 250k, 3200000 -> 3.2M

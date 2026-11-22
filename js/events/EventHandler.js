@@ -2,6 +2,7 @@ import Event from "./Event.js";
 
 export default class EventHandler{
     constructor(inventory){
+        this.inventory = inventory; // handed to the events, which may take items from the storage
         this.events = {
             1: new Event("witches about", "a witch has been spotted roaming around the storage.", "SEARCH", "IGNORE", 
                 function conOne(inventory){
@@ -69,12 +70,12 @@ export default class EventHandler{
         container.appendChild(optionTwo);
 
         optionOne.addEventListener("click", () => {
-            this.events[rand].conOne();
+            this.events[rand].conOne(this.inventory);
             modaleventbox.style.display = "none"
             this.messageBox(this.events[rand].conOneText);
         });
         optionTwo.addEventListener("click", () => {
-            this.events[rand].conTwo();
+            this.events[rand].conTwo(this.inventory);
             modaleventbox.style.display = "none";
             this.messageBox(this.events[rand].conTwoText);
         });

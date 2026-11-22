@@ -121,10 +121,12 @@ export default class Inventory{
         this.items.gold = this.items.gold - ammount;
     }
 
+    // Takes `ammount` single items, each from a random kind of storage (never below 0).
     useRandomItems(ammount){
-        for (i = 0; i < ammount; i++){
-            let n = this.getRandomInt(0, Object.keys(this.items).length);
-            this.items[n]--;
+        const names = Object.keys(this.items);
+        for (let i = 0; i < ammount; i++){
+            const name = names[this.getRandomInt(0, names.length)];
+            this.items[name] = Math.max(0, this.items[name] - 1);
         }
     }
 
