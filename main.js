@@ -18,6 +18,7 @@ import DiceGame from './js/dice/DiceGame.js';
 import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
+import formatNumber from './js/formatNumber.js';
 import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
@@ -156,7 +157,7 @@ for (const button of buyUpgradeButtons){
 	})
 }
 
-drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
+drinkBloodButton.addEventListener("click", () => { showStorage("bloodCount", Math.floor(++Inv.items.blood)); })
 
 adoptFamiliarButton.addEventListener("click", () => { Familiars.adopt(House, Inv, updateBox, document); })
 
@@ -180,12 +181,13 @@ try {
 	console.error("Chat could not start:", error);
 }
 
-//Dice button next to the chat opens the same dice pop-up as the one in the header
-document.getElementById("chatDice")?.addEventListener("click", () => document.getElementById("diceButton")?.click());
-//(the chat window opens the game with ?dice, so the dice pop-up is shown straight away)
-if (new URLSearchParams(location.search).has("dice")) {
-	setTimeout(() => { if (signedUp) document.getElementById("diceButton")?.click(); }, 1200);
-}
+//Dice button next to the chat opens the dice game in a separate window (dice.html).
+//The header button still opens the pop-up inside the game.
+document.getElementById("chatDice")?.addEventListener("click", () => {
+	const popup = window.open("dice.html", "vampireHouseDice", "popup=yes,width=620,height=820");
+	if (popup) popup.focus();
+	else alert("Your browser blocked the pop-up window. Allow pop-ups for this page and try again.");
+});
 
 //Column with the names of the players who are online, next to the chat
 try {
@@ -208,14 +210,17 @@ const playerSync = new PlayerSync(PLAYER_API_URL);
 //The ids of applied results are kept in the save so that none is ever applied twice.
 const diceApplied = { ids: [] };
 try {
-	new DiceGame({
+	const diceOptions = {
 		apiUrl: DICE_API_URL,
 		getPlayerId: () => signedUp ? playerSync.id : null,
 		getItems: () => Inv.items,
 		onChange: () => save(),
 		log: (text) => updateBox.townUpdatesAdd(text, document),
 		applied: diceApplied,
-	}).start();
+	};
+	new DiceGame(diceOptions).start();
+	// The separate dice window (dice.html) runs on the same options, so it uses this window's storage and save.
+	window.vampireGameDice = diceOptions;
 } catch (error) {
 	console.error("Dice game could not start:", error);
 }
@@ -253,12 +258,12 @@ function displayUpdate(){
 	document.getElementById("familiarAmmount").innerHTML = Familiars.ammount;
 
 	//inventory
-	document.getElementById("humanFoodCount").innerHTML = Inv.getHumanFoodAmmount();
-	document.getElementById("bloodCount").innerHTML = Inv.getBloodAmmount();
-	document.getElementById("woodCount").innerHTML = Inv.getWoodAmmount();
-	document.getElementById("ironCount").innerHTML = Inv.getIronAmmount();
-	document.getElementById("bronzeCount").innerHTML = Inv.getBronzeAmmount();
-	document.getElementById("goldCount").innerHTML = Inv.getGoldAmmount();
+	showStorage("humanFoodCount", Inv.getHumanFoodAmmount());
+	showStorage("bloodCount", Inv.getBloodAmmount());
+	showStorage("woodCount", Inv.getWoodAmmount());
+	showStorage("ironCount", Inv.getIronAmmount());
+	showStorage("bronzeCount", Inv.getBronzeAmmount());
+	showStorage("goldCount", Inv.getGoldAmmount());
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
@@ -598,6 +603,13 @@ function announceLevelUp(level){
 	} catch (error) {
 		console.error("Level-up announcement failed:", error);
 	}
+}
+
+// Storage line with an easy-to-read number (1.2M); hovering shows the exact amount
+function showStorage(id, amount){
+	const element = document.getElementById(id);
+	element.textContent = formatNumber(amount);
+	element.title = Math.floor(amount).toLocaleString("en-US");
 }
 
 // Short number for the chat: 1234 -> 1234, 250000 -> 250k, 3200000 -> 3.2M

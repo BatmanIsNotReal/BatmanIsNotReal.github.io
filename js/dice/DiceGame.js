@@ -25,6 +25,7 @@ export default class DiceGame {
 	//   onChange()    -> called after the storage was changed (the game saves)
 	//   log(text)     -> shows a line in the Updates box
 	//   applied       -> { ids: [] } remembered in the save
+	//   standalone    -> true in the separate dice window (dice.html): always open, closing closes the window
 	constructor(options, doc = document) {
 		this.o = options;
 		this.modal = doc.getElementById("diceModal");
@@ -51,13 +52,13 @@ export default class DiceGame {
 
 	start() {
 		this.buildInputs();
-		this.openButton.addEventListener("click", () => this.open());
+		if (this.openButton) this.openButton.addEventListener("click", () => this.open());
 		this.closeButton.addEventListener("click", () => this.close());
 		this.closeButton.addEventListener("keydown", (event) => {
 			if (event.key === "Enter" || event.key === " ") { event.preventDefault(); this.close(); }
 		});
 		this.modal.addEventListener("click", (event) => {
-			if (event.target === this.modal) this.close(); // click on the dark background
+			if (event.target === this.modal && !this.o.standalone) this.close(); // click on the dark background
 		});
 		document.addEventListener("keydown", (event) => {
 			if (event.key === "Escape" && this.isOpen()) this.close();
@@ -80,8 +81,9 @@ export default class DiceGame {
 	}
 
 	close() {
+		if (this.o.standalone) { window.close(); return; } // the separate dice window (dice.html)
 		this.modal.style.display = "none";
-		this.openButton.focus();
+		if (this.openButton) this.openButton.focus();
 		this.schedule();
 	}
 

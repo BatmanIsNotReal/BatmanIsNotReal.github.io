@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BLOOD & EARTH - Dice</title>
+
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+</head>
+
+<!-- The dice game in its own window. Opened by the "Dice" button next to the chat in index.html / chat.html.
+     Your storage lives in the game window, so this window works through it: keep the game open. -->
+<body class="dice-window">
+	<p class="dice-window-note" id="diceWindowNote" hidden>The game window is not open (or was reloaded). Open the game, then press the Dice button next to the chat again.</p>
+
+	<div id="diceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="diceTitle">
+		<div class="modal-content dice-content">
+			<div id="diceClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
+			<h3 id="diceTitle">Dice</h3>
+			<p class="dice-intro">Bet the same resources as another player. Two dice each: the higher total wins both bets, a tie returns everything.
+				<span id="diceWins" class="dice-wins"></span></p>
+			<p class="dice-status" id="diceStatus" role="status"></p>
+			<div class="dice-result" id="diceResult" hidden></div>
+
+			<h4>Challenges for you</h4>
+			<ul class="dice-list" id="diceIncoming"></ul>
+
+			<h4>Open lobby</h4>
+			<ul class="dice-list" id="diceLobby"></ul>
+
+			<h4>Make a challenge</h4>
+			<p class="dice-help">Bet any mix of resources, up to what you have. The other player must be able to cover the same bet.</p>
+			<div class="dice-inputs" id="diceStakeInputs"></div>
+			<label class="dice-target">Challenge a specific player (leave empty for the open lobby)
+				<input type="text" id="diceTarget" maxlength="20" placeholder="Vampire name">
+			</label>
+			<button type="button" class="button" id="diceCreate">Challenge</button>
+
+			<h4>Your open challenges</h4>
+			<ul class="dice-list" id="diceMine"></ul>
+
+			<h4>Recent games</h4>
+			<ul class="dice-list dice-recent" id="diceRecent"></ul>
+		</div>
+	</div>
+
+	<script type="module">
+		import DiceGame from './js/dice/DiceGame.js';
+
+		// The game window is the one that opened this window, or the one that opened the chat window that opened this one.
+		function findGame() {
+			let w = window.opener;
+			for (let i = 0; i < 3 && w; i++) {
+				try {
+					if (!w.closed && w.vampireGameDice) return w.vampireGameDice;
+					w = w.opener;
+				} catch { return null; }
+			}
+			return null;
+		}
+
+		const game = findGame();
+		if (!game) {
+			document.getElementById("diceWindowNote").hidden = false;
+		} else {
+			const dice = new DiceGame({ ...game, standalone: true });
+			dice.start();
+			dice.open();
+		}
+	</script>
+</body>
+
+</html>

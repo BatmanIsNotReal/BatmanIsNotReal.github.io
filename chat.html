@@ -51,18 +51,10 @@
 		new GifPicker(chat, GIPHY_API_KEY).start();
 		document.getElementById("chatInput").focus();
 
-		// Dice lives in the game window: bring that window forward and open the dice pop-up there.
-		// If the game window is not open any more, open it with the dice pop-up ready.
+		// The dice game opens in its own window; it finds the game window through this one.
 		document.getElementById("chatDice").addEventListener("click", () => {
-			try {
-				const game = window.opener;
-				if (game && !game.closed) {
-					game.document.getElementById("diceButton").click();
-					game.focus();
-					return;
-				}
-			} catch { /* the game window cannot be reached: open it again */ }
-			window.open("index.html?dice", "_blank");
+			const popup = window.open("dice.html", "vampireHouseDice", "popup=yes,width=620,height=820");
+			if (popup) popup.focus();
 		});
 	</script>
 </body>
