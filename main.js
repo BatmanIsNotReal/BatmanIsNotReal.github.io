@@ -285,7 +285,9 @@ function displayUpdate(){
 
 	for (const [id, vampire] of Object.entries(vampireTypes)){
 		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
-		document.getElementById(id + "Cost").innerHTML = vampire.getCost();
+		const costElement = document.getElementById(id + "Cost");
+		costElement.textContent = formatNumber(vampire.getCost());
+		costElement.title = vampire.getCost().toLocaleString("en-US");
 	}
 	
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
