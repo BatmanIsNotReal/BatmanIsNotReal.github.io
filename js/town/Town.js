@@ -14,6 +14,7 @@ export default class Town{
         this.xpRates = xpRates;
         this.mapWidth = 80;
         this.mapHeight = 20;
+        this.tileSize = 64; // width and height of one map tile, in pixels
         this.tiles = {
         }
         this.Buildings ={
@@ -194,16 +195,16 @@ export default class Town{
             table.appendChild(t);
             for (let i = 0; i < this.mapWidth; i++){
                 let g = document.createElement('td');
-                g.setAttribute("width", 32);
-                g.setAttribute("height", 32);
+                g.setAttribute("width", this.tileSize);
+                g.setAttribute("height", this.tileSize);
                 let id = "tile"+current;
                 this.tiles["tile"+current] = 0;
                 current++;
                 t.appendChild(g);
                 let image = document.createElement('img');
                 image.setAttribute("id", id);
-                image.setAttribute("width", 32);
-                image.setAttribute("height", 32);
+                image.setAttribute("width", this.tileSize);
+                image.setAttribute("height", this.tileSize);
                 image.setAttribute("class", "tile");
                 g.appendChild(image);
             }

@@ -133,7 +133,7 @@ img {
 /* The map is bigger than the panel, so it scrolls inside its own box */
 .map-scroll {
 	width: 100%;
-	max-height: 28rem;
+	max-height: 40rem;
 	overflow: auto;
 }
 
