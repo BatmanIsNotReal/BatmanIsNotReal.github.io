@@ -173,6 +173,7 @@ export default class Chat {
 		// textContent (never innerHTML) so nobody can inject HTML into the page.
 		const row = document.createElement("div");
 		row.className = isMine ? "chat-message own" : "chat-message";
+		if (String(message.text).startsWith("LEVEL UP!")) row.classList.add("chat-levelup");
 
 		const time = document.createElement("span");
 		time.className = "chat-time";
@@ -260,6 +261,22 @@ export default class Chat {
 			this.sending = false;
 			this.sendButton.disabled = this.online === false;
 			this.messageInput.focus();
+		}
+	}
+
+	// Posts a message for the player without touching the input box or the status line
+	// (used for the level-up announcements). Failing is fine: it is only an announcement.
+	async announce(text, name) {
+		try {
+			const response = await fetch(this.apiUrl, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name, text: String(text).slice(0, 300) }),
+			});
+			const data = await response.json().catch(() => ({}));
+			if (response.ok && data.message) this.addMessages([data.message]);
+		} catch {
+			// chat server not reachable: skip
 		}
 	}
 

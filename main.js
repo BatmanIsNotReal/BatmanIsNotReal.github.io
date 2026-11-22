@@ -305,7 +305,7 @@ window.setInterval(function(){
 	Inv.updateTen();
 
 	//House
-	const influenceMultiplier = myTown.influenceMultiplier(document, updateBox);
+	const influenceMultiplier = myTown.influenceMultiplier(document, updateBox, Inv);
 	const newLevel = House.updateTen(Account, document, influenceMultiplier);
 	if (newLevel) announceLevelUp(newLevel);
 
@@ -539,6 +539,28 @@ function announceLevelUp(level){
 	levelStat.classList.remove("level-up");
 	void levelStat.offsetWidth; // lets the flash start again if levels come quickly
 	levelStat.classList.add("level-up");
+
+	chat?.announce(levelUpMessage(level), Account.vampireName);
+}
+
+// Short number for the chat: 1234 -> 1234, 250000 -> 250k, 3200000 -> 3.2M
+function shortNumber(value){
+	value = Number(value) || 0;
+	if (value >= 1e6) return (Math.round(value / 1e5) / 10) + "M";
+	if (value >= 1e5) return Math.round(value / 1e3) + "k";
+	return String(Math.round(value * 10) / 10);
+}
+
+// The text posted in the chat when the player reaches a new level (the server allows 300 characters)
+function levelUpMessage(level){
+	const n = shortNumber;
+	const items = Inv.items;
+	return "LEVEL UP! " + Account.vampireName + " of " + Account.houseName + " reached level " + level +
+		" | Stats: blood +" + n(Inv.newBloodPerRound) + ", food +" + n(Inv.newHumanFoodPerRound) +
+		", wood +" + n(Inv.newWoodPerRound) + " per 10s" +
+		" | Familiars: " + n(Familiars.ammount) +
+		" | Storage: blood " + n(items.blood) + ", food " + n(items.humanFood) + ", wood " + n(items.wood) +
+		", iron " + n(items.iron) + ", bronze " + n(items.bronze) + ", gold " + n(items.gold);
 }
 
 function deleteSave(){

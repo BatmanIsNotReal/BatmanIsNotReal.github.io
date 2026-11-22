@@ -349,8 +349,9 @@ export default class Town{
 
     // Influence multiplier of this round (the Blood Temple's blessing).
     // Call once per round, before the house counts the influence.
-    influenceMultiplier(document, updatebox){
-        return this.Buildings.BloodTemple.updateTen(document, updatebox);
+    // A new blessing consumes part of the player's blood (inventory).
+    influenceMultiplier(document, updatebox, inventory){
+        return this.Buildings.BloodTemple.updateTen(document, updatebox, inventory);
     }
 
     // newGrid(document){

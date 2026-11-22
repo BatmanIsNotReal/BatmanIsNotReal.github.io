@@ -3,6 +3,9 @@ import IronAxe from "./tools/ironAxe.js";
 import IronHoe from "./tools/IronHoe.js";
 import IronPick from "./tools/IronPick.js";
 
+// Every upgrade you buy makes the next one of the same kind 10% more expensive.
+const PRICE_GROWTH = 1.1;
+
 export default class Upgrade{
     constructor(){
         this.tools = {
@@ -10,6 +13,15 @@ export default class Upgrade{
             ironAxe: new IronAxe(100, 10, 0),
             ironPick: new IronPick(200, 10, 0),
         };
+
+        // The price follows from how many have been bought (so it is also right after loading a save)
+        for (const tool of Object.values(this.tools)){
+            const basePrice = tool.cost;
+            Object.defineProperty(tool, "cost", {
+                get: () => Math.ceil(Number((basePrice * Math.pow(PRICE_GROWTH, tool.ammount)).toFixed(6))), // toFixed: 50*1.1 is 55.00000000000001
+                enumerable: true,
+            });
+        }
 
     }
 
