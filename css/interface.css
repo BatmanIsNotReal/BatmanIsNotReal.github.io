@@ -119,6 +119,14 @@ img {
 	border: 1px solid rgb(73, 48, 2);
 }
 
+#map td { padding: 0; line-height: 0; }
+
+/* Grass behind every tile: pictures with see-through areas (farm, lumber mill, ...) sit on real grass */
+img.tile {
+	display: block; /* inline images leave a gap under them */
+	background: url("../src/grass.png") center / 100% 100%;
+}
+
 .tile:hover {
 	outline: 3px solid var(--bone);
 	outline-offset: -3px;
@@ -139,6 +147,8 @@ img {
 
 #map {
 	margin: 0 auto;
+	border-collapse: collapse; /* no gaps between tiles */
+	border-spacing: 0;
 	background-color: #006c17; /* grass green: shows in the gaps between tiles */
 }
 
