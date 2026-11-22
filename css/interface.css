@@ -41,8 +41,20 @@ img {
 	margin: 0.5rem 0;
 }
 
-.header > p:last-child {
+.header > p.version {
 	color: var(--bone-dim);
+}
+
+/* Who is first on the leaderboard (filled in by js/leaderboard/Leaderboard.js) */
+.leader-line {
+	margin: 0.25rem 0 0;
+	font-size: 1.2rem;
+	color: var(--bone-dim);
+}
+
+.leader-line strong {
+	font-weight: normal;
+	color: var(--gold);
 }
 
 #tenSecTimer {
@@ -121,6 +133,13 @@ img {
 
 #map td { padding: 0; line-height: 0; }
 
+/* The tile size follows the zoom (this overrides the width/height attributes) */
+#map td,
+img.tile {
+	width: var(--tile-size);
+	height: var(--tile-size);
+}
+
 /* Grass behind every tile: pictures with see-through areas (farm, lumber mill, ...) sit on real grass */
 img.tile {
 	display: block; /* inline images leave a gap under them */
@@ -140,6 +159,7 @@ img.tile {
 
 /* The map is bigger than the panel, so it scrolls inside its own box */
 .map-scroll {
+	--tile-size: 64px; /* changed by js/MapZoom.js (mouse wheel) */
 	width: 100%;
 	max-height: 40rem;
 	overflow: auto;
@@ -160,4 +180,10 @@ img.tile {
 
 #levelStat.level-up {
 	animation: levelflash 2.5s ease-in-out;
+}
+
+.map-hint {
+	margin: 0.25rem 0 0;
+	font-size: 0.8rem;
+	opacity: 0.7;
 }

@@ -10,6 +10,7 @@ import Upgrade from './js/upgrades/Upgrade.js';
 import EventHandler from './js/events/EventHandler.js';
 import MusicHandler from './js/MusicHandler.js';
 import Chat from './js/chat/Chat.js';
+import MapZoom from './js/MapZoom.js';
 import PlayerSync from './js/playerSync.js';
 import Leaderboard from './js/leaderboard/Leaderboard.js';
 import { CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
@@ -111,12 +112,16 @@ for (let i = 0; i < tiles.length; i++){
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
+//map zoom with the mouse wheel
+new MapZoom(document.querySelector(".map-scroll"));
+
 //buy buildings check
 const buildingActions = {
 	buyHut: (id) => myTown.buyHut(Inv, Familiars, document, currentTile, id),
 	buyMine: (id) => myTown.buyMine(Inv, Familiars, document, currentTile, id),
 	buyFarm: (id) => myTown.buyFarm(Inv, Familiars, document, currentTile, id),
 	buyLumberMill: (id) => myTown.buyLumberMill(Inv, Familiars, document, currentTile, id),
+	buyBloodTemple: (id) => myTown.buyBloodTemple(Inv, Familiars, document, currentTile, id),
 };
 
 for (const button of buyBuildingButtons){
@@ -164,6 +169,13 @@ try {
 } catch (error) {
 	console.error("Chat could not start:", error);
 }
+
+//Chat in a separate window (chat.html)
+document.getElementById("chatPopout")?.addEventListener("click", () => {
+	const popup = window.open("chat.html", "vampireHouseChat", "popup=yes,width=440,height=620");
+	if (popup) popup.focus();
+	else alert("Your browser blocked the pop-up window. Allow pop-ups for this page and try again.");
+});
 
 //Player file (names and stats are also kept on the server)
 const playerSync = new PlayerSync(PLAYER_API_URL);
@@ -227,6 +239,13 @@ function displayUpdate(){
 	document.getElementById("buildingFarmCost").innerHTML = myTown.Buildings.Farm.cost;
 	document.getElementById("buildingLumberMillCost").innerHTML = myTown.Buildings.LumberMill.cost;
 
+	const temple = myTown.Buildings.BloodTemple;
+	document.getElementById("buildingBloodTempleWood").innerHTML = temple.cost.wood;
+	document.getElementById("buildingBloodTempleIron").innerHTML = temple.cost.iron;
+	document.getElementById("buildingBloodTempleBronze").innerHTML = temple.cost.bronze;
+	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
+	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
+
 	document.getElementById("buildingFarmFamiliarsRequired").innerHTML = myTown.Buildings.Farm.workersRequired;
 	document.getElementById("buildingMineFamiliarsRequired").innerHTML = myTown.Buildings.Mine.workersRequired;
 	document.getElementById("buildingLumberMillFamiliarsRequired").innerHTML = myTown.Buildings.LumberMill.workersRequired;
@@ -284,7 +303,8 @@ window.setInterval(function(){
 	Inv.updateTen();
 
 	//House
-	const newLevel = House.updateTen(Account, document);
+	const influenceMultiplier = myTown.influenceMultiplier(document, updateBox);
+	const newLevel = House.updateTen(Account, document, influenceMultiplier);
 	if (newLevel) announceLevelUp(newLevel);
 
 	//Player
@@ -390,6 +410,8 @@ const saveFields = {
 	mineGain: field(myTown.Buildings.Mine, "gain"),
 	farmGain: field(myTown.Buildings.Farm, "gain"),
 	lumberMillGain: field(myTown.Buildings.LumberMill, "gain"),
+	bloodTempleAmmount: field(myTown.Buildings.BloodTemple, "ammount"),
+	bloodTempleBlessingRoundsLeft: field(myTown.Buildings.BloodTemple, "blessingRoundsLeft"),
 
 	ironHoeAmmount: field(Upgrades.tools.ironHoe, "ammount"),
 	ironAxeAmmount: field(Upgrades.tools.ironAxe, "ammount"),

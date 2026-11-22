@@ -50,8 +50,9 @@ export default class HousePar {
 
     //Updates
     // Returns the new level when the player levels up, otherwise null.
-    updateXP(account){
-        this.xp = (this.xp + account.influence) + 1;
+    // influenceMultiplier: e.g. 1.25 while the Blood Temple's blessing is active.
+    updateXP(account, influenceMultiplier = 1){
+        this.xp = (this.xp + Math.round(account.influence * influenceMultiplier)) + 1;
         if (this.xp < this.xpNext) return null;
 
         this.xp = 0; // influence starts again from 0 at every new level
@@ -65,8 +66,8 @@ export default class HousePar {
 
 
     // Returns the new level when the player levels up, otherwise null.
-    updateTen(account, document){
+    updateTen(account, document, influenceMultiplier = 1){
         this.updateImage();
-        return this.updateXP(account);
+        return this.updateXP(account, influenceMultiplier);
     }
 }

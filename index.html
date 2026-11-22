@@ -68,7 +68,8 @@
 			<p class="button" id="restart">restart</p>
 		</div>
 
-		<p>version 0.0.5.2.9</p>
+		<p class="version">version 0.0.5.2.9</p>
+		<p class="leader-line" id="leaderLine" hidden></p>
 	</div>
 
 	<div class="flex-row">
@@ -138,6 +139,7 @@
 					<div class="map-scroll">
 						<table id="map"></table>
 					</div>
+					<p class="map-hint">Scroll the mouse wheel over the map to zoom in and out</p>
 					<p>Room for familiars: <span id="familiarLimit"></span></p>
 				</div>
 			</div>
@@ -261,7 +263,10 @@
 			</div>
 
 			<div class="grid-item chat">
-				<h3 class="grid-item-title">Chat</h3>
+				<div class="chat-head">
+					<h3 class="grid-item-title">Chat</h3>
+					<button type="button" class="chat-popout" id="chatPopout" title="Open the chat in a separate window">Pop out &#8599;</button>
+				</div>
 				<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
 				<form class="chat-form" id="chatForm" autocomplete="off">
 					<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
@@ -393,6 +398,19 @@
 					<p>Has place for 5 familiars</p>
 					<p>price wood: <span id="buildingLumberMillCost"></span></p>
 					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyBloodTemple">Buy blood temple
+				<div class="hover">
+					<p>A place of worship to thy master</p>
+					<p>Each round: 10% chance of +25% influence for 3 rounds</p>
+					<p>Build on grassland. Has no place for familiars</p>
+					<p>price: <span id="buildingBloodTempleWood"></span> wood,
+						<span id="buildingBloodTempleIron"></span> iron,
+						<span id="buildingBloodTempleBronze"></span> bronze,
+						<span id="buildingBloodTempleGold"></span> gold</p>
+					<p>familiars required: <span id="buildingBloodTempleFamiliarsRequired"></span></p>
 				</div>
 			</div>
 		</div>

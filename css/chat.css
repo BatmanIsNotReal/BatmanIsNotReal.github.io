@@ -82,3 +82,51 @@
 .chat-status.error {
 	color: #e8808c;
 }
+
+/* Title row with the "pop out" button */
+.chat-head {
+	position: relative;
+}
+
+.chat-head .grid-item-title {
+	margin-bottom: 0;
+}
+
+.chat-popout {
+	position: absolute;
+	top: 50%;
+	right: 0.75rem;
+	transform: translateY(-50%);
+	padding: 0.25rem 0.6rem;
+	font-family: inherit;
+	font-size: 1.1rem;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--line);
+	cursor: pointer;
+}
+
+.chat-popout:hover {
+	color: var(--gold);
+	border-color: var(--gold);
+}
+
+/* The separate chat window (chat.html) */
+body.chat-popout-page {
+	display: flex;
+	flex-direction: column;
+	height: 100vh;
+	max-width: none;
+	margin: 0;
+	padding: 0;
+}
+
+body.chat-popout-page .chat-log {
+	flex: 1 1 auto;
+	height: auto;
+	min-height: 0;
+}
+
+body.chat-popout-page .chat-form {
+	padding-bottom: 0.5rem;
+}

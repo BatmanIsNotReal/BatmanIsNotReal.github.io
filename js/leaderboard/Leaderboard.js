@@ -1,6 +1,8 @@
 // Leaderboard pop-up: shows the best players saved on the server.
 // Talks to GET /api/leaderboard in server.js.
 
+const LEADER_REFRESH_MS = 60000;
+
 export default class Leaderboard {
 	// getMyName: function that returns the current player's vampire name (to highlight their row)
 	constructor(apiUrl, getMyName, doc = document) {
@@ -13,6 +15,7 @@ export default class Leaderboard {
 		this.statusLine = doc.getElementById("leaderboardStatus");
 		this.tableBody = doc.getElementById("leaderboardBody");
 		this.scroll = doc.getElementById("leaderboardScroll");
+		this.leaderLine = doc.getElementById("leaderLine"); // "current leader" text in the header
 		this.loadCount = 0; // so a slow, old answer cannot replace a newer one
 	}
 
@@ -32,6 +35,38 @@ export default class Leaderboard {
 		document.addEventListener("keydown", (event) => {
 			if (event.key === "Escape" && this.isOpen()) this.close();
 		});
+
+		this.refreshLeader();
+		setInterval(() => this.refreshLeader(), LEADER_REFRESH_MS);
+	}
+
+	// Asks the server for the number one player and shows them in the header.
+	async refreshLeader() {
+		if (!this.leaderLine) return;
+		try {
+			const response = await fetch(`${this.apiUrl}?limit=1`, { cache: "no-store" });
+			const data = await response.json();
+			if (!response.ok || !Array.isArray(data.players)) throw new Error("Unexpected answer");
+			this.showLeader(data.players[0]);
+		} catch {
+			this.showLeader(null); // server not reachable: hide the line
+		}
+	}
+
+	showLeader(player) {
+		if (!this.leaderLine) return;
+		if (!player) {
+			this.leaderLine.hidden = true;
+			return;
+		}
+		// textContent (never innerHTML): names are typed by players.
+		const name = document.createElement("strong");
+		name.textContent = String(player.vampireName);
+		this.leaderLine.replaceChildren(
+			"Current leader: ", name,
+			` of ${player.settlementName} (level ${player.level})`
+		);
+		this.leaderLine.hidden = false;
 	}
 
 	isOpen() {
@@ -61,6 +96,7 @@ export default class Leaderboard {
 			if (thisLoad !== this.loadCount) return;
 
 			this.render(data.players);
+			this.showLeader(data.players[0]);
 			this.setStatus(data.players.length === 0 ? "No players on the leaderboard yet." : "");
 		} catch (error) {
 			if (thisLoad !== this.loadCount) return;

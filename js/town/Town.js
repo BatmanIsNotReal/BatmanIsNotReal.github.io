@@ -7,6 +7,7 @@ import Rock from './terrain/Rock.js';
 import Water from './terrain/Water.js';
 import Forest from './terrain/Forest.js';
 import LumberMill from './buildings/LumberMill.js';
+import BloodTemple from './buildings/BloodTemple.js';
 
 export default class Town{
     constructor(townSize, xpRates){
@@ -26,6 +27,7 @@ export default class Town{
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
             Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.png', 500, 5),
             LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600, 5),
+            BloodTemple: new BloodTemple("Blood Temple", "A place of worship to thy master", 0, '../../../src/bloodtemple.png', {wood: 7000, iron: 4000, bronze: 4000, gold: 1000}, 40),
         }
 
         this.buildSound = new Audio('music/sounds/buildSound.mp3');
@@ -60,6 +62,9 @@ export default class Town{
             else if (this.tiles[id] == 7){
                 alert("There is already a lumber mill here");
             }
+                else if (this.tiles[id] == 8){
+                    alert("There is already a blood temple here");
+                }
         }else{
             alert("You dont have enough wood!");
         }
@@ -95,6 +100,9 @@ export default class Town{
                 }
                 else if (this.tiles[id] == 7){
                     alert("There is already a lumber mill here");
+                }
+                else if (this.tiles[id] == 8){
+                    alert("There is already a blood temple here");
                 }
             }else{
                 alert("you dont have enough familiars.");
@@ -133,6 +141,9 @@ export default class Town{
                 }
                 else if (this.tiles[id] == 7){
                     alert("There is already a lumber mill here");
+                }
+                else if (this.tiles[id] == 8){
+                    alert("There is already a blood temple here");
                 }
             }
             else{
@@ -173,6 +184,9 @@ export default class Town{
                 else if (this.tiles[id] == 7){
                     alert("There is already a lumber mill here");
                 }
+                else if (this.tiles[id] == 8){
+                    alert("There is already a blood temple here");
+                }
             }else{
                 alert("you dont have enough familiars.");
             }
@@ -182,6 +196,44 @@ export default class Town{
     }
 
 
+
+    // The temple is built on grassland and costs wood, iron, bronze and gold.
+    buyBloodTemple(inventory, familiar, document, id){
+        const temple = this.Buildings.BloodTemple;
+        const cost = temple.cost;
+        const missing = [];
+        for (const [item, price] of Object.entries(cost)){
+            if (inventory.items[item] < price) missing.push(item);
+        }
+        if (missing.length){
+            alert("You dont have enough " + missing.join(", ") + "!");
+            return;
+        }
+        if (familiar.getNotWorking() < temple.workersRequired){
+            alert("you dont have enough familiars.");
+            return;
+        }
+        const tile = this.tiles[id];
+        if (tile < 1){
+            temple.ammount++;
+            familiar.addMaxLimit(temple.capacity);
+            familiar.notWorking = familiar.notWorking - temple.workersRequired;
+            for (const [item, price] of Object.entries(cost)) inventory.items[item] -= price;
+            document.getElementById(id).src = String(temple.imgsrc);
+            this.tiles[id] = 8;
+            return;
+        }
+        alert({
+            1: "There is already a hut on this land",
+            2: "There is water here",
+            3: "There is rock here",
+            4: "There is already a mine here",
+            5: "There is already a farm here",
+            6: "There is a forest here",
+            7: "There is already a lumber mill here",
+            8: "There is already a blood temple here",
+        }[tile] || "You can only build a blood temple on grassland");
+    }
 
     //getTiles(){
       //  return this.tiles;
@@ -253,6 +305,7 @@ export default class Town{
             5: B.Farm,
             6: B.Forest,
             7: B.LumberMill,
+            8: B.BloodTemple,
         }[type]?.imgsrc;
     }
 
@@ -272,7 +325,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 7) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 8) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -292,6 +345,12 @@ export default class Town{
         this.Buildings.Mine.updateTen(inv, document, updatebox);
         this.Buildings.Farm.updateTen(inv, document, updatebox);
         this.Buildings.LumberMill.updateTen(inv, document, updatebox);
+    }
+
+    // Influence multiplier of this round (the Blood Temple's blessing).
+    // Call once per round, before the house counts the influence.
+    influenceMultiplier(document, updatebox){
+        return this.Buildings.BloodTemple.updateTen(document, updatebox);
     }
 
     // newGrid(document){

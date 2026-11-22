@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Vampire House - Chat</title>
+
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+</head>
+
+<!-- The chat in its own window. Opened by the "Pop out" button in index.html. -->
+<body class="chat-popout-page">
+	<h3 class="grid-item-title">Chat</h3>
+	<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
+	<form class="chat-form" id="chatForm" autocomplete="off">
+		<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
+		<input type="text" id="chatInput" maxlength="300" aria-label="Message" placeholder="Say something…">
+		<button type="submit" class="button" id="chatSend">Send</button>
+	</form>
+	<p class="chat-status" id="chatStatus" role="status"></p>
+
+	<script type="module">
+		import Chat from './js/chat/Chat.js';
+		import { CHAT_API_URL } from './js/chat/chatConfig.js';
+
+		const chat = new Chat(CHAT_API_URL);
+
+		// Use the vampire name from the game's save (same browser, same site)
+		try {
+			const save = JSON.parse(localStorage.getItem("save"));
+			if (save && save.signedUp === true && save.vampireName) chat.lockName(save.vampireName);
+		} catch { /* no readable save: the chat keeps its own name */ }
+
+		chat.start();
+		document.getElementById("chatInput").focus();
+	</script>
+</body>
+
+</html>
