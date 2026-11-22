@@ -171,3 +171,27 @@
 	text-align: center;
 	color: var(--bone);
 }
+
+/* Glow on the Dice buttons while a challenge is waiting for you */
+@keyframes dice-glow {
+	0%, 100% {
+		border-color: var(--gold);
+		box-shadow: 0 0 4px 1px rgba(214, 170, 70, 0.45);
+	}
+	50% {
+		border-color: var(--blood-bright);
+		box-shadow: 0 0 14px 4px rgba(214, 170, 70, 0.9), 0 0 22px 6px rgba(160, 30, 50, 0.6);
+	}
+}
+
+.dice-glow {
+	animation: dice-glow 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dice-glow {
+		animation: none;
+		border-color: var(--gold);
+		box-shadow: 0 0 12px 3px rgba(214, 170, 70, 0.8);
+	}
+}

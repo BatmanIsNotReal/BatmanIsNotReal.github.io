@@ -43,6 +43,8 @@ export default class DiceGame {
 			mine: doc.getElementById("diceMine"),
 			recent: doc.getElementById("diceRecent"),
 		};
+		// Buttons that glow while a challenge is waiting for the player (header and chat; absent in dice.html)
+		this.glowButtons = ["diceButton", "chatDice"].map((id) => doc.getElementById(id)).filter(Boolean);
 		this.state = null;
 		this.polling = false;
 		this.timer = null;
@@ -126,6 +128,7 @@ export default class DiceGame {
 				return;
 			}
 			this.state = result.data;
+			this.updateGlow();
 			await this.applySettlements(result.data.settlements || []);
 			if (this.isOpen()) {
 				this.setStatus("");
@@ -134,6 +137,18 @@ export default class DiceGame {
 		} finally {
 			this.polling = false;
 			this.schedule();
+		}
+	}
+
+	// The Dice buttons glow while somebody has challenged you directly and you have not answered yet.
+	updateGlow() {
+		const waiting = Array.isArray(this.state && this.state.incoming) ? this.state.incoming.length : 0;
+		for (const button of this.glowButtons) {
+			button.classList.toggle("dice-glow", waiting > 0);
+			if (!("diceTitle" in button.dataset)) button.dataset.diceTitle = button.title || "";
+			button.title = waiting > 0
+				? (waiting === 1 ? "A dice challenge is waiting for you!" : waiting + " dice challenges are waiting for you!")
+				: button.dataset.diceTitle;
 		}
 	}
 
