@@ -55,6 +55,7 @@ export default class Chat {
 	}
 
 	saveName() {
+		if (this.nameInput.readOnly) return;
 		const name = this.nameInput.value.replace(/\s+/g, " ").trim();
 		if (!name) {
 			this.nameInput.value = this.loadName();
@@ -66,6 +67,13 @@ export default class Chat {
 		} catch {
 			// Not being able to remember the name is fine.
 		}
+	}
+
+	// Use the player's vampire name in the chat and stop it being edited.
+	lockName(name) {
+		this.nameInput.value = name;
+		this.nameInput.readOnly = true;
+		this.nameInput.title = "Your chat name is your vampire name";
 	}
 
 	// ---------- Receiving ----------

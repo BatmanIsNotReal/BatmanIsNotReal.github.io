@@ -6,6 +6,9 @@
 //   HOST           address to listen on                    (default 0.0.0.0)
 //   TRUST_PROXY    set to 1 if you run behind a reverse proxy, so the real
 //                  visitor IP is used for rate limiting    (default off)
+//   DATA_DIR       folder for chat.json and players.json   (default ./server-data)
+//                  On hosts that wipe the disk on every deploy, point this at a
+//                  persistent volume or the data is lost.
 
 const http = require("http");
 const fs = require("fs");
@@ -17,8 +20,9 @@ const HOST = process.env.HOST || "0.0.0.0";
 const TRUST_PROXY = process.env.TRUST_PROXY === "1";
 
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "server-data");
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "server-data");
 const CHAT_FILE = path.join(DATA_DIR, "chat.json");
+const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
 
 // ---------- Chat limits ----------
 const MAX_STORED_MESSAGES = 200;   // older messages are dropped
@@ -28,6 +32,16 @@ const MAX_TEXT_LENGTH = 300;
 const MAX_BODY_BYTES = 4 * 1024;
 const RATE_LIMIT_COUNT = 5;        // messages ...
 const RATE_LIMIT_WINDOW_MS = 10000; // ... per 10 seconds per visitor
+
+// ---------- Player file limits ----------
+const MAX_PLAYERS = 5000;          // new players are refused beyond this
+const PLAYER_RATE_LIMIT_COUNT = 30; // saves ...
+const PLAYER_RATE_LIMIT_WINDOW_MS = 60000; // ... per minute per visitor
+const MAX_STAT_VALUE = 1e15;
+const MAX_LEVEL = 1000;
+const LEADERBOARD_DEFAULT_ROWS = 20;
+const LEADERBOARD_MAX_ROWS = 50;
+const STAT_KEYS = ["blood", "humanFood", "wood", "iron", "bronze", "gold", "familiars", "influence"];
 
 // ---------- Chat storage ----------
 let messages = [];
@@ -45,50 +59,95 @@ function loadMessages() {
 	}
 }
 
-let saveTimer = null;
-function saveSoon() {
-	if (saveTimer) return;
-	saveTimer = setTimeout(() => {
-		saveTimer = null;
-		try {
-			fs.mkdirSync(DATA_DIR, { recursive: true });
-			const temp = CHAT_FILE + ".tmp";
-			fs.writeFileSync(temp, JSON.stringify({ messages }));
-			fs.renameSync(temp, CHAT_FILE); // swap in one step so the file is never half-written
-		} catch (error) {
-			console.error("Could not save chat:", error.message);
-		}
-	}, 500);
+// Writes a file a moment after the data changes (many changes become one write).
+// The file is written to a temp name first and swapped in, so it is never half-written.
+function makeSaver(file, getData, delayMs, indent) {
+	let timer = null;
+	return function saveSoon() {
+		if (timer) return;
+		timer = setTimeout(() => {
+			timer = null;
+			try {
+				fs.mkdirSync(DATA_DIR, { recursive: true });
+				const temp = file + ".tmp";
+				fs.writeFileSync(temp, JSON.stringify(getData(), null, indent));
+				fs.renameSync(temp, file);
+			} catch (error) {
+				console.error(`Could not save ${path.basename(file)}:`, error.message);
+			}
+		}, delayMs);
+	};
 }
+
+const saveMessages = makeSaver(CHAT_FILE, () => ({ messages }), 500);
+
+// ---------- Player storage ----------
+// id (random, made by the player's browser) -> { vampireName, settlementName, createdAt, updatedAt, stats }
+const players = new Map();
+
+// Vampire names must be unique. Names are compared without caps, spaces or lookalike
+// width forms, so "Count Dracula", "count  dracula" and "CountDracula" are the same name.
+const nameOwners = new Map(); // normalised name -> player id
+
+function nameKey(name) {
+	return name.normalize("NFKC").toLowerCase().replace(/\s+/g, "");
+}
+
+function loadPlayers() {
+	try {
+		const saved = JSON.parse(fs.readFileSync(PLAYERS_FILE, "utf8"));
+		for (const [id, record] of Object.entries(saved.players || {})) {
+			if (/^[a-f0-9]{32}$/.test(id) && record && typeof record === "object") {
+				players.set(id, record);
+				const key = nameKey(String(record.vampireName || ""));
+				if (key && !nameOwners.has(key)) nameOwners.set(key, id);
+			}
+		}
+	} catch {
+		// No players saved yet (or the file is damaged): start empty.
+	}
+}
+
+const savePlayers = makeSaver(PLAYERS_FILE, () => ({ players: Object.fromEntries(players) }), 2000, 2);
 
 // Remove control characters, squash whitespace, cut to length (by character, not byte).
 function clean(value, maxLength) {
 	if (typeof value !== "string") return "";
-	const text = value.replace(/[\u0000-\u001F\u007F-\u009F\u2028\u2029]/g, " ").replace(/\s+/g, " ").trim();
+	const text = value
+		.replace(/[\u200B-\u200F\u2060\uFEFF\u00AD]/g, "") // zero-width and invisible characters
+		.replace(/[\u0000-\u001F\u007F-\u009F\u2028\u2029]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
 	return Array.from(text).slice(0, maxLength).join("");
 }
 
 // ---------- Rate limiting ----------
-const recentPosts = new Map(); // ip -> timestamps
+function createRateLimiter(limit, windowMs) {
+	const recent = new Map(); // ip -> timestamps
 
-function isRateLimited(ip) {
-	const now = Date.now();
-	const stamps = (recentPosts.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-	if (stamps.length >= RATE_LIMIT_COUNT) {
-		recentPosts.set(ip, stamps);
-		return true;
-	}
-	stamps.push(now);
-	recentPosts.set(ip, stamps);
-	return false;
+	setInterval(() => {
+		const now = Date.now();
+		for (const [ip, stamps] of recent) {
+			if (stamps.every((t) => now - t >= windowMs)) recent.delete(ip);
+		}
+	}, 60000).unref();
+
+	return function isLimited(ip) {
+		const now = Date.now();
+		const stamps = (recent.get(ip) || []).filter((t) => now - t < windowMs);
+		if (stamps.length >= limit) {
+			recent.set(ip, stamps);
+			return true;
+		}
+		stamps.push(now);
+		recent.set(ip, stamps);
+		return false;
+	};
 }
 
-setInterval(() => {
-	const now = Date.now();
-	for (const [ip, stamps] of recentPosts) {
-		if (stamps.every((t) => now - t >= RATE_LIMIT_WINDOW_MS)) recentPosts.delete(ip);
-	}
-}, 60000).unref();
+const isChatRateLimited = createRateLimiter(RATE_LIMIT_COUNT, RATE_LIMIT_WINDOW_MS);
+const isPlayerRateLimited = createRateLimiter(PLAYER_RATE_LIMIT_COUNT, PLAYER_RATE_LIMIT_WINDOW_MS);
+const isLeaderboardRateLimited = createRateLimiter(30, 60000);
 
 function clientIp(req) {
 	if (TRUST_PROXY) {
@@ -140,17 +199,19 @@ function readJsonBody(req) {
 	});
 }
 
+function sendPreflight(res) {
+	res.writeHead(204, {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Max-Age": "86400",
+	});
+	res.end();
+}
+
 // ---------- Chat API ----------
 async function handleChat(req, res, url) {
-	if (req.method === "OPTIONS") {
-		res.writeHead(204, {
-			"Access-Control-Allow-Origin": "*",
-			"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-			"Access-Control-Allow-Headers": "Content-Type",
-			"Access-Control-Max-Age": "86400",
-		});
-		return res.end();
-	}
+	if (req.method === "OPTIONS") return sendPreflight(res);
 
 	if (req.method === "GET") {
 		const after = Number.parseInt(url.searchParams.get("after"), 10);
@@ -172,19 +233,126 @@ async function handleChat(req, res, url) {
 		const name = clean(body && body.name, MAX_NAME_LENGTH) || "Vampire";
 		if (!text) return sendJson(res, 400, { error: "Message is empty" });
 
-		if (isRateLimited(clientIp(req))) {
+		if (isChatRateLimited(clientIp(req))) {
 			return sendJson(res, 429, { error: "You are sending messages too fast. Wait a few seconds." });
 		}
 
 		const message = { id: nextId++, name, text, time: Date.now() };
 		messages.push(message);
 		if (messages.length > MAX_STORED_MESSAGES) messages = messages.slice(-MAX_STORED_MESSAGES);
-		saveSoon();
+		saveMessages();
 		return sendJson(res, 201, { message });
 	}
 
 	res.writeHead(405, { Allow: "GET, POST, OPTIONS" });
 	res.end();
+}
+
+// ---------- Player API ----------
+// POST /api/player  { id, vampireName, settlementName, level, stats: { blood, humanFood, ... } }
+// Saves the player's names and stats into players.json. There is deliberately no
+// way to read the file back through the API, so one player cannot see another's id.
+async function handlePlayer(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "POST") {
+		res.writeHead(405, { Allow: "POST, OPTIONS" });
+		return res.end();
+	}
+
+	let body;
+	try {
+		body = await readJsonBody(req);
+	} catch (error) {
+		return sendJson(res, error.status || 400, { error: error.message });
+	}
+	body = body && typeof body === "object" ? body : {};
+
+	const id = typeof body.id === "string" ? body.id : "";
+	if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+
+	const vampireName = clean(body.vampireName, MAX_NAME_LENGTH);
+	const settlementName = clean(body.settlementName, MAX_NAME_LENGTH);
+	if (!vampireName || !settlementName) {
+		return sendJson(res, 400, { error: "A vampire name and a settlement name are required" });
+	}
+
+	if (isPlayerRateLimited(clientIp(req))) {
+		return sendJson(res, 429, { error: "Saving too often. Try again in a moment." });
+	}
+
+	// A vampire name can only belong to one player.
+	const key = nameKey(vampireName);
+	const owner = nameOwners.get(key);
+	if (owner && owner !== id) {
+		return sendJson(res, 409, { error: "That vampire name is already taken. Choose another." });
+	}
+
+	const existing = players.get(id);
+	if (!existing && players.size >= MAX_PLAYERS) {
+		return sendJson(res, 503, { error: "This server cannot store any more players" });
+	}
+
+	const stats = {};
+	const sent = body.stats && typeof body.stats === "object" ? body.stats : {};
+	for (const key of STAT_KEYS) {
+		const value = Number(sent[key]);
+		stats[key] = Number.isFinite(value) ? Math.min(Math.max(Math.round(value * 100) / 100, 0), MAX_STAT_VALUE) : 0;
+	}
+
+	const level = Number.isInteger(body.level) ? Math.min(Math.max(body.level, 1), MAX_LEVEL) : 1;
+
+	// Free the old name if this player is changing it.
+	if (existing) {
+		const oldKey = nameKey(String(existing.vampireName || ""));
+		if (oldKey !== key && nameOwners.get(oldKey) === id) nameOwners.delete(oldKey);
+	}
+	nameOwners.set(key, id);
+
+	const now = Date.now();
+	players.set(id, {
+		vampireName,
+		settlementName,
+		level,
+		createdAt: existing ? existing.createdAt : now,
+		updatedAt: now,
+		stats,
+	});
+	savePlayers();
+	return sendJson(res, 200, { ok: true });
+}
+
+// ---------- Leaderboard API ----------
+// GET /api/leaderboard?limit=20  ->  { players: [{ rank, vampireName, settlementName, level, influence, blood, familiars }], total }
+// Ranked by level, then influence, then blood. Player ids are never included.
+function handleLeaderboard(req, res, url) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "GET") {
+		res.writeHead(405, { Allow: "GET, OPTIONS" });
+		return res.end();
+	}
+	if (isLeaderboardRateLimited(clientIp(req))) {
+		return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	}
+
+	const asked = Number.parseInt(url.searchParams.get("limit"), 10);
+	const limit = Math.min(Math.max(asked || LEADERBOARD_DEFAULT_ROWS, 1), LEADERBOARD_MAX_ROWS);
+
+	const rows = [...players.values()].map((p) => ({
+		vampireName: p.vampireName,
+		settlementName: p.settlementName,
+		level: p.level || 1,
+		influence: p.stats.influence,
+		blood: p.stats.blood,
+		familiars: p.stats.familiars,
+	}));
+	rows.sort((a, b) =>
+		b.level - a.level ||
+		b.influence - a.influence ||
+		b.blood - a.blood ||
+		a.vampireName.localeCompare(b.vampireName));
+
+	const top = rows.slice(0, limit).map((row, index) => ({ rank: index + 1, ...row }));
+	sendJson(res, 200, { players: top, total: rows.length });
 }
 
 // ---------- Static files (the game itself) ----------
@@ -286,8 +454,13 @@ function sendFile(req, res, filePath, stats) {
 // ---------- Start ----------
 const server = http.createServer((req, res) => {
 	const url = new URL(req.url, "http://localhost");
-	if (url.pathname === "/api/chat") {
-		handleChat(req, res, url).catch((error) => {
+	const api = {
+		"/api/chat": () => handleChat(req, res, url),
+		"/api/player": () => handlePlayer(req, res),
+		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
+	}[url.pathname];
+	if (api) {
+		api().catch((error) => {
 			console.error(error);
 			if (!res.headersSent) sendJson(res, 500, { error: "Server error" });
 		});
@@ -297,6 +470,7 @@ const server = http.createServer((req, res) => {
 });
 
 loadMessages();
+loadPlayers();
 
 server.listen(PORT, HOST, () => {
 	console.log("Vampire House is running.");

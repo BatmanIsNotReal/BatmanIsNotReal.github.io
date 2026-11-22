@@ -22,36 +22,35 @@
 		<i class="fas fa-tint"></i>
 	</div>
 
-	<!-- Sign-up overlay -->
-	<div id="overlay">
-		<form name="signUp" onsubmit="validateForm()" method="post">
+	<!-- Sign-up pop-up for new players (shown by main.js) -->
+	<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="signUpTitle">
+		<form name="signUp" id="signUpForm" autocomplete="off">
 			<div class="grid-container-signup">
 				<div class="item10">
-					<div class="text" id="text">Welcome to vampire house</div>
+					<h3 id="signUpTitle">Welcome to Vampire House</h3>
+					<p>Name your vampire and your settlement to begin.</p>
 				</div>
 				<div class="item11">
-					<div class="text"><img src="sPlayerDown.png" width="25" height="100" alt=""></div>
+					<img src="sPlayerDown.png" width="25" height="100" alt="">
 				</div>
 				<div class="item12">
-					<div class="text">
-						<label for="vName">Vampire name:</label><br>
-						<input type="text" id="vName" name="vName" value="">
-					</div>
+					<label for="vName">Vampire name</label>
+					<input type="text" id="vName" name="vName" maxlength="20" required>
 				</div>
 				<div class="item13">
-					<div class="text">
-						<label for="hName">House name:</label><br>
-						<input type="text" id="hName" name="hName" value="">
-					</div>
+					<label for="hName">Settlement name</label>
+					<input type="text" id="hName" name="hName" maxlength="20" required>
 				</div>
 				<div class="item14">
-					<div class="text">
-						<input type="submit" value="awaken">
-					</div>
+					<p class="signup-error" id="signUpError" role="alert"></p>
+					<button type="submit" class="button">Awaken</button>
 				</div>
 			</div>
 		</form>
 	</div>
+
+	<!-- Background music (started, looped and muted by js/MusicHandler.js) -->
+	<audio id="backgroundMusic" src="music/medieval-ambient.mp3" loop preload="auto"></audio>
 
 	<!-- Header -->
 	<div class="grid-item header">
@@ -61,14 +60,13 @@
 			<img src="src/skullCandle.gif" width="50" height="100" alt="">
 		</h1>
 		<p>Autosave in: <span id="tenSecTimer"></span></p>
-		<p class="button" id="restart">restart</p>
-
-		<!-- Music -->
-		<p>
-			<audio controls autoplay loop>
-				<source src="music/medieval-ambient.mp3" type="audio/mpeg">
-			</audio>
-		</p>
+		<div class="header-buttons">
+			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
+			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
+				<i class="fas fa-volume-up"></i> <span>Sound on</span>
+			</button>
+			<p class="button" id="restart">restart</p>
+		</div>
 
 		<p>version 0.0.5.2.9</p>
 	</div>
@@ -117,6 +115,7 @@
 
 			<div class="grid-item">
 				<h3 class="grid-item-title">Stats</h3>
+				<p>Level: <span id="levelStat"></span></p>
 				<p>Influence: <span id="xpReturnDisplayStat"></span></p>
 				<p>blood/10 sec: <span id="newBloodPerRoundStat"></span></p>
 				<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"></span></p>
@@ -412,6 +411,32 @@
 					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></span></p>
 				</div>
 			</div>
+		</div>
+	</div>
+
+	<!-- Leaderboard (filled in by js/leaderboard/Leaderboard.js) -->
+	<div id="leaderboardModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
+		<div class="modal-content leaderboard-content">
+			<div id="leaderboardClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
+			<h3 id="leaderboardTitle">Leaderboard</h3>
+			<p class="leaderboard-status" id="leaderboardStatus" role="status"></p>
+			<div class="leaderboard-scroll" id="leaderboardScroll" hidden>
+				<table class="leaderboard-table">
+					<thead>
+						<tr>
+							<th scope="col">#</th>
+							<th scope="col">Vampire</th>
+							<th scope="col">Settlement</th>
+							<th scope="col">Level</th>
+							<th scope="col">Influence</th>
+							<th scope="col">Blood</th>
+							<th scope="col">Familiars</th>
+						</tr>
+					</thead>
+					<tbody id="leaderboardBody"></tbody>
+				</table>
+			</div>
+			<button type="button" class="button" id="leaderboardRefresh">Refresh</button>
 		</div>
 	</div>
 

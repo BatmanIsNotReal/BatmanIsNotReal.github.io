@@ -29,6 +29,18 @@ img {
 	font-size: 1.5625rem;
 }
 
+.header-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 0.75rem;
+	margin: 0.25rem 0;
+}
+
+.header-buttons .button {
+	margin: 0.5rem 0;
+}
+
 .header > p:last-child {
 	color: var(--bone-dim);
 }
@@ -37,22 +49,25 @@ img {
 	color: var(--gold);
 }
 
-audio {
-	width: min(100%, 22rem);
-}
-
-/* ---------- Sign-up overlay ---------- */
+/* ---------- Sign-up pop-up ---------- */
 #overlay {
 	position: fixed;
-	display: none; /* shown by main.js */
-	top: 50%;
-	left: 50%;
-	transform: translate(-50%, -50%);
-	width: min(92vw, 30rem);
+	inset: 0;
+	display: none; /* main.js shows it for new players */
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	background-color: rgba(8, 4, 5, 0.88);
+	z-index: var(--z-overlay);
+}
+
+#overlay form {
+	width: min(100%, 30rem);
+	max-height: 100%;
+	overflow-y: auto;
 	background-color: var(--ink);
 	border: 3px solid var(--line);
-	box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.7); /* dims the page behind it */
-	z-index: var(--z-overlay);
+	box-shadow: inset 0 0 0 2px var(--crypt);
 }
 
 .grid-container-signup {
@@ -74,11 +89,9 @@ audio {
 	background-color: var(--crypt);
 }
 
-.item10 { grid-area: title; }
-.item11 { grid-area: image; }
-.item12 { grid-area: name; }
-.item13 { grid-area: house; }
-.item14 { grid-area: confirm; }
+.grid-container-signup label {
+	display: block;
+}
 
 .grid-container-signup input[type="text"] {
 	width: 100%;
@@ -87,6 +100,18 @@ audio {
 	color: var(--bone);
 	background-color: var(--ink);
 	border: 2px solid var(--line);
+}
+
+.item10 { grid-area: title; }
+.item11 { grid-area: image; }
+.item12 { grid-area: name; }
+.item13 { grid-area: house; }
+.item14 { grid-area: confirm; }
+
+.signup-error {
+	min-height: 1.25em;
+	margin: 0 0 0.25rem;
+	color: #e8808c;
 }
 
 /* ---------- Map tiles ---------- */
@@ -110,4 +135,14 @@ audio {
 	max-width: 100%;
 	margin-top: 0;
 	background-color: rgb(128, 64, 18);
+}
+
+/* Level shown in the Stats panel flashes when the player levels up */
+@keyframes levelflash {
+	0%, 100% { color: inherit; text-shadow: none; }
+	30%      { color: var(--gold); text-shadow: 0 0 12px var(--blood-bright); }
+}
+
+#levelStat.level-up {
+	animation: levelflash 2.5s ease-in-out;
 }

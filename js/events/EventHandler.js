@@ -48,9 +48,7 @@ export default class EventHandler{
 
 
         let len = Object.keys(this.events).length;
-        console.log(len);
         let rand = this.getRandomInt(1, Object.keys(this.events).length);
-        console.log(rand);
         
         
         const header = document.createElement("h3");
@@ -80,7 +78,6 @@ export default class EventHandler{
             modaleventbox.style.display = "none";
             this.messageBox(this.events[rand].conTwoText);
         });
-        console.log("event happened");
         
     }
 

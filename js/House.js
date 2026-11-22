@@ -3,10 +3,30 @@ export default class HousePar {
         this.houseImages = houseImages;
         this.houseSize = houseSize;
         this.xpRates = xpRates;
-        this.xp = 0;
-        this.currentSize = 0;
-        this.xpNext = xpRates[this.currentSize + 1];
-        this.currentHouse = houseSize[this.currentSize];
+        this.xp = 0;        // influence: progress towards the next level
+        this.level = 1;
+        this.applyLevel(1);
+    }
+
+    // Influence needed to get from `level` to the next level.
+    // Levels 1-5 use the gaps between the original house milestones
+    // (1000, 9000, 40000, 150000, 800000: the same total as before), and every
+    // level after that needs 50% more than the one before.
+    levelRequirement(level){
+        const rates = this.xpRates;
+        if (level < rates.length){
+            return rates[level] - rates[level - 1];
+        }
+        const last = rates[rates.length - 1] - rates[rates.length - 2];
+        return Math.round(last * Math.pow(1.5, level - rates.length + 1));
+    }
+
+    // Sets everything that follows from the level (also used when loading a save).
+    applyLevel(level){
+        this.level = level;
+        this.currentSize = Math.min(level - 1, this.houseSize.length - 1);
+        this.currentHouse = this.houseSize[this.currentSize];
+        this.xpNext = this.levelRequirement(level);
     }
 
     fire = {
@@ -39,14 +59,16 @@ export default class HousePar {
     }
 
     //Updates
+    // Returns the new level when the player levels up, otherwise null.
     updateXP(account){
         this.xp = (this.xp + account.influence) + 1;
-		if(this.xp >= this.xpNext){
-			this.currentSize = this.currentSize + 1;
-			this.xpNext = this.xpRates[this.currentSize + 1];
-			this.currentHouse = this.houseSize[this.currentSize];
-            this.fire.getPercent();
-		}
+        if (this.xp < this.xpNext) return null;
+
+        const oldSize = this.currentSize;
+        this.xp = 0; // influence starts again from 0 at every new level
+        this.applyLevel(this.level + 1);
+        if (this.currentSize !== oldSize) this.fire.getPercent(); // bigger house: fire is refilled
+        return this.level;
     }
 
     updateImage(){
@@ -86,9 +108,10 @@ export default class HousePar {
         this.updateFireImage(document);
     }
 
+    // Returns the new level when the player levels up, otherwise null.
     updateTen(account, document){
         this.updateImage();
         this.updateFire(document);
-        this.updateXP(account);
+        return this.updateXP(account);
     }
 }

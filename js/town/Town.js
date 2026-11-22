@@ -27,14 +27,12 @@ export default class Town{
             LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600, 5),
         }
 
-        this.buildSound = new Audio('music\sounds\buildSound.mp3');
+        this.buildSound = new Audio('music/sounds/buildSound.mp3');
     }
 
     buyHut(inventory, familiar, document, id){
         if (inventory.items.wood >= this.Buildings.Hut.cost){
             if(this.tiles[id] < 1){
-                console.log(document.getElementById(id).src);
-                console.log(String(this.Buildings.Grass.imgsrc));
                 familiar.addMaxLimit(this.Buildings.Hut.capacity);
                 inventory.useWood(this.Buildings.Hut.cost);
                 this.Buildings.Hut.ammount++;
@@ -75,7 +73,6 @@ export default class Town{
                 }
                 else if (this.tiles[id] == 3){
                     this.Buildings.Mine.ammount++;
-                    console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.Mine.capacity);
                     familiar.notWorking = familiar.notWorking - this.Buildings.Mine.workersRequired;
                     inventory.useWood(this.Buildings.Mine.cost);
@@ -105,7 +102,6 @@ export default class Town{
             if (familiar.getNotWorking() >= this.Buildings.Farm.workersRequired){
                 if(this.tiles[id] < 1){
                     this.Buildings.Farm.ammount++;
-                    console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.Farm.capacity);
                     familiar.notWorking = familiar.notWorking - this.Buildings.Farm.workersRequired;
                     inventory.useWood(this.Buildings.Farm.cost);
@@ -160,7 +156,6 @@ export default class Town{
                 }
                 else if (this.tiles[id] == 6){
                     this.Buildings.LumberMill.ammount++;
-                    console.log(document.getElementById(id).src);
                     familiar.addMaxLimit(this.Buildings.LumberMill.capacity);
                     familiar.notWorking = familiar.notWorking - this.Buildings.LumberMill.workersRequired;
                     inventory.useWood(this.Buildings.LumberMill.cost);
@@ -195,7 +190,6 @@ export default class Town{
                 this.tiles["tile"+current] = 0;
                 current++;
                 table.appendChild(g);
-                console.log(id);
                 let image = document.createElement('img');
                 image.setAttribute("id", id);
                 image.setAttribute("width", 32);
@@ -204,7 +198,6 @@ export default class Town{
                 g.appendChild(image);
             }
         }
-        console.log("tiles created");
     }
 
     newTileMap(document){

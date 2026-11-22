@@ -10,27 +10,28 @@ import Upgrade from './js/upgrades/Upgrade.js';
 import EventHandler from './js/events/EventHandler.js';
 import MusicHandler from './js/MusicHandler.js';
 import Chat from './js/chat/Chat.js';
-import { CHAT_API_URL } from './js/chat/chatConfig.js';
+import PlayerSync from './js/playerSync.js';
+import Leaderboard from './js/leaderboard/Leaderboard.js';
+import { CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
 const xpRates = [0, 1000, 10000, 50000, 200000, 1000000];
 const houseImages = ["src/smallHut.png", "src/house2.png"];
 
-const townSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
-
-
 //game basics - inventory, player 
 let Inv = new Inventory();
-let Account = new Player("john", "house");
-let myTown = new Town(townSize, xpRates);
+const Account = new Player("", "");
+let signedUp = false; // true once the player has chosen their names
+let myTown = new Town(houseSize, xpRates);
 const Upgrades = new Upgrade();
 
 let updateBox = new UpdateBox(10, 0);
 
 let eventHandler = new EventHandler(Inv);
 
-let musicHandler = new MusicHandler();
+let musicHandler = new MusicHandler(document.getElementById("backgroundMusic"), document.getElementById("muteButton"));
+musicHandler.start();
 
 
 
@@ -107,7 +108,7 @@ for (let i = 0; i < buyVampireButtons.length; i++) {
 
 // open modal box
 for (let i = 0; i < tiles.length; i++){
-	tiles[i].addEventListener("click", () => {currentTile = tiles[i].id; modal.style.display = "block"; console.log(tiles[i].id)});
+	tiles[i].addEventListener("click", () => {currentTile = tiles[i].id; modal.style.display = "block"});
 }
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
@@ -155,17 +156,28 @@ for (const button of addGatherButtons){
 for (const button of removeGatherButtons){
 	button.addEventListener("click", (event) => Familiars.removeGather(event.currentTarget.dataset.gather));
 }
-restartButton.addEventListener("click", () => {deleteSave();})
+restartButton.addEventListener("click", () => {
+	if (confirm("Delete your save and start a new game?")) deleteSave();
+})
 
 //Chat (a broken chat must never stop the game from starting)
+let chat = null;
 try {
-	new Chat(CHAT_API_URL).start();
+	chat = new Chat(CHAT_API_URL);
+	chat.start();
 } catch (error) {
 	console.error("Chat could not start:", error);
 }
 
-load();
+//Player file (names and stats are also kept on the server)
+const playerSync = new PlayerSync(PLAYER_API_URL);
 
+//Leaderboard
+try {
+	new Leaderboard(LEADERBOARD_API_URL, () => Account.vampireName).start();
+} catch (error) {
+	console.error("Leaderboard could not start:", error);
+}
 
 //random number getter
  function getRandomInt(min, max){
@@ -191,6 +203,7 @@ function displayUpdate(){
 	
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
+	document.getElementById("levelStat").innerHTML = House.level;
 	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
@@ -208,40 +221,13 @@ function displayUpdate(){
 
 	document.getElementById("fireGuard").innerHTML = Familiars.fireGuard;
 	
-	document.getElementById("mosquitoCount").innerHTML = Mosquito.getAmmount();
-	document.getElementById("mosquitoCost").innerHTML = Mosquito.getCost();
-	
-	document.getElementById("vampireRatCount").innerHTML = VampireRat.getAmmount();
-	document.getElementById("vampireRatCost").innerHTML = VampireRat.getCost();
-	
-	document.getElementById("vampireBatCount").innerHTML = VampireBat.getAmmount();
-	document.getElementById("vampireBatCost").innerHTML = VampireBat.getCost();
-	
-	document.getElementById("bloodHoundCount").innerHTML = BloodHound.getAmmount();
-	document.getElementById("bloodHoundCost").innerHTML = BloodHound.getCost();
-	
-	document.getElementById("vampireSlaveCount").innerHTML = VampireSlave.getAmmount();
-	document.getElementById("vampireSlaveCost").innerHTML = VampireSlave.getCost();
-	
-	document.getElementById("nightWalkerCount").innerHTML = NightWalker.getAmmount();
-	document.getElementById("nightWalkerCost").innerHTML = NightWalker.getCost();
-	
-	document.getElementById("badabookCount").innerHTML = Badabook.getAmmount();
-	document.getElementById("badabookCost").innerHTML = Badabook.getCost();
-
-	document.getElementById("draugrCount").innerHTML = Draugr.getAmmount();
-	document.getElementById("draugrCost").innerHTML = Draugr.getCost();
-
-	document.getElementById("strigoiCount").innerHTML = Strigoi.getAmmount();
-	document.getElementById("strigoiCost").innerHTML = Strigoi.getCost();
-
-	document.getElementById("overloardCount").innerHTML = Overloard.getAmmount();
-	document.getElementById("overloardCost").innerHTML = Overloard.getCost();
+	for (const [id, vampire] of Object.entries(vampireTypes)){
+		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
+		document.getElementById(id + "Cost").innerHTML = vampire.getCost();
+	}
 	
 	document.getElementById("fireLeft").innerHTML = House.fire.percent;
 	
-	document.getElementById("vName").innerHTML = Account.vampireName;
-	document.getElementById("hName").innerHTML = Account.houseName;
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
 
 	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
@@ -307,7 +293,8 @@ window.setInterval(function(){
 	Inv.updateTen();
 
 	//House
-	House.updateTen(Account, document);
+	const newLevel = House.updateTen(Account, document);
+	if (newLevel) announceLevelUp(newLevel);
 
 	//Player
 
@@ -341,130 +328,209 @@ window.setInterval(function(){
 }, 60000)
 
 
-function validateForm(){
-		let vName = document.forms["signUp"]["vName"].value;
-		let hName = document.forms["signUp"]["hName"].value;
-		if (vName == ""){
-			alert("You must have a name");
-		}
-		else if (hName == ""){
-			alert("Your house must have a name");
-		}
-		if (vName !== "" && hName !== ""){
-			let Account = new Player(vName, hName);
-			document.getElementById("overlay").style.display = "none";
-		} 
-	}
+//SIGN-UP (new players choose a vampire name and a settlement name)
+const overlay = document.getElementById("overlay");
+const signUpForm = document.getElementById("signUpForm");
+const signUpError = document.getElementById("signUpError");
+const signUpButton = signUpForm.querySelector("button[type=submit]");
 
+function cleanName(value){
+	const text = value
+		.replace(/[​-‏⁠﻿­]/g, "")
+		.replace(/[\u0000-\u001F\u007F-\u009F]/g, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+	return Array.from(text).slice(0, 20).join("");
+}
+
+function showSignUp(message = ""){
+	signUpError.textContent = message;
+	signUpForm.vName.value = Account.vampireName;
+	signUpForm.hName.value = Account.houseName;
+	overlay.style.display = "flex";
+	signUpForm.vName.focus();
+}
+
+signUpForm.addEventListener("submit", async (event) => {
+	event.preventDefault();
+	const vampireName = cleanName(signUpForm.vName.value);
+	const settlementName = cleanName(signUpForm.hName.value);
+	if (vampireName === "") { signUpError.textContent = "Your vampire needs a name."; return; }
+	if (settlementName === "") { signUpError.textContent = "Your settlement needs a name."; return; }
+
+	// Ask the server: it refuses a vampire name that another player already has.
+	signUpButton.disabled = true;
+	signUpError.textContent = "Checking the name…";
+	const result = await playerSync.save(playerProfile({ vampireName, houseName: settlementName }));
+	signUpButton.disabled = false;
+
+	if (!result.ok && !result.offline){
+		signUpError.textContent = result.error || "Could not save your name. Please try again.";
+		return;
+	}
+	// (If the server could not be reached the game still starts. The name is checked
+	// again on the next autosave, and the pop-up comes back if it turns out to be taken.)
+
+	Account.vampireName = vampireName;
+	Account.houseName = settlementName;
+	signedUp = true;
+	overlay.style.display = "none";
+	chat?.lockName(vampireName);
+	updateBox.townUpdatesAdd("-- " + vampireName + " founds " + settlementName + " --", document);
+	save();
+})
+
+
+//SAVE / LOAD
+//One list describes everything that is saved: key in the save -> [how to read it, how to set it]
+const field = (target, property) => [() => target[property], (value) => { target[property] = value; }];
+
+const saveFields = {
+	bloodAmmount: field(Inv.items, "blood"),
+	humanFoodAmmount: field(Inv.items, "humanFood"),
+	woodAmmount: field(Inv.items, "wood"),
+	ironAmmount: field(Inv.items, "iron"),
+	bronzeAmmount: field(Inv.items, "bronze"),
+	goldAmmount: field(Inv.items, "gold"),
+
+	hutAmmount: field(myTown.Buildings.Hut, "ammount"),
+	mineAmmount: field(myTown.Buildings.Mine, "ammount"),
+	farmAmmount: field(myTown.Buildings.Farm, "ammount"),
+	lumberMillAmmount: field(myTown.Buildings.LumberMill, "ammount"),
+	mineGain: field(myTown.Buildings.Mine, "gain"),
+	farmGain: field(myTown.Buildings.Farm, "gain"),
+	lumberMillGain: field(myTown.Buildings.LumberMill, "gain"),
+
+	ironHoeAmmount: field(Upgrades.tools.ironHoe, "ammount"),
+	ironAxeAmmount: field(Upgrades.tools.ironAxe, "ammount"),
+	ironPickAmmount: field(Upgrades.tools.ironPick, "ammount"),
+
+	vampiresAmmount: field(Account, "vampiresAmmount"),
+	mosquitoAmmount: field(Mosquito, "ammount"),
+	vampireRatAmmount: field(VampireRat, "ammount"),
+	vampireBatAmmount: field(VampireBat, "ammount"),
+	bloodHoundAmmount: field(BloodHound, "ammount"),
+	vampireSlaveAmmount: field(VampireSlave, "ammount"),
+	nightWalkerAmmount: field(NightWalker, "ammount"),
+	badabookAmmount: field(Badabook, "ammount"),
+	draugrAmmount: field(Draugr, "ammount"),
+	strigoiAmmount: field(Strigoi, "ammount"),
+	overloardAmmount: field(Overloard, "ammount"),
+
+	familiarAmmount: field(Familiars, "ammount"),
+	familiarNotWorking: field(Familiars, "notWorking"),
+	familiarLimit: field(Familiars, "maxLimit"),
+	humanFoodGather: field(Familiars, "foodGather"),
+	bloodVictimGather: field(Familiars, "bloodGather"),
+	woodGather: field(Familiars, "woodGather"),
+	fireGuard: field(Familiars, "fireGuard"),
+
+	newHumanFoodPerRound: field(Inv, "newHumanFoodPerRound"),
+	newBloodPerRound: field(Inv, "newBloodPerRound"),
+
+	xp: field(House, "xp"),
+	level: field(House, "level"),
+	firePercent: field(House.fire, "percent"),
+
+	vampireName: field(Account, "vampireName"),
+	houseName: field(Account, "houseName"),
+	playerBloodPerRoundGain: field(Account, "bloodPerRoundGain"),
+	playerInfluencePerRound: field(Account, "influence"),
+};
 
 function newGame(){
-	//document.getElementById("overlay").style.display="grid";
 	myTown.newTileMap(document);
 }
 
-function load(){
-	
-	updateBox.townUpdatesAdd("-- Welcome back --", document);
-	// document.body.style.zoom="60%";
-	House.updateFire(document);
-	var savegame = JSON.parse(localStorage.getItem("save"));
-	if (savegame == null) savegame = ""; newGame();
-	if (savegame.bloodAmmount !== "undefined"){ 
-		Inv.bloodAmmount = savegame.bloodAmmount;
-	}else{
-		return;
+function readSave(){
+	try {
+		return JSON.parse(localStorage.getItem("save"));
+	} catch {
+		return null; // missing or damaged save: start fresh
 	}
-	if (typeof savegame.bloodAmmount !== "undefined") Inv.items.blood = savegame.bloodAmmount;
-	if (typeof savegame.humanFoodAmmount !== "undefined") Inv.items.humanFood = savegame.humanFoodAmmount;
-	if (typeof savegame.woodAmmount !== "undefined") Inv.items.wood = savegame.woodAmmount;
-	if (typeof savegame.ironAmmount !== "undefined") Inv.items.iron = savegame.ironAmmount;
-	if (typeof savegame.bronzeAmmount !== "undefined") Inv.items.bronze = savegame.bronzeAmmount;
-	if (typeof savegame.goldAmmount !== "undefined") Inv.items.gold = savegame.goldAmmount;
-	
-	if (typeof savegame.hutAmmount !== "undefined") myTown.Buildings.Hut.ammount = savegame.hutAmmount;
-	if (typeof savegame.mineAmmount !== "undefined") myTown.Buildings.Mine.ammount = savegame.mineAmmount;
-	if (typeof savegame.farmAmmount !== "undefined") myTown.Buildings.Farm.ammount = savegame.farmAmmount;
+}
 
-	if (typeof savegame.vampiresAmmount !== "undefined") Account.vampiresAmmount = savegame.vampiresAmmount;
-	if (typeof savegame.mosquitoAmmount !== "undefined") Mosquito.ammount = savegame.mosquitoAmmount;
-	if (typeof savegame.vampireRatAmmount !== "undefined") VampireRat.ammount = savegame.vampireRatAmmount;
-	if (typeof savegame.vampireBatAmmount !== "undefined") VampireBat.ammount = savegame.vampireBatAmmount;
-	if (typeof savegame.bloodHoundAmmount !== "undefined") BloodHound.ammount = savegame.bloodHoundAmmount;
-	if (typeof savegame.vampireSlaveAmmount !== "undefined") VampireSlave.ammount = savegame.vampireSlaveAmmount;
-	if (typeof savegame.nightWalkerAmmount !== "undefined") NightWalker.ammount = savegame.nightWalkerAmmount;
-	if (typeof savegame.badabookAmmount !== "undefined") Badabook.ammount = savegame.badabookAmmount;
-	if (typeof savegame.draugrAmmount !== "undefined") Draugr.ammount = savegame.draugrAmmount;
-	if (typeof savegame.strigoiAmmount !== "undefined") Strigoi.ammount = savegame.strigoiAmmount;
-	if (typeof savegame.overloardAmmount !== "undefined") Overloard.ammount = savegame.overloardAmmount;
-	if (typeof savegame.familiarAmmount !== "undefined") Familiars.ammount = savegame.familiarAmmount;
-	if (typeof savegame.newHumanFoodPerRound !== "undefined") Inv.newHumanFoodPerRound = savegame.newHumanFoodPerRound;
-	if (typeof savegame.newBloodPerRound !== "undefined") Inv.newBloodPerRound = savegame.newBloodPerRound;
-	if (typeof savegame.humanFoodGather !== "undefined") Familiars.foodGather = savegame.humanFoodGather;
-	if (typeof savegame.bloodVictimGather !== "undefined") Familiars.bloodGather = savegame.bloodVictimGather;
-	if (typeof savegame.woodGather !== "undefined") Familiars.woodGather = savegame.woodGather;
-	if (typeof savegame.fireGuard !== "undefined") Familiars.fireGuard = savegame.fireGuard;
-	if (typeof savegame.familiarNotWorking !== "undefined") Familiars.notWorking = savegame.familiarNotWorking;
-	if (typeof savegame.familiarLimit !== "undefined") Familiars.maxLimit = savegame.familiarLimit;
-	if (typeof savegame.xp !== "undefined") House.xp = savegame.xp;
-	if (typeof savegame.currentSize !== "undefined") House.currentSize = savegame.currentSize;
-	if (typeof savegame.currentHouse !== "undefined") House.currentHouse = savegame.currentHouse;
-	if (typeof savegame.vampireName !== "undefined") Account.vampireName = savegame.vampireName;
-	if (typeof savegame.houseName !== "undefined") Account.houseName = savegame.houseName;
-	if (typeof savegame.playerBloodPerRoundGain !== "undefined") Account.bloodPerRoundGain = savegame.playerBloodPerRoundGain;
-	if (typeof savegame.playerInfluencePerRound !== "undefined") Account.influence = savegame.playerInfluencePerRound;
-	if (typeof savegame.firePercent !== "undefined") House.fire.percent = savegame.firePercent;
-	if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
-	
+function load(){
+	updateBox.townUpdatesAdd("-- Welcome back --", document);
+	House.updateFire(document);
+
+	const savegame = readSave();
+	if (!savegame || typeof savegame.tiles === "undefined") newGame();
+
+	if (savegame){
+		for (const [key, [, set]] of Object.entries(saveFields)){
+			if (savegame[key] !== undefined && savegame[key] !== null) set(savegame[key]);
+		}
+		if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
+		signedUp = savegame.signedUp === true;
+
+		if (typeof savegame.level === "undefined"){
+			// Saved before levels existed: the old house size becomes the level, and the
+			// influence collected beyond that house's milestone is the progress in it.
+			const oldSize = Number.isInteger(savegame.currentSize) ? savegame.currentSize : 0;
+			House.level = oldSize + 1;
+			House.xp = Math.max(0, House.xp - (xpRates[oldSize] || 0));
+		}
+		House.applyLevel(House.level); // house name, size and next milestone follow from the level
+	}
+
+	if (signedUp) chat?.lockName(Account.vampireName);
+	else showSignUp();
+}
+
+//What the server keeps in its player file
+function playerProfile(names = Account){
+	return {
+		vampireName: names.vampireName,
+		settlementName: names.houseName,
+		level: House.level,
+		stats: {
+			blood: Inv.items.blood,
+			humanFood: Inv.items.humanFood,
+			wood: Inv.items.wood,
+			iron: Inv.items.iron,
+			bronze: Inv.items.bronze,
+			gold: Inv.items.gold,
+			familiars: Familiars.ammount,
+			influence: House.xp,
+		},
+	};
+}
+
+async function syncPlayerFile(){
+	const result = await playerSync.save(playerProfile());
+	if (result.status === 409 && signedUp){
+		// The server says another player has this name (it could not be checked while offline).
+		signedUp = false;
+		save();
+		showSignUp(result.error || "That vampire name is already taken. Choose another.");
+	}
 }
 
 function save(){
-	var save = {
-		bloodAmmount: Inv.items.blood,
-		humanFoodAmmount: Inv.items.humanFood,
-		woodAmmount: Inv.items.wood,
-		ironAmmount: Inv.items.iron,
-		bronzeAmmount: Inv.items.bronze,
-		goldAmmount: Inv.items.gold,
+	const data = { signedUp, tiles: myTown.tiles };
+	for (const [key, [get]] of Object.entries(saveFields)) data[key] = get();
 
-		hutAmmount: myTown.Buildings.Hut.ammount,
-		mineAmmount: myTown.Buildings.Mine.ammount,
-		farmAmmount: myTown.Buildings.Farm.ammount,
-
-		vampiresAmmount: Account.vampiresAmmount,
-		mosquitoAmmount: Mosquito.ammount,
-		vampireRatAmmount: VampireRat.ammount,
-		vampireBatAmmount: VampireBat.ammount,
-		bloodHoundAmmount: BloodHound.ammount,
-		vampireSlaveAmmount: VampireSlave.ammount,
-		nightWalkerAmmount: NightWalker.ammount,
-		badabookAmmount: Badabook.ammount,
-		draugrAmmount: Draugr.ammount,
-		strigoiAmmount: Strigoi.ammount,
-		overloardAmmount: Overloard.ammount,
-		familiarAmmount: Familiars.ammount,
-		newHumanFoodPerRound: Inv.newHumanFoodPerRound,
-		newBloodPerRound: Inv.newBloodPerRound,
-		humanFoodGather: Familiars.foodGather,
-		bloodVictimGather: Familiars.bloodGather,
-		woodGather: Familiars.woodGather,
-		fireGuard: Familiars.fireGuard,
-		familiarNotWorking: Familiars.notWorking,
-		familiarLimit: Familiars.maxLimit,
-		humanFoodPerTurn: Inv.newHumanFoodPerRound,
-		xp: House.xp,
-		currentSize: House.currentSize,
-		currentHouse: House.currentHouse,
-		vampireName: Account.vampireName,
-		houseName: Account.houseName,
-		firePercent: House.fire.percent,
-		playerBloodPerRoundGain: Account.bloodPerRoundGain,
-		playerInfluencePerRound: Account.influence,
-		tiles: myTown.tiles,
+	try {
+		localStorage.setItem("save", JSON.stringify(data));
+	} catch (error) {
+		console.warn("Could not save the game:", error);
 	}
-	localStorage.setItem("save", JSON.stringify(save));
+	if (signedUp) syncPlayerFile();
+}
+
+//LEVELS
+function announceLevelUp(level){
+	updateBox.townUpdatesAdd("-- Level up! " + Account.vampireName + " is now level " + level + " (" + House.currentHouse + ") --", document);
+	const levelStat = document.getElementById("levelStat");
+	levelStat.classList.remove("level-up");
+	void levelStat.offsetWidth; // lets the flash start again if levels come quickly
+	levelStat.classList.add("level-up");
 }
 
 function deleteSave(){
 	localStorage.removeItem("save");
-	
+	location.reload(); // start a new game (otherwise the next autosave would write the old one back)
 }
+
+load();

@@ -21,7 +21,6 @@ export default class Mine{
     checkForLoot(inv, document, updatebox){
         for (let i = 0; i < this.ammount; i++){
             var chance = this.getRandomInt(0, 1000);
-            console.log(chance);
             if (chance <= 300){
                 //your miners discovered an ore of iron
                 var ammount = this.getRandomInt(10*this.gain, 30*this.gain);
