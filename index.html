@@ -268,9 +268,16 @@
 			<div class="grid-item chat">
 				<div class="chat-head">
 					<h3 class="grid-item-title">Chat</h3>
+					<button type="button" class="chat-popout chat-dice-button" id="chatDice" title="Challenge someone to a game of dice">Dice</button>
 					<button type="button" class="chat-popout" id="chatPopout" title="Open the chat in a separate window">Pop out &#8599;</button>
 				</div>
+				<div class="chat-body">
 				<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
+				<aside class="chat-online" aria-label="Players online">
+					<h4 id="chatOnlineTitle">Online</h4>
+					<ul id="chatOnlineList"></ul>
+				</aside>
+				</div>
 				<form class="chat-form" id="chatForm" autocomplete="off">
 					<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
 					<input type="text" id="chatInput" maxlength="300" aria-label="Message" placeholder="Say something…">

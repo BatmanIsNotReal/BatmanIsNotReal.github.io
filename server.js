@@ -241,7 +241,7 @@ async function handleChat(req, res, url) {
 		const text = clean(body && body.text, MAX_TEXT_LENGTH);
 		const name = clean(body && body.name, MAX_NAME_LENGTH) || "Vampire";
 		if (!text) return sendJson(res, 400, { error: "Message is empty" });
-		if (nameKey(name) === DICE_KEY) return sendJson(res, 400, { error: "That name is reserved." });
+		if (RESERVED_KEYS.has(nameKey(name))) return sendJson(res, 400, { error: "That name is reserved." });
 
 		if (isChatRateLimited(clientIp(req))) {
 			return sendJson(res, 429, { error: "You are sending messages too fast. Wait a few seconds." });
@@ -292,7 +292,7 @@ async function handlePlayer(req, res) {
 
 	// A vampire name can only belong to one player.
 	const key = nameKey(vampireName);
-	if (key === DICE_KEY) return sendJson(res, 409, { error: "That name is reserved. Choose another." });
+	if (RESERVED_KEYS.has(key)) return sendJson(res, 409, { error: "That name is reserved. Choose another." });
 	const owner = nameOwners.get(key);
 	if (owner && owner !== id) {
 		return sendJson(res, 409, { error: "That vampire name is already taken. Choose another." });
@@ -335,7 +335,8 @@ async function handlePlayer(req, res) {
 // ---------- Active players API ----------
 // POST /api/online { id }  -> the player is active right now; answers { online }
 // GET  /api/online         -> { online }   (number of players seen in the last 90 seconds)
-// Only a number is kept and handed out: nothing about who is online.
+// Both answers also carry "names": the vampire names of the players seen in that time
+// (shown in the chat's "Online" column). Only vampire names are handed out, nothing else.
 const lastSeen = new Map(); // player id -> time of the last sign of life
 
 function countOnline() {
@@ -344,6 +345,35 @@ function countOnline() {
 		if (now - time >= ONLINE_WINDOW_MS) lastSeen.delete(id);
 	}
 	return lastSeen.size;
+}
+
+// Welcome message in the chat when a signed-up player comes online.
+// - Not for the first minutes after a server start (everybody "arrives" at once then).
+// - At most one welcome per player every 30 minutes, so a flaky connection or a
+//   closed-and-reopened tab does not fill the chat.
+const SERVER_START = Date.now();
+const WELCOME_QUIET_AFTER_START_MS = ONLINE_WINDOW_MS + 60000;
+const WELCOME_COOLDOWN_MS = 30 * 60000;
+const lastWelcome = new Map(); // player id -> time of their last welcome
+
+function welcomePlayer(id, now) {
+	const player = players.get(id);
+	if (!player) return;
+	if (now - SERVER_START < WELCOME_QUIET_AFTER_START_MS) return;
+	if (now - (lastWelcome.get(id) || 0) < WELCOME_COOLDOWN_MS) return;
+	if (lastWelcome.size >= MAX_TRACKED_ONLINE) lastWelcome.clear();
+	lastWelcome.set(id, now);
+	postChatAnnouncement("Welcome, " + player.vampireName + " of " + player.settlementName + "! The night awaits you.", CRIER_NAME);
+}
+
+const MAX_ONLINE_NAMES = 200;
+function onlineNames() {
+	const names = [];
+	for (const id of lastSeen.keys()) {
+		const player = players.get(id);
+		if (player && player.vampireName) names.push(player.vampireName);
+	}
+	return names.sort((a, b) => a.localeCompare(b)).slice(0, MAX_ONLINE_NAMES);
 }
 
 async function handleOnline(req, res) {
@@ -365,9 +395,12 @@ async function handleOnline(req, res) {
 		}
 		const id = body && typeof body.id === "string" ? body.id : "";
 		if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
-		if (lastSeen.has(id) || lastSeen.size < MAX_TRACKED_ONLINE) lastSeen.set(id, Date.now());
+		const now = Date.now();
+		const wasOnline = now - (lastSeen.get(id) || 0) < ONLINE_WINDOW_MS;
+		if (lastSeen.has(id) || lastSeen.size < MAX_TRACKED_ONLINE) lastSeen.set(id, now);
+		if (!wasOnline) welcomePlayer(id, now);
 	}
-	return sendJson(res, 200, { online: countOnline() });
+	return sendJson(res, 200, { online: countOnline(), names: onlineNames() });
 }
 
 // ---------- Dice game ----------
@@ -381,6 +414,8 @@ async function handleOnline(req, res) {
 // POST /api/dice  { id, action: "state" | "create" | "accept" | "cancel" | "ack", ... }
 const DICE_NAME = "Dice Master";       // announces big wins in the chat; no player may use this name
 const DICE_KEY = nameKey(DICE_NAME);
+const CRIER_NAME = "Town Crier";      // welcomes players when they come online; also reserved
+const RESERVED_KEYS = new Set([DICE_KEY, nameKey(CRIER_NAME)]);
 const DICE_RESOURCES = ["blood", "humanFood", "wood", "iron", "bronze", "gold"];
 const DICE_RESOURCE_NAMES = { blood: "blood", humanFood: "human food", wood: "wood", iron: "iron", bronze: "bronze", gold: "gold" };
 // How much one piece of each resource counts for when deciding if a win is "big"
@@ -450,8 +485,8 @@ function scaled(stake, factor) {
 	return Object.fromEntries(Object.entries(stake).map(([kind, n]) => [kind, n * factor]));
 }
 
-function postChatAnnouncement(text) {
-	messages.push({ id: nextId++, name: DICE_NAME, text: text.slice(0, MAX_TEXT_LENGTH), time: Date.now() });
+function postChatAnnouncement(text, name = DICE_NAME) {
+	messages.push({ id: nextId++, name, text: text.slice(0, MAX_TEXT_LENGTH), time: Date.now() });
 	if (messages.length > MAX_STORED_MESSAGES) messages = messages.slice(-MAX_STORED_MESSAGES);
 	saveMessages();
 }

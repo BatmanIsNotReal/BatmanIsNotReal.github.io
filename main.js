@@ -17,6 +17,7 @@ import GifPicker from './js/chat/GifPicker.js';
 import DiceGame from './js/dice/DiceGame.js';
 import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
+import OnlinePlayers from './js/chat/OnlinePlayers.js';
 import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
@@ -147,7 +148,11 @@ const upgradeActions = {
 for (const button of buyUpgradeButtons){
 	button.addEventListener("click", (event) => {
 		const action = upgradeActions[event.currentTarget.id];
-		if (action) action();
+		if (!action) return;
+		const countBefore = Object.values(Upgrades.tools).reduce((sum, tool) => sum + tool.ammount, 0);
+		action();
+		const countAfter = Object.values(Upgrades.tools).reduce((sum, tool) => sum + tool.ammount, 0);
+		if (countAfter > countBefore) musicHandler.playToolUpgrade(); // only when the purchase went through
 	})
 }
 
@@ -173,6 +178,20 @@ try {
 	new GifPicker(chat, GIPHY_API_KEY).start();
 } catch (error) {
 	console.error("Chat could not start:", error);
+}
+
+//Dice button next to the chat opens the same dice pop-up as the one in the header
+document.getElementById("chatDice")?.addEventListener("click", () => document.getElementById("diceButton")?.click());
+//(the chat window opens the game with ?dice, so the dice pop-up is shown straight away)
+if (new URLSearchParams(location.search).has("dice")) {
+	setTimeout(() => { if (signedUp) document.getElementById("diceButton")?.click(); }, 1200);
+}
+
+//Column with the names of the players who are online, next to the chat
+try {
+	new OnlinePlayers(ONLINE_API_URL).start();
+} catch (error) {
+	console.error("Online list could not start:", error);
 }
 
 //Chat in a separate window (chat.html)

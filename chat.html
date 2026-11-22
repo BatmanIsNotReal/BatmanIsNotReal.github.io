@@ -14,8 +14,17 @@
 
 <!-- The chat in its own window. Opened by the "Pop out" button in index.html. -->
 <body class="chat-popout-page">
-	<h3 class="grid-item-title">Chat</h3>
+	<div class="chat-head">
+		<h3 class="grid-item-title">Chat</h3>
+		<button type="button" class="chat-popout chat-dice-button" id="chatDice" title="Challenge someone to a game of dice">Dice</button>
+	</div>
+	<div class="chat-body">
 	<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
+	<aside class="chat-online" aria-label="Players online">
+		<h4 id="chatOnlineTitle">Online</h4>
+		<ul id="chatOnlineList"></ul>
+	</aside>
+	</div>
 	<form class="chat-form" id="chatForm" autocomplete="off">
 		<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
 		<input type="text" id="chatInput" maxlength="300" aria-label="Message" placeholder="Say something…">
@@ -26,7 +35,8 @@
 	<script type="module">
 		import Chat from './js/chat/Chat.js';
 		import GifPicker from './js/chat/GifPicker.js';
-		import { CHAT_API_URL, GIPHY_API_KEY } from './js/chat/chatConfig.js';
+		import OnlinePlayers from './js/chat/OnlinePlayers.js';
+		import { CHAT_API_URL, ONLINE_API_URL, GIPHY_API_KEY } from './js/chat/chatConfig.js';
 
 		const chat = new Chat(CHAT_API_URL);
 
@@ -37,8 +47,23 @@
 		} catch { /* no readable save: the chat keeps its own name */ }
 
 		chat.start();
+		new OnlinePlayers(ONLINE_API_URL).start();
 		new GifPicker(chat, GIPHY_API_KEY).start();
 		document.getElementById("chatInput").focus();
+
+		// Dice lives in the game window: bring that window forward and open the dice pop-up there.
+		// If the game window is not open any more, open it with the dice pop-up ready.
+		document.getElementById("chatDice").addEventListener("click", () => {
+			try {
+				const game = window.opener;
+				if (game && !game.closed) {
+					game.document.getElementById("diceButton").click();
+					game.focus();
+					return;
+				}
+			} catch { /* the game window cannot be reached: open it again */ }
+			window.open("index.html?dice", "_blank");
+		});
 	</script>
 </body>
 

@@ -15,6 +15,7 @@ export default class MusicHandler {
 		this.music = music;
 		this.button = button;
 		this.buyVampire = new Audio("music/sounds/strigoiBought.mp3");
+		this.toolUpgrade = new Audio("music/sounds/toolUpgrade.wav");
 		this.muted = this.loadMuted();
 		this.waitingForGesture = false;
 		this.onGesture = () => this.startAfterGesture();
@@ -83,5 +84,11 @@ export default class MusicHandler {
 		if (this.muted) return;
 		this.buyVampire.currentTime = 0;
 		this.buyVampire.play().catch(() => {});
+	}
+
+	playToolUpgrade() {
+		if (this.muted) return;
+		this.toolUpgrade.currentTime = 0;
+		this.toolUpgrade.play().catch(() => {});
 	}
 }

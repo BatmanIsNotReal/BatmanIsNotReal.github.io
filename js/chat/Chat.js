@@ -176,6 +176,7 @@ export default class Chat {
 		if (String(message.text).startsWith("LEVEL UP!")) row.classList.add("chat-levelup");
 		// Big dice wins are announced by the server. Players cannot use this name (the server refuses it).
 		if (message.name === "Dice Master") row.classList.add("chat-dice");
+		if (message.name === "Town Crier") row.classList.add("chat-dice");
 
 		const time = document.createElement("span");
 		time.className = "chat-time";
