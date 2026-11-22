@@ -143,6 +143,7 @@ export default class DiceGame {
 	// The Dice buttons glow while somebody has challenged you directly and you have not answered yet.
 	updateGlow() {
 		const waiting = Array.isArray(this.state && this.state.incoming) ? this.state.incoming.length : 0;
+		this.o.waitingChallenges = waiting; // the pop-out chat window reads this (it has no dice code of its own)
 		for (const button of this.glowButtons) {
 			button.classList.toggle("dice-glow", waiting > 0);
 			if (!("diceTitle" in button.dataset)) button.dataset.diceTitle = button.title || "";

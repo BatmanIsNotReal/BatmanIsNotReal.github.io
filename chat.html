@@ -51,6 +51,20 @@
 		new GifPicker(chat, GIPHY_API_KEY).start();
 		document.getElementById("chatInput").focus();
 
+		// Glow on the Dice button while a challenge is waiting: the game window knows, so ask it.
+		function updateDiceGlow() {
+			let waiting = 0;
+			try {
+				const game = window.opener && !window.opener.closed && window.opener.vampireGameDice;
+				waiting = (game && game.waitingChallenges) || 0;
+			} catch { /* the game window cannot be reached */ }
+			const button = document.getElementById("chatDice");
+			button.classList.toggle("dice-glow", waiting > 0);
+			button.title = waiting > 0 ? "A dice challenge is waiting for you!" : "Challenge someone to a game of dice";
+		}
+		updateDiceGlow();
+		setInterval(updateDiceGlow, 2000);
+
 		// The dice game opens in its own window; it finds the game window through this one.
 		document.getElementById("chatDice").addEventListener("click", () => {
 			const popup = window.open("dice.html", "vampireHouseDice", "popup=yes,width=620,height=820");
