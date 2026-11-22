@@ -94,8 +94,6 @@ const buyUpgradeButtons = document.getElementsByClassName("buy-upgrade-button");
 const tiles = document.getElementsByClassName("tile");
 
 
-const addWoodButton = document.getElementById("addWoodFire");
-
 const restartButton = document.getElementById("restart");
 
 //buy vampire check
@@ -143,8 +141,6 @@ for (const button of buyUpgradeButtons){
 		if (action) action();
 	})
 }
-
-addWoodButton.addEventListener("click", () => {House.addWoodToFire(Inv, 1);})
 
 drinkBloodButton.addEventListener("click", () => { document.getElementById("bloodCount").innerHTML = Math.floor(++Inv.items.blood); })
 
@@ -219,14 +215,10 @@ function displayUpdate(){
 	document.getElementById("newWoodPerRound").innerHTML = Inv.getWoodPerRound(Familiars);
 	document.getElementById("newWoodPerRoundStat").innerHTML = Inv.getNewWoodPerRound();
 
-	document.getElementById("fireGuard").innerHTML = Familiars.fireGuard;
-	
 	for (const [id, vampire] of Object.entries(vampireTypes)){
 		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
 		document.getElementById(id + "Cost").innerHTML = vampire.getCost();
 	}
-	
-	document.getElementById("fireLeft").innerHTML = House.fire.percent;
 	
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
 
@@ -270,7 +262,6 @@ window.setInterval(function(){
 	Inv.updateOne(Familiars, Account);
 
 	//House
-	House.updateOne(document);
 
 	//Player
 
@@ -313,7 +304,6 @@ window.setInterval(function(){
 		eventHandler.getRandomEvent(document);
 	}
 	//Familiars
-	Familiars.updateMin(House, Inv);
 	//Inventory
 
 	//House
@@ -423,14 +413,12 @@ const saveFields = {
 	humanFoodGather: field(Familiars, "foodGather"),
 	bloodVictimGather: field(Familiars, "bloodGather"),
 	woodGather: field(Familiars, "woodGather"),
-	fireGuard: field(Familiars, "fireGuard"),
 
 	newHumanFoodPerRound: field(Inv, "newHumanFoodPerRound"),
 	newBloodPerRound: field(Inv, "newBloodPerRound"),
 
 	xp: field(House, "xp"),
 	level: field(House, "level"),
-	firePercent: field(House.fire, "percent"),
 
 	vampireName: field(Account, "vampireName"),
 	houseName: field(Account, "houseName"),
@@ -452,7 +440,6 @@ function readSave(){
 
 function load(){
 	updateBox.townUpdatesAdd("-- Welcome back --", document);
-	House.updateFire(document);
 
 	const savegame = readSave();
 	if (!savegame || typeof savegame.tiles === "undefined") newGame();
@@ -463,6 +450,8 @@ function load(){
 		}
 		if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
 		signedUp = savegame.signedUp === true;
+		// Fire guards no longer exist: their familiars are free to work elsewhere again
+		if (savegame.fireGuard > 0) Familiars.notWorking += savegame.fireGuard;
 
 		if (typeof savegame.level === "undefined"){
 			// Saved before levels existed: the old house size becomes the level, and the

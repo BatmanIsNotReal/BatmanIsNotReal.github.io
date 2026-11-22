@@ -3,7 +3,7 @@ rem Removes leftover files the game does not use. Run it from the project folder
 rem Everything stays in your git history, so nothing is lost for good.
 cd /d "%~dp0"
 
-for %%F in (Chat.js files_2.zip files_css.zip js\Modalbox.js js\town\test.html) do (
+for %%F in (css\progressbar.css Chat.js files_2.zip files_css.zip js\Modalbox.js js\town\test.html) do (
     if exist "%%F" (
         del "%%F"
         echo Deleted %%F

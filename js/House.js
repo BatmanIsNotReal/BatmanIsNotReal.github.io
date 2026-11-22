@@ -29,16 +29,6 @@ export default class HousePar {
         this.xpNext = this.levelRequirement(level);
     }
 
-    fire = {
-        percent: 100,
-        getRate: () =>{
-            return (this.currentSize * 2) + 1;
-        },
-        getPercent: () =>{
-            this.percent = 100 * (this.currentSize + 1);
-        }
-    }
-
     //Getters
     xpReturnDisplay(){
         return String(this.xp + "/" + this.xpNext);
@@ -64,10 +54,8 @@ export default class HousePar {
         this.xp = (this.xp + account.influence) + 1;
         if (this.xp < this.xpNext) return null;
 
-        const oldSize = this.currentSize;
         this.xp = 0; // influence starts again from 0 at every new level
         this.applyLevel(this.level + 1);
-        if (this.currentSize !== oldSize) this.fire.getPercent(); // bigger house: fire is refilled
         return this.level;
     }
 
@@ -76,42 +64,9 @@ export default class HousePar {
     }
 
 
-    updateFire(document){
-        this.fire.percent = this.fire.percent - this.fire.getRate();
-        if(this.fire.percent < 1){
-            this.fire.percent = 0;
-        }
-		if (this.fire.percent == 10){
-			alert("The fire is running out!");
-		}
-		document.getElementById("fireProgressBar").style.width = this.fire.percent + "%";
-    }
-
-    updateFireImage(document){
-        document.getElementById("fireProgressBar").style.width = this.fire.percent + "%";
-    }
-
-    //Maintenance - house
-    addWoodToFire(inventory, ammount){
-        if (inventory.getWoodAmmount() >= 1){
-            this.fire.getPercent();
-            this.fire.percent = this.fire.percent + (25 * ammount);
-            inventory.useWood(ammount);
-            if (this.fire.percent > 99){
-                this.fire.percent = 100;
-            }
-        }
-    }
-
-    updateOne(document){
-        this.xpReturnDisplay();
-        this.updateFireImage(document);
-    }
-
     // Returns the new level when the player levels up, otherwise null.
     updateTen(account, document){
         this.updateImage();
-        this.updateFire(document);
         return this.updateXP(account);
     }
 }

@@ -4,7 +4,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>EMPERY MELANCHOLIA</title>
+	<title>Vampire House</title>
 
 	<link rel="stylesheet" type="text/css" href="css/style.css" />
 
@@ -27,7 +27,7 @@
 		<form name="signUp" id="signUpForm" autocomplete="off">
 			<div class="grid-container-signup">
 				<div class="item10">
-					<h3 id="signUpTitle">Welcome to EMPERY MELANCHOLIA</h3>
+					<h3 id="signUpTitle">Welcome to Vampire House</h3>
 					<p>Name your vampire and your settlement to begin.</p>
 				</div>
 				<div class="item11">
@@ -56,7 +56,7 @@
 	<div class="grid-item header">
 		<h1>
 			<img src="src/skullCandle.gif" width="50" height="100" alt="">
-			EMPERY MELANCHOLIA
+			VAMPIRE HOUSE
 			<img src="src/skullCandle.gif" width="50" height="100" alt="">
 		</h1>
 		<p>Autosave in: <span id="tenSecTimer"></span></p>
@@ -136,12 +136,7 @@
 
 				<div class="flex-column house-art-container">
 					<table id="map"></table>
-					<div class="button" id="addWoodFire">Add wood</div>
 					<p>Room for familiars: <span id="familiarLimit"></span></p>
-				</div>
-
-				<div class="progress-bar">
-					<div class="progress-bar-inner" id="fireProgressBar"><span id="fireLeft"></span></div>
 				</div>
 			</div>
 
@@ -326,19 +321,6 @@
 						</div>
 						<div class="button remove-gather-button" data-gather="woodGather">-
 							<div class="hover">-Wood/10 sec: 2</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Fire guards -->
-				<div class="fireGuard">
-					<p>fire guards: <span id="fireGuard"></span></p>
-					<div class="flex-row">
-						<div class="button add-gather-button" data-gather="fireGuard">+
-							<div class="hover">+Wood to fire/min: 1</div>
-						</div>
-						<div class="button remove-gather-button" data-gather="fireGuard">-
-							<div class="hover">-Wood to fire/min: 1</div>
 						</div>
 					</div>
 				</div>

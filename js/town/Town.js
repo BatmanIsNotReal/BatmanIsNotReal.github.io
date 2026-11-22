@@ -56,6 +56,9 @@ export default class Town{
             else if (this.tiles[id] == 6){
                 alert("There is a forest here");
             }
+            else if (this.tiles[id] == 7){
+                alert("There is already a lumber mill here");
+            }
         }else{
             alert("You dont have enough wood!");
         }
@@ -89,6 +92,9 @@ export default class Town{
                 else if (this.tiles[id] == 6){
                     alert("There is a forest here");
                 }
+                else if (this.tiles[id] == 7){
+                    alert("There is already a lumber mill here");
+                }
             }else{
                 alert("you dont have enough familiars.");
             }
@@ -113,8 +119,7 @@ export default class Town{
                     alert("There is water here");
                 }
                 else if (this.tiles[id] == 3){
-                    alert("There is already a mine here");
-                    
+                    alert("There is rock here");
                 }
                 else if (this.tiles[id] == 4){
                     alert("There is already a mine here");
@@ -124,6 +129,9 @@ export default class Town{
                 }
                 else if (this.tiles[id] == 6){
                     alert("There is a forest here");
+                }
+                else if (this.tiles[id] == 7){
+                    alert("There is already a lumber mill here");
                 }
             }
             else{
@@ -145,8 +153,7 @@ export default class Town{
                     alert("There is water here");
                 }
                 else if (this.tiles[id] == 3){
-                    alert("There is already a mine here");
-                    
+                    alert("There is rock here");
                 }
                 else if (this.tiles[id] == 4){
                     alert("There is already a mine here");
@@ -161,6 +168,9 @@ export default class Town{
                     inventory.useWood(this.Buildings.LumberMill.cost);
                     document.getElementById(id).src = String(this.Buildings.LumberMill.imgsrc);
                     this.tiles[id] = 7;
+                }
+                else if (this.tiles[id] == 7){
+                    alert("There is already a lumber mill here");
                 }
             }else{
                 alert("you dont have enough familiars.");
@@ -230,31 +240,26 @@ export default class Town{
         return Math.floor(Math.random() * (max - min) + min);
     }
 
+    // Which picture belongs to which tile type
+    tileImage(type){
+        const B = this.Buildings;
+        if (type < 1) return B.Grass.imgsrc;
+        return {
+            1: B.Hut,
+            2: B.Water,
+            3: B.Rock,
+            4: B.Mine,
+            5: B.Farm,
+            6: B.Forest,
+            7: B.LumberMill,
+        }[type]?.imgsrc;
+    }
+
     updateTileImages(document){
         for (let name in this.tiles){
-            if(this.tiles[name] < 1){
-                document.getElementById(name).src = String(this.Buildings.Grass.imgsrc);
-            }
-            if (this.tiles[name] == 1){
-                document.getElementById(name).src = String(this.Buildings.Hut.imgsrc);
-            }
-            if (this.tiles[name] == 2){
-                document.getElementById(name).src = String(this.Buildings.Water.imgsrc);
-            }
-            if (this.tiles[name] == 3){
-                document.getElementById(name).src = String(this.Buildings.Rock.imgsrc);
-            }
-            if (this.tiles[name] == 4){
-                document.getElementById(name).src = String(this.Buildings.Mine.imgsrc);
-            }
-            if (this.tiles[name] == 5){
-                document.getElementById(name).src = String(this.Buildings.Farm.imgsrc);
-            }
-            if (this.tiles[name] == 6){
-                document.getElementById(name).src = String(this.Buildings.Forest.imgsrc);
-            }
+            const src = this.tileImage(this.tiles[name]);
+            if (src) document.getElementById(name).src = String(src);
         }
-        
     }
 
     update(document){
