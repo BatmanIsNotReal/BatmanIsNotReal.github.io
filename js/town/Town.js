@@ -27,7 +27,7 @@ export default class Town{
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
             Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.png', 500, 5),
             LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600, 5),
-            BloodTemple: new BloodTemple("Blood Temple", "A place of worship to thy master", 0, '../../../src/bloodtemple.png', {wood: 7000, iron: 4000, bronze: 4000, gold: 1000}, 40),
+            BloodTemple: new BloodTemple("Blood Temple", "A place of worship to thy master", 0, '../../../src/bloodtemple.png', {wood: 10000, iron: 15000, bronze: 5000, gold: 1000}, 40),
         }
 
         this.buildSound = new Audio('music/sounds/buildSound.mp3');
