@@ -13,7 +13,8 @@ import Chat from './js/chat/Chat.js';
 import MapZoom from './js/MapZoom.js';
 import PlayerSync from './js/playerSync.js';
 import Leaderboard from './js/leaderboard/Leaderboard.js';
-import { CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
+import GifPicker from './js/chat/GifPicker.js';
+import { GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -166,6 +167,7 @@ let chat = null;
 try {
 	chat = new Chat(CHAT_API_URL);
 	chat.start();
+	new GifPicker(chat, GIPHY_API_KEY).start();
 } catch (error) {
 	console.error("Chat could not start:", error);
 }

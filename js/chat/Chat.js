@@ -1,6 +1,24 @@
 // Chat panel: shows messages from the chat server and sends new ones.
 // Talks to the API in server.js:  GET /api/chat?after=<id>   and   POST /api/chat
 
+// GIFs: a message with a direct link to a picture from one of these sites shows the
+// picture. Only these sites are allowed, so a link cannot make everyone's browser
+// contact some random server.
+const GIF_HOSTS = ["media.giphy.com", "i.giphy.com", "media0.giphy.com", "media1.giphy.com", "media2.giphy.com",
+	"media3.giphy.com", "media4.giphy.com", "media.tenor.com", "c.tenor.com", "i.imgur.com"];
+
+function findGifUrl(text) {
+	for (const match of text.matchAll(/https:\/\/[^\s<>"]+/gi)) {
+		try {
+			const url = new URL(match[0]);
+			if (GIF_HOSTS.includes(url.hostname) && /\.(gif|webp)$/i.test(url.pathname)) {
+				return { link: match[0], url: url.href };
+			}
+		} catch { /* not a valid address: just text */ }
+	}
+	return null;
+}
+
 const NAME_STORAGE_KEY = "vampireChatName";
 const MAX_MESSAGES_ON_SCREEN = 200;
 const POLL_VISIBLE_MS = 2500;
@@ -142,7 +160,7 @@ export default class Chat {
 		for (const message of fresh) {
 			this.seenIds.add(message.id);
 			this.lastId = Math.max(this.lastId, message.id);
-			this.log.appendChild(this.buildMessage(message, message.name === myName));
+			this.log.appendChild(this.buildMessage(message, message.name === myName, nearBottom));
 		}
 
 		while (this.log.children.length > MAX_MESSAGES_ON_SCREEN) {
@@ -151,7 +169,7 @@ export default class Chat {
 		if (nearBottom) this.log.scrollTop = this.log.scrollHeight;
 	}
 
-	buildMessage(message, isMine) {
+	buildMessage(message, isMine, keepAtBottom = false) {
 		// textContent (never innerHTML) so nobody can inject HTML into the page.
 		const row = document.createElement("div");
 		row.className = isMine ? "chat-message own" : "chat-message";
@@ -164,11 +182,35 @@ export default class Chat {
 		name.className = "chat-name";
 		name.textContent = String(message.name);
 
+		const gif = findGifUrl(String(message.text));
 		const text = document.createElement("span");
 		text.className = "chat-text";
-		text.textContent = String(message.text);
+		// the link itself is replaced by the picture
+		text.textContent = gif ? String(message.text).replace(gif.link, "").trim() : String(message.text);
 
-		row.append(time, name, text);
+		row.append(time, name);
+		if (text.textContent) row.append(text);
+
+		if (gif) {
+			const picture = document.createElement("img");
+			picture.className = "chat-gif";
+			picture.src = gif.url;
+			picture.alt = "GIF";
+			picture.loading = "lazy";
+			picture.referrerPolicy = "no-referrer";
+			// A picture changes the height of the chat: stay at the bottom if we were there
+			picture.addEventListener("load", () => {
+				if (keepAtBottom) this.log.scrollTop = this.log.scrollHeight;
+			});
+			// If the picture cannot be loaded, show the link as text instead
+			picture.addEventListener("error", () => {
+				const fallback = document.createElement("span");
+				fallback.className = "chat-text";
+				fallback.textContent = gif.link;
+				picture.replaceWith(fallback);
+			});
+			row.appendChild(picture);
+		}
 		return row;
 	}
 
@@ -189,8 +231,10 @@ export default class Chat {
 	}
 
 	// ---------- Sending ----------
-	async send() {
-		const text = this.messageInput.value.trim();
+	// textOverride: send this text instead of what is typed in the box (used by the GIF picker)
+	async send(textOverride) {
+		const fromPicker = typeof textOverride === "string";
+		const text = fromPicker ? textOverride.trim() : this.messageInput.value.trim();
 		if (!text || this.sending) return;
 		this.saveName();
 
@@ -205,7 +249,7 @@ export default class Chat {
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok) throw new Error(data.error || "Could not send your message.");
 
-			this.messageInput.value = "";
+			if (!fromPicker) this.messageInput.value = "";
 			this.addMessages([data.message]);
 			this.log.scrollTop = this.log.scrollHeight;
 			this.setOnline(true);

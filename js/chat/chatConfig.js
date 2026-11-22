@@ -12,3 +12,8 @@ export const PLAYER_API_URL = CHAT_API_URL.replace(/\/chat$/, "/player");
 
 // ...and so is the leaderboard.
 export const LEADERBOARD_API_URL = CHAT_API_URL.replace(/\/chat$/, "/leaderboard");
+
+// GIF search in the chat uses GIPHY. This key is visible to anyone who views the page
+// source (that is normal for GIPHY keys); in your GIPHY developer dashboard you can
+// delete and replace it at any time. Leave it empty ("") to hide the GIF button.
+export const GIPHY_API_KEY = "o7xku0eaOLKGG9TQvfExci26j0HXVCHZ";

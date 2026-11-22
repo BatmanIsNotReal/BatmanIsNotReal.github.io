@@ -25,7 +25,8 @@
 
 	<script type="module">
 		import Chat from './js/chat/Chat.js';
-		import { CHAT_API_URL } from './js/chat/chatConfig.js';
+		import GifPicker from './js/chat/GifPicker.js';
+		import { CHAT_API_URL, GIPHY_API_KEY } from './js/chat/chatConfig.js';
 
 		const chat = new Chat(CHAT_API_URL);
 
@@ -36,6 +37,7 @@
 		} catch { /* no readable save: the chat keeps its own name */ }
 
 		chat.start();
+		new GifPicker(chat, GIPHY_API_KEY).start();
 		document.getElementById("chatInput").focus();
 	</script>
 </body>
