@@ -13,6 +13,9 @@ export const PLAYER_API_URL = CHAT_API_URL.replace(/\/chat$/, "/player");
 // ...and the count of active players.
 export const ONLINE_API_URL = CHAT_API_URL.replace(/\/chat$/, "/online");
 
+// ...and the dice game.
+export const DICE_API_URL = CHAT_API_URL.replace(/\/chat$/, "/dice");
+
 // ...and so is the leaderboard.
 export const LEADERBOARD_API_URL = CHAT_API_URL.replace(/\/chat$/, "/leaderboard");
 

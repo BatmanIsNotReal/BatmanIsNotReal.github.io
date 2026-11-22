@@ -1,0 +1,166 @@
+/* Dice game pop-up (js/dice/DiceGame.js) */
+.dice-content {
+	width: min(100%, 44rem);
+	margin-top: 4vh;
+	margin-bottom: 4vh;
+	text-align: left;
+}
+
+.dice-content h3,
+.dice-content h4 {
+	text-align: center;
+}
+
+.dice-content h4 {
+	margin: 1.25rem 0 0.4rem;
+	padding-top: 0.6rem;
+	color: var(--gold);
+	border-top: 2px solid var(--line);
+}
+
+.dice-intro,
+.dice-help {
+	color: var(--bone-dim);
+	text-align: center;
+}
+
+.dice-wins {
+	display: block;
+	margin-top: 0.3rem;
+	color: var(--gold);
+}
+
+.dice-status {
+	min-height: 1.3em;
+	margin: 0.3rem 0;
+	text-align: center;
+	color: #e8808c;
+}
+
+.dice-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.dice-list li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.35rem 0.5rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.dice-list .button {
+	margin: 0;
+}
+
+.dice-list .button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.dice-list .dice-empty,
+.dice-recent li {
+	color: var(--bone-dim);
+}
+
+.dice-inputs {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.dice-input {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.dice-input input,
+.dice-target input {
+	width: 100%;
+	min-width: 0;
+	padding: 0.3rem 0.5rem;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--line);
+}
+
+.dice-input small {
+	color: var(--bone-dim);
+}
+
+.dice-target {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	margin-bottom: 0.75rem;
+}
+
+.dice-content > .button {
+	display: block;
+	margin: 0 auto;
+}
+
+/* The roll */
+.dice-result {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 1.25rem;
+	margin: 0.5rem 0;
+	padding: 0.75rem;
+	background-color: var(--ink);
+	border: 2px solid var(--line);
+}
+
+.dice-result[hidden] {
+	display: none;
+}
+
+.dice-group {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.3rem;
+}
+
+.dice-group .die {
+	display: inline-block;
+	width: 2.6rem;
+	height: 2.6rem;
+	margin: 0 0.15rem;
+	font-size: 1.6rem;
+	line-height: 2.6rem;
+	text-align: center;
+	color: var(--ink);
+	background-color: var(--bone);
+	border: 2px solid var(--line);
+	border-radius: 0.4rem;
+}
+
+.dice-group {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.dice-group > span {
+	flex-basis: 100%;
+	text-align: center;
+	color: var(--bone-dim);
+}
+
+.dice-result-text {
+	flex-basis: 100%;
+	margin: 0;
+	text-align: center;
+}
+
+.dice-win { color: var(--gold); }
+.dice-lose { color: #e8808c; }

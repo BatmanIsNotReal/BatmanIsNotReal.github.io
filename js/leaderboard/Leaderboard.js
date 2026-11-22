@@ -126,6 +126,7 @@ export default class Leaderboard {
 				Math.floor(player.influence),
 				Math.floor(player.blood),
 				Math.floor(player.familiars),
+				Math.floor(player.diceWins || 0),
 			];
 			cells.forEach((value, index) => {
 				const cell = document.createElement("td");

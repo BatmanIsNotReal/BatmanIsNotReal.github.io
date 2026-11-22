@@ -9,6 +9,7 @@
 @import url("updatebox.css");
 @import url("chat.css");
 @import url("leaderboard.css");
+@import url("dice.css");
 @import url("responsive.css");   /* keep last so it can override the rest */
 
 *,

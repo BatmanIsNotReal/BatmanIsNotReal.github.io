@@ -214,3 +214,15 @@ body.chat-popout-page .chat-form {
 .chat-levelup .chat-text {
 	color: var(--gold);
 }
+
+/* Dice wins announced by the server */
+.chat-dice {
+	padding: 0.3rem 0.5rem;
+	border-left: 3px solid var(--blood-bright);
+	background-color: rgba(160, 30, 50, 0.15);
+}
+
+.chat-dice .chat-name,
+.chat-dice .chat-text {
+	color: var(--gold);
+}

@@ -62,6 +62,7 @@
 		<p>Autosave in: <span id="tenSecTimer"></span></p>
 		<div class="header-buttons">
 			<button type="button" class="button" id="helpButton">How to play</button>
+			<button type="button" class="button" id="diceButton">Dice</button>
 			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
 			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
 				<i class="fas fa-volume-up"></i> <span>Sound on</span>
@@ -443,7 +444,7 @@
 				</li>
 				<li>
 					<strong>Level up.</strong> Influence fills your level bar, and resets to 0 each time you level up.
-					Level 2 takes 1000 influence and every level after that needs more. Iron tools (hoe, axe, pick) make
+					Level 2 takes 1,000 influence and every level after that needs more. Iron tools (hoe, axe, pick) make
 					your buildings more productive, and each one you buy makes the next one a little dearer.
 				</li>
 				<li>
@@ -455,6 +456,38 @@
 
 			<p class="help-note">The game saves by itself every 10 seconds, so you can close it and come back later.</p>
 			<button type="button" class="button" id="helpOk">Got it</button>
+		</div>
+	</div>
+
+	<!-- Dice game (js/dice/DiceGame.js) -->
+	<div id="diceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="diceTitle">
+		<div class="modal-content dice-content">
+			<div id="diceClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
+			<h3 id="diceTitle">Dice</h3>
+			<p class="dice-intro">Bet the same resources as another player. Two dice each: the higher total wins both bets, a tie returns everything.
+				<span id="diceWins" class="dice-wins"></span></p>
+			<p class="dice-status" id="diceStatus" role="status"></p>
+			<div class="dice-result" id="diceResult" hidden></div>
+
+			<h4>Challenges for you</h4>
+			<ul class="dice-list" id="diceIncoming"></ul>
+
+			<h4>Open lobby</h4>
+			<ul class="dice-list" id="diceLobby"></ul>
+
+			<h4>Make a challenge</h4>
+			<p class="dice-help">Bet any mix of resources, up to what you have. The other player must be able to cover the same bet.</p>
+			<div class="dice-inputs" id="diceStakeInputs"></div>
+			<label class="dice-target">Challenge a specific player (leave empty for the open lobby)
+				<input type="text" id="diceTarget" maxlength="20" placeholder="Vampire name">
+			</label>
+			<button type="button" class="button" id="diceCreate">Challenge</button>
+
+			<h4>Your open challenges</h4>
+			<ul class="dice-list" id="diceMine"></ul>
+
+			<h4>Recent games</h4>
+			<ul class="dice-list dice-recent" id="diceRecent"></ul>
 		</div>
 	</div>
 
@@ -475,6 +508,7 @@
 							<th scope="col">Influence</th>
 							<th scope="col">Blood</th>
 							<th scope="col">Familiars</th>
+							<th scope="col">Dice wins</th>
 						</tr>
 					</thead>
 					<tbody id="leaderboardBody"></tbody>

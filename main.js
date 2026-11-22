@@ -14,9 +14,10 @@ import MapZoom from './js/MapZoom.js';
 import PlayerSync from './js/playerSync.js';
 import Leaderboard from './js/leaderboard/Leaderboard.js';
 import GifPicker from './js/chat/GifPicker.js';
+import DiceGame from './js/dice/DiceGame.js';
 import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
-import { ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
+import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -183,6 +184,22 @@ document.getElementById("chatPopout")?.addEventListener("click", () => {
 
 //Player file (names and stats are also kept on the server)
 const playerSync = new PlayerSync(PLAYER_API_URL);
+
+//Dice game: results (resources won or lost, bets set aside) are applied to the storage by DiceGame.js.
+//The ids of applied results are kept in the save so that none is ever applied twice.
+const diceApplied = { ids: [] };
+try {
+	new DiceGame({
+		apiUrl: DICE_API_URL,
+		getPlayerId: () => signedUp ? playerSync.id : null,
+		getItems: () => Inv.items,
+		onChange: () => save(),
+		log: (text) => updateBox.townUpdatesAdd(text, document),
+		applied: diceApplied,
+	}).start();
+} catch (error) {
+	console.error("Dice game could not start:", error);
+}
 
 //How to play (header button; opens by itself once for a new player)
 const howToPlay = new HowToPlay();
@@ -454,6 +471,8 @@ const saveFields = {
 
 	newHumanFoodPerRound: field(Inv, "newHumanFoodPerRound"),
 	newBloodPerRound: field(Inv, "newBloodPerRound"),
+
+	diceApplied: field(diceApplied, "ids"),
 
 	xp: field(House, "xp"),
 	level: field(House, "level"),

@@ -6,7 +6,7 @@
 //   HOST           address to listen on                    (default 0.0.0.0)
 //   TRUST_PROXY    set to 1 if you run behind a reverse proxy, so the real
 //                  visitor IP is used for rate limiting    (default off)
-//   DATA_DIR       folder for chat.json and players.json   (default ./server-data)
+//   DATA_DIR       folder for chat.json, players.json and dice.json   (default ./server-data)
 //                  On hosts that wipe the disk on every deploy, point this at a
 //                  persistent volume or the data is lost.
 //   ONLINE_WINDOW_SECONDS  how long a player counts as active after their last
@@ -16,6 +16,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const crypto = require("crypto");
 
 const PORT = Number(process.env.PORT) || 8000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -25,6 +26,7 @@ const ROOT = __dirname;
 const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "server-data");
 const CHAT_FILE = path.join(DATA_DIR, "chat.json");
 const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
+const DICE_FILE = path.join(DATA_DIR, "dice.json");
 
 // ---------- Chat limits ----------
 const MAX_STORED_MESSAGES = 200;   // older messages are dropped
@@ -239,6 +241,7 @@ async function handleChat(req, res, url) {
 		const text = clean(body && body.text, MAX_TEXT_LENGTH);
 		const name = clean(body && body.name, MAX_NAME_LENGTH) || "Vampire";
 		if (!text) return sendJson(res, 400, { error: "Message is empty" });
+		if (nameKey(name) === DICE_KEY) return sendJson(res, 400, { error: "That name is reserved." });
 
 		if (isChatRateLimited(clientIp(req))) {
 			return sendJson(res, 429, { error: "You are sending messages too fast. Wait a few seconds." });
@@ -289,6 +292,7 @@ async function handlePlayer(req, res) {
 
 	// A vampire name can only belong to one player.
 	const key = nameKey(vampireName);
+	if (key === DICE_KEY) return sendJson(res, 409, { error: "That name is reserved. Choose another." });
 	const owner = nameOwners.get(key);
 	if (owner && owner !== id) {
 		return sendJson(res, 409, { error: "That vampire name is already taken. Choose another." });
@@ -366,8 +370,283 @@ async function handleOnline(req, res) {
 	return sendJson(res, 200, { online: countOnline() });
 }
 
+// ---------- Dice game ----------
+// Two players bet the same bundle of resources and the server rolls two dice for each;
+// the higher total takes both bundles. A tie gives everyone their bundle back.
+// The server rolls (so nobody can cheat the dice) and keeps the bets safe. Resources live in
+// each player's browser, so the server hands out "settlements" (+/- resources) that the
+// browser applies once and then confirms (ack). Nothing is lost if a player closes the page:
+// their settlements wait on the server until the game is opened again.
+//
+// POST /api/dice  { id, action: "state" | "create" | "accept" | "cancel" | "ack", ... }
+const DICE_NAME = "Dice Master";       // announces big wins in the chat; no player may use this name
+const DICE_KEY = nameKey(DICE_NAME);
+const DICE_RESOURCES = ["blood", "humanFood", "wood", "iron", "bronze", "gold"];
+const DICE_RESOURCE_NAMES = { blood: "blood", humanFood: "human food", wood: "wood", iron: "iron", bronze: "bronze", gold: "gold" };
+// How much one piece of each resource counts for when deciding if a win is "big"
+const DICE_WEIGHTS = { blood: 1, humanFood: 1, wood: 1, iron: 3, bronze: 5, gold: 20 };
+const BIG_WIN_VALUE = 2000;            // a win this big (value of the other player's bet) is announced in the chat
+const DICE_CHALLENGE_TTL_MS = 60 * 60 * 1000; // an unanswered challenge is cancelled after an hour
+const MAX_OPEN_PER_PLAYER = 3;
+const MAX_OPEN_TOTAL = 500;
+const MAX_PENDING_SETTLEMENTS = 100;
+const MAX_STAKE = 1e12;
+const RECENT_MATCHES = 15;
+
+const challenges = new Map();   // challenge id -> { id, creatorId, creatorName, targetId, targetName, stake, createdAt }
+const settlements = new Map();  // player id -> [ { id, delta, message, match } ]
+const diceWins = new Map();     // player id -> number of games won
+let recentMatches = [];
+
+const saveDice = makeSaver(DICE_FILE, () => ({
+	challenges: [...challenges.values()],
+	settlements: Object.fromEntries(settlements),
+	wins: Object.fromEntries(diceWins),
+	recent: recentMatches,
+}), 1000, 2);
+
+function loadDice() {
+	try {
+		const saved = JSON.parse(fs.readFileSync(DICE_FILE, "utf8"));
+		for (const c of saved.challenges || []) if (c && c.id && c.stake) challenges.set(c.id, c);
+		for (const [id, list] of Object.entries(saved.settlements || {})) {
+			if (Array.isArray(list) && list.length) settlements.set(id, list);
+		}
+		for (const [id, n] of Object.entries(saved.wins || {})) if (Number.isInteger(n)) diceWins.set(id, n);
+		if (Array.isArray(saved.recent)) recentMatches = saved.recent.slice(-RECENT_MATCHES);
+	} catch {
+		// No dice games saved yet (or the file is damaged): start empty.
+	}
+}
+
+// A bet: { resource: whole number > 0 } for any mix of resources. Returns null if it is not valid.
+function parseStake(input) {
+	if (!input || typeof input !== "object") return null;
+	const stake = {};
+	for (const kind of DICE_RESOURCES) {
+		const value = Number(input[kind] || 0);
+		if (!Number.isInteger(value) || value < 0 || value > MAX_STAKE) return null;
+		if (value > 0) stake[kind] = value;
+	}
+	return Object.keys(stake).length ? stake : null;
+}
+
+function stakeText(stake) {
+	return Object.entries(stake).map(([kind, n]) => n + " " + DICE_RESOURCE_NAMES[kind]).join(", ");
+}
+
+function stakeValue(stake) {
+	return Object.entries(stake).reduce((sum, [kind, n]) => sum + n * DICE_WEIGHTS[kind], 0);
+}
+
+// delta: { resource: +/- amount }. Waits on the server until the player's game collects it.
+function queueSettlement(playerId, delta, message, match = null) {
+	const list = settlements.get(playerId) || [];
+	list.push({ id: crypto.randomUUID(), delta, message, match });
+	settlements.set(playerId, list);
+}
+
+function scaled(stake, factor) {
+	return Object.fromEntries(Object.entries(stake).map(([kind, n]) => [kind, n * factor]));
+}
+
+function postChatAnnouncement(text) {
+	messages.push({ id: nextId++, name: DICE_NAME, text: text.slice(0, MAX_TEXT_LENGTH), time: Date.now() });
+	if (messages.length > MAX_STORED_MESSAGES) messages = messages.slice(-MAX_STORED_MESSAGES);
+	saveMessages();
+}
+
+// Cancels a challenge and gives the creator's bet back.
+function closeChallenge(challenge, message) {
+	challenges.delete(challenge.id);
+	queueSettlement(challenge.creatorId, challenge.stake, message);
+	saveDice();
+}
+
+function expireChallenges() {
+	const now = Date.now();
+	for (const challenge of [...challenges.values()]) {
+		if (now - challenge.createdAt >= DICE_CHALLENGE_TTL_MS) {
+			closeChallenge(challenge, "Dice: nobody took your challenge, so your bet is returned (" + stakeText(challenge.stake) + ").");
+		}
+	}
+}
+setInterval(expireChallenges, 60000).unref();
+
+function rollTwoDice() {
+	return [crypto.randomInt(1, 7), crypto.randomInt(1, 7)];
+}
+
+function diceView(challenge) {
+	return {
+		id: challenge.id,
+		creator: challenge.creatorName,
+		target: challenge.targetName || null,
+		stake: challenge.stake,
+		createdAt: challenge.createdAt,
+		expiresAt: challenge.createdAt + DICE_CHALLENGE_TTL_MS,
+	};
+}
+
+function diceState(playerId) {
+	const all = [...challenges.values()];
+	return {
+		open: all.filter((c) => !c.targetId && c.creatorId !== playerId).map(diceView),
+		incoming: all.filter((c) => c.targetId === playerId).map(diceView),
+		mine: all.filter((c) => c.creatorId === playerId).map(diceView),
+		recent: recentMatches,
+		wins: diceWins.get(playerId) || 0,
+		settlements: settlements.get(playerId) || [],
+	};
+}
+
+const isDiceRateLimited = createRateLimiter(120, 60000);
+
+async function handleDice(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "POST") {
+		res.writeHead(405, { Allow: "POST, OPTIONS" });
+		return res.end();
+	}
+	if (isDiceRateLimited(clientIp(req))) {
+		return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	}
+
+	let body;
+	try {
+		body = await readJsonBody(req);
+	} catch (error) {
+		return sendJson(res, error.status || 400, { error: error.message });
+	}
+	body = body && typeof body === "object" ? body : {};
+
+	const id = typeof body.id === "string" ? body.id : "";
+	if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+	const me = players.get(id);
+	if (!me) return sendJson(res, 403, { error: "The server does not know you yet. Wait a few seconds and try again." });
+
+	expireChallenges();
+	const action = body.action;
+
+	if (action === "state") {
+		return sendJson(res, 200, diceState(id));
+	}
+
+	if (action === "ack") {
+		const done = new Set(Array.isArray(body.ids) ? body.ids.filter((x) => typeof x === "string").slice(0, 200) : []);
+		const left = (settlements.get(id) || []).filter((s) => !done.has(s.id));
+		if (left.length) settlements.set(id, left);
+		else settlements.delete(id);
+		saveDice();
+		return sendJson(res, 200, { ok: true });
+	}
+
+	if (action === "create") {
+		const stake = parseStake(body.stake);
+		if (!stake) return sendJson(res, 400, { error: "Choose something to bet." });
+
+		const mineOpen = [...challenges.values()].filter((c) => c.creatorId === id).length;
+		if (mineOpen >= MAX_OPEN_PER_PLAYER) {
+			return sendJson(res, 400, { error: "You already have " + MAX_OPEN_PER_PLAYER + " open challenges. Cancel one first." });
+		}
+		if (challenges.size >= MAX_OPEN_TOTAL) return sendJson(res, 503, { error: "Too many open challenges right now." });
+		if ((settlements.get(id) || []).length >= MAX_PENDING_SETTLEMENTS) {
+			return sendJson(res, 400, { error: "Your game has not collected its earlier results yet. Keep the game open for a moment." });
+		}
+
+		let targetId = null;
+		let targetName = null;
+		const wanted = clean(body.target, MAX_NAME_LENGTH);
+		if (wanted) {
+			targetId = nameOwners.get(nameKey(wanted));
+			if (!targetId || !players.has(targetId)) return sendJson(res, 404, { error: "There is no player called " + wanted + "." });
+			if (targetId === id) return sendJson(res, 400, { error: "You cannot challenge yourself." });
+			targetName = players.get(targetId).vampireName;
+		}
+
+		const challenge = {
+			id: crypto.randomUUID(), creatorId: id, creatorName: me.vampireName,
+			targetId, targetName, stake, createdAt: Date.now(),
+		};
+		challenges.set(challenge.id, challenge);
+		// The bet is taken out of the creator's storage right away
+		queueSettlement(id, scaled(stake, -1), "Dice: you put up " + stakeText(stake) + (targetName ? " against " + targetName : "") + ".");
+		saveDice();
+		return sendJson(res, 200, { ok: true, challenge: diceView(challenge) });
+	}
+
+	const challenge = challenges.get(typeof body.challengeId === "string" ? body.challengeId : "");
+	if (!challenge) return sendJson(res, 404, { error: "That challenge is no longer there." });
+
+	if (action === "cancel") {
+		if (challenge.creatorId === id) {
+			closeChallenge(challenge, "Dice: you cancelled your challenge. Your bet is returned (" + stakeText(challenge.stake) + ").");
+			return sendJson(res, 200, { ok: true });
+		}
+		if (challenge.targetId === id) {
+			closeChallenge(challenge, "Dice: " + me.vampireName + " declined your challenge. Your bet is returned (" + stakeText(challenge.stake) + ").");
+			return sendJson(res, 200, { ok: true });
+		}
+		return sendJson(res, 403, { error: "That is not your challenge." });
+	}
+
+	if (action === "accept") {
+		if (challenge.creatorId === id) return sendJson(res, 400, { error: "You cannot accept your own challenge." });
+		if (challenge.targetId && challenge.targetId !== id) return sendJson(res, 403, { error: "That challenge is for someone else." });
+		if ((settlements.get(id) || []).length >= MAX_PENDING_SETTLEMENTS) {
+			return sendJson(res, 400, { error: "Your game has not collected its earlier results yet. Keep the game open for a moment." });
+		}
+		const creator = players.get(challenge.creatorId);
+		const creatorName = creator ? creator.vampireName : challenge.creatorName;
+
+		challenges.delete(challenge.id);
+		const rollA = rollTwoDice();   // the one who made the challenge
+		const rollB = rollTwoDice();   // the one who accepted
+		const totalA = rollA[0] + rollA[1];
+		const totalB = rollB[0] + rollB[1];
+		const outcome = totalA > totalB ? "creator" : totalB > totalA ? "acceptor" : "tie";
+		const stake = challenge.stake;
+		const bet = stakeText(stake);
+		const view = (mine, theirs, opponent, result) => ({ you: mine, them: theirs, opponent, outcome: result, stake });
+
+		// The creator's bet was taken when the challenge was made, so winners get both bets,
+		// and in a tie everyone gets their own bet back. The acceptor's bet is settled here.
+		if (outcome === "tie") {
+			queueSettlement(challenge.creatorId, stake, "Dice: a tie with " + me.vampireName + " (" + totalA + " each). Your bet is returned.", view(rollA, rollB, me.vampireName, "tie"));
+			queueSettlement(id, {}, "Dice: a tie with " + creatorName + " (" + totalB + " each). Nobody loses anything.", view(rollB, rollA, creatorName, "tie"));
+		} else if (outcome === "creator") {
+			queueSettlement(challenge.creatorId, scaled(stake, 2), "Dice: you beat " + me.vampireName + " (" + totalA + " to " + totalB + ") and win " + bet + "!", view(rollA, rollB, me.vampireName, "win"));
+			queueSettlement(id, scaled(stake, -1), "Dice: " + creatorName + " beat you (" + totalA + " to " + totalB + "). You lose " + bet + ".", view(rollB, rollA, creatorName, "lose"));
+		} else {
+			queueSettlement(challenge.creatorId, {}, "Dice: " + me.vampireName + " beat you (" + totalB + " to " + totalA + "). You lose " + bet + ".", view(rollA, rollB, me.vampireName, "lose"));
+			queueSettlement(id, stake, "Dice: you beat " + creatorName + " (" + totalB + " to " + totalA + ") and win " + bet + "!", view(rollB, rollA, creatorName, "win"));
+		}
+
+		recentMatches.push({
+			time: Date.now(), creator: creatorName, acceptor: me.vampireName, stake,
+			creatorDice: rollA, acceptorDice: rollB, outcome,
+		});
+		recentMatches = recentMatches.slice(-RECENT_MATCHES);
+
+		if (outcome !== "tie") {
+			const winnerId = outcome === "creator" ? challenge.creatorId : id;
+			const winnerName = outcome === "creator" ? creatorName : me.vampireName;
+			const loserName = outcome === "creator" ? me.vampireName : creatorName;
+			diceWins.set(winnerId, (diceWins.get(winnerId) || 0) + 1);
+			if (stakeValue(stake) >= BIG_WIN_VALUE) {
+				postChatAnnouncement(winnerName + " just won " + bet + " from " + loserName + " at dice (" +
+					Math.max(totalA, totalB) + " to " + Math.min(totalA, totalB) + ")!");
+			}
+		}
+		saveDice();
+		return sendJson(res, 200, { ok: true });
+	}
+
+	return sendJson(res, 400, { error: "Unknown action" });
+}
+
 // ---------- Leaderboard API ----------
-// GET /api/leaderboard?limit=20  ->  { players: [{ rank, vampireName, settlementName, level, influence, blood, familiars }], total }
+// GET /api/leaderboard?limit=20  ->  { players: [{ rank, vampireName, settlementName, level, influence, blood, familiars, diceWins }], total }
 // Ranked by level, then influence, then blood. Player ids are never included.
 function handleLeaderboard(req, res, url) {
 	if (req.method === "OPTIONS") return sendPreflight(res);
@@ -382,13 +661,14 @@ function handleLeaderboard(req, res, url) {
 	const asked = Number.parseInt(url.searchParams.get("limit"), 10);
 	const limit = Math.min(Math.max(asked || LEADERBOARD_DEFAULT_ROWS, 1), LEADERBOARD_MAX_ROWS);
 
-	const rows = [...players.values()].map((p) => ({
+	const rows = [...players.entries()].map(([id, p]) => ({
 		vampireName: p.vampireName,
 		settlementName: p.settlementName,
 		level: p.level || 1,
 		influence: p.stats.influence,
 		blood: p.stats.blood,
 		familiars: p.stats.familiars,
+		diceWins: diceWins.get(id) || 0,
 	}));
 	rows.sort((a, b) =>
 		b.level - a.level ||
@@ -504,6 +784,7 @@ const server = http.createServer((req, res) => {
 		"/api/player": () => handlePlayer(req, res),
 		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
 		"/api/online": () => handleOnline(req, res),
+		"/api/dice": () => handleDice(req, res),
 	}[url.pathname];
 	if (api) {
 		api().catch((error) => {
@@ -517,6 +798,7 @@ const server = http.createServer((req, res) => {
 
 loadMessages();
 loadPlayers();
+loadDice();
 
 server.listen(PORT, HOST, () => {
 	console.log("Vampire House is running.");
