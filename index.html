@@ -61,6 +61,7 @@
 		</h1>
 		<p>Autosave in: <span id="tenSecTimer"></span></p>
 		<div class="header-buttons">
+			<button type="button" class="button" id="helpButton">How to play</button>
 			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
 			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
 				<i class="fas fa-volume-up"></i> <span>Sound on</span>
@@ -415,6 +416,45 @@
 					<p>familiars required: <span id="buildingBloodTempleFamiliarsRequired"></span></p>
 				</div>
 			</div>
+		</div>
+	</div>
+
+	<!-- How to play (opened by js/HowToPlay.js: once after sign-up, and by the header button) -->
+	<div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+		<div class="modal-content help-content">
+			<div id="helpClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
+			<h3 id="helpTitle">How to play</h3>
+			<p class="help-intro">Build a vampire house that grows stronger over time.</p>
+
+			<ol class="help-steps">
+				<li>
+					<strong>Drink blood.</strong> Click the big blood drop in the corner. Spend blood on vampire animals and
+					vampires: they give you blood and influence every 10 seconds, even while you are away.
+				</li>
+				<li>
+					<strong>Get familiars.</strong> Adopting one costs influence. Give each familiar a job with the
+					<em>+</em> and <em>&minus;</em> buttons: human food, blood victims or wood. They eat 1 food per 10 seconds,
+					so keep some on food. Familiars without a job are the ones who can work in new buildings.
+				</li>
+				<li>
+					<strong>Build on the map.</strong> Click a tile to open the build menu. Huts make room for more familiars,
+					farms give food, lumber mills (on forest) give wood, and mines (on rock) give iron, bronze and gold.
+					Scroll the mouse wheel over the map to zoom.
+				</li>
+				<li>
+					<strong>Level up.</strong> Influence fills your level bar, and resets to 0 each time you level up.
+					Level 2 takes 1,000 influence and every level after that needs more. Iron tools (hoe, axe, pick) make
+					your buildings more productive, and each one you buy makes the next one a little dearer.
+				</li>
+				<li>
+					<strong>Aim high.</strong> The Blood Temple is the late-game goal: each round it may bless you with
+					extra influence, but a blessing eats 20% of your blood. Check the leaderboard, chat with other players,
+					and expect a random event now and then.
+				</li>
+			</ol>
+
+			<p class="help-note">The game saves by itself every 10 seconds, so you can close it and come back later.</p>
+			<button type="button" class="button" id="helpOk">Got it</button>
 		</div>
 	</div>
 

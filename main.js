@@ -14,6 +14,7 @@ import MapZoom from './js/MapZoom.js';
 import PlayerSync from './js/playerSync.js';
 import Leaderboard from './js/leaderboard/Leaderboard.js';
 import GifPicker from './js/chat/GifPicker.js';
+import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import { ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
@@ -30,8 +31,6 @@ let myTown = new Town(houseSize, xpRates);
 const Upgrades = new Upgrade();
 
 let updateBox = new UpdateBox(10, 0);
-
-let eventHandler = new EventHandler(Inv);
 
 let musicHandler = new MusicHandler(document.getElementById("backgroundMusic"), document.getElementById("muteButton"));
 musicHandler.start();
@@ -80,6 +79,8 @@ const Timer = new Timers();
 
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
+
+let eventHandler = new EventHandler(Inv, Familiars, House);
 
 var modal = document.getElementById("myModal");
 var span = document.getElementById("close");
@@ -182,6 +183,10 @@ document.getElementById("chatPopout")?.addEventListener("click", () => {
 
 //Player file (names and stats are also kept on the server)
 const playerSync = new PlayerSync(PLAYER_API_URL);
+
+//How to play (header button; opens by itself once for a new player)
+const howToPlay = new HowToPlay();
+howToPlay.start();
 
 //Players online (signed-up players count once, however many tabs they have open)
 try {
@@ -396,6 +401,7 @@ signUpForm.addEventListener("submit", async (event) => {
 	signedUp = true;
 	overlay.style.display = "none";
 	chat?.lockName(vampireName);
+	howToPlay.showOnce();
 	updateBox.townUpdatesAdd("-- " + vampireName + " founds " + settlementName + " --", document);
 	save();
 })

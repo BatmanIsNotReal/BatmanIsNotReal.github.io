@@ -95,6 +95,23 @@ export default class Familiar{
     }
 
 
+    // Familiars are lost (killed, run off...). Free familiars go first, then the busiest
+    // group of workers. Returns how many were really lost.
+    loseFamiliars(count){
+        const lost = Math.max(0, Math.min(Math.floor(count), this.ammount));
+        for (let i = 0; i < lost; i++){
+            this.ammount--;
+            if (this.notWorking > 0){
+                this.notWorking--;
+                continue;
+            }
+            const groups = ["foodGather", "bloodGather", "woodGather"];
+            groups.sort((a, b) => this[b] - this[a]);
+            if (this[groups[0]] > 0) this[groups[0]]--;
+        }
+        return lost;
+    }
+
     //Loop actions
     eat(inventory){
         if (inventory.items.humanFood >= 1){
