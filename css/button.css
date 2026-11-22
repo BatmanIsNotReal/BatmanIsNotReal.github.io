@@ -96,3 +96,8 @@ input[type="submit"]:active {
 	font-size: 60px;
 	color: rgb(117, 117, 117);
 }
+
+/* A price line in a buy button's hover box turns red while you do not have enough of that resource */
+.price-short {
+	color: #e8808c;
+}
