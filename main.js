@@ -442,13 +442,13 @@ function load(){
 	updateBox.townUpdatesAdd("-- Welcome back --", document);
 
 	const savegame = readSave();
-	if (!savegame || typeof savegame.tiles === "undefined") newGame();
+	newGame(); // random terrain everywhere; a saved map is put on top of it below
 
 	if (savegame){
 		for (const [key, [, set]] of Object.entries(saveFields)){
 			if (savegame[key] !== undefined && savegame[key] !== null) set(savegame[key]);
 		}
-		if (typeof savegame.tiles !== "undefined") myTown.tiles = savegame.tiles;
+		myTown.loadTiles(savegame.tiles, savegame.mapWidth);
 		signedUp = savegame.signedUp === true;
 		// Fire guards no longer exist: their familiars are free to work elsewhere again
 		if (savegame.fireGuard > 0) Familiars.notWorking += savegame.fireGuard;
@@ -497,7 +497,7 @@ async function syncPlayerFile(){
 }
 
 function save(){
-	const data = { signedUp, tiles: myTown.tiles };
+	const data = { signedUp, tiles: myTown.tiles, mapWidth: myTown.mapWidth, mapHeight: myTown.mapHeight };
 	for (const [key, [get]] of Object.entries(saveFields)) data[key] = get();
 
 	try {

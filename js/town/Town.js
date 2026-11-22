@@ -12,8 +12,8 @@ export default class Town{
     constructor(townSize, xpRates){
         this.townSize = townSize;
         this.xpRates = xpRates;
-        this.mapWidth = 40;
-        this.mapHeight = 10;
+        this.mapWidth = 80;
+        this.mapHeight = 20;
         this.tiles = {
         }
         this.Buildings ={
@@ -23,7 +23,7 @@ export default class Town{
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
-            Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.jpg', 500, 5),
+            Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.png', 500, 5),
             LumberMill: new LumberMill("Lumber Mill", "a lumber mill for wood", 5, '../../../src/lumbermill.png', 600, 5),
         }
 
@@ -199,7 +199,7 @@ export default class Town{
                 let id = "tile"+current;
                 this.tiles["tile"+current] = 0;
                 current++;
-                table.appendChild(g);
+                t.appendChild(g);
                 let image = document.createElement('img');
                 image.setAttribute("id", id);
                 image.setAttribute("width", 32);
@@ -258,7 +258,25 @@ export default class Town{
     updateTileImages(document){
         for (let name in this.tiles){
             const src = this.tileImage(this.tiles[name]);
-            if (src) document.getElementById(name).src = String(src);
+            const image = document.getElementById(name);
+            if (src && image.getAttribute("src") !== String(src)) image.src = String(src);
+        }
+    }
+
+    // Puts a saved map onto the current map. Works when the map size has changed since
+    // the save was made: every saved tile keeps its row and column, and tiles that did
+    // not exist before keep the random terrain that is already there.
+    // savedWidth: how many tiles wide the saved map was (the old map was 40 wide).
+    loadTiles(saved, savedWidth = 40){
+        if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
+        for (const [name, type] of Object.entries(saved)){
+            const match = /^tile(\d+)$/.exec(name);
+            if (!match || !Number.isInteger(type) || type < 0 || type > 7) continue;
+            const index = Number(match[1]);
+            const row = Math.floor(index / savedWidth);
+            const col = index % savedWidth;
+            if (row >= this.mapHeight || col >= this.mapWidth) continue;
+            this.tiles["tile" + (row * this.mapWidth + col)] = type;
         }
     }
 
