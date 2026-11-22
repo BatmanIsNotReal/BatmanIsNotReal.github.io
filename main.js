@@ -52,10 +52,14 @@ let BloodHound = new Vampire(0, 100, 2, 0.8);
 let VampireSlave = new Vampire(0, 400, 10, 1);
 let NightWalker = new Vampire(0, 1000, 30, 5);
 let Badabook = new Vampire(0, 3000, 100, 8);
-let Draugr = new Vampire(0, 10000, 350, 12);
-let Strigoi = new Vampire(0, 30000, 700, 18);
+let Draugr = new Vampire(0, 10000, 350, 12, { iron: 200, bronze: 50 });
+let Strigoi = new Vampire(0, 30000, 700, 18, { iron: 600, bronze: 150 });
 
-let Overloard = new Vampire(0, 1000000, 3000, 40);
+// The top tiers: (amount, blood, blood/10s, influence/10s, { iron, bronze, gold })
+let VampireMaster = new Vampire(0, 1000000, 3000, 40, { iron: 5000, bronze: 1000, gold: 140 });   // was the Overlord
+let VampireElder = new Vampire(0, 5000000, 20000, 120, { iron: 20000, bronze: 4000, gold: 560 });
+let BloodDemon = new Vampire(0, 25000000, 130000, 360, { iron: 75000, bronze: 16000, gold: 2200 });
+let BloodLeviathan = new Vampire(0, 125000000, 850000, 1000, { iron: 300000, bronze: 64000, gold: 9000 });
 
 
 const vampireTypes = {
@@ -68,7 +72,10 @@ const vampireTypes = {
 	"badabook": Badabook,
 	"draugr": Draugr,
 	"strigoi": Strigoi,
-	"overloard": Overloard,
+	"vampireMaster": VampireMaster,
+	"vampireElder": VampireElder,
+	"bloodDemon": BloodDemon,
+	"bloodLeviathan": BloodLeviathan,
 }
 
 //Map
@@ -106,8 +113,8 @@ const restartButton = document.getElementById("restart");
 //buy vampire check
 for (let i = 0; i < buyVampireButtons.length; i++) {
 	buyVampireButtons[i].addEventListener("click", (event) => {
-		vampireTypes[event.currentTarget.id].addVampire(Inv, Account);
-		musicHandler.playBuyVamp();
+		const bought = vampireTypes[event.currentTarget.id].addVampire(Inv, Account);
+		if (bought) musicHandler.playBuyVamp(); // no sound when you could not afford it
 	})
 }
 
@@ -285,9 +292,14 @@ function displayUpdate(){
 
 	for (const [id, vampire] of Object.entries(vampireTypes)){
 		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
-		const costElement = document.getElementById(id + "Cost");
-		costElement.textContent = formatNumber(vampire.getCost());
-		costElement.title = vampire.getCost().toLocaleString("en-US");
+		const price = vampire.getPrices();
+		for (const [kind, suffix] of [["blood", ""], ["iron", "Iron"], ["bronze", "Bronze"], ["gold", "Gold"]]){
+			const element = document.getElementById(id + "Cost" + suffix);
+			if (!element) continue; // this vampire does not cost that resource
+			element.textContent = formatNumber(price[kind]);
+			element.title = price[kind].toLocaleString("en-US");
+			element.classList.toggle("price-short", Inv.items[kind] < price[kind]); // not enough of it yet
+		}
 	}
 	
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
@@ -486,7 +498,10 @@ const saveFields = {
 	badabookAmmount: field(Badabook, "ammount"),
 	draugrAmmount: field(Draugr, "ammount"),
 	strigoiAmmount: field(Strigoi, "ammount"),
-	overloardAmmount: field(Overloard, "ammount"),
+	vampireMasterAmmount: field(VampireMaster, "ammount"),
+	vampireElderAmmount: field(VampireElder, "ammount"),
+	bloodDemonAmmount: field(BloodDemon, "ammount"),
+	bloodLeviathanAmmount: field(BloodLeviathan, "ammount"),
 
 	familiarAmmount: field(Familiars, "ammount"),
 	familiarNotWorking: field(Familiars, "notWorking"),
@@ -531,6 +546,8 @@ function load(){
 		for (const [key, [, set]] of Object.entries(saveFields)){
 			if (savegame[key] !== undefined && savegame[key] !== null) set(savegame[key]);
 		}
+		// The Overloard was renamed Vampire Master: owners keep theirs
+		if (savegame.vampireMasterAmmount === undefined && savegame.overloardAmmount > 0) VampireMaster.ammount = savegame.overloardAmmount;
 		myTown.loadTiles(savegame.tiles, savegame.mapWidth);
 		signedUp = savegame.signedUp === true;
 		// Fire guards no longer exist: their familiars are free to work elsewhere again
