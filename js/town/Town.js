@@ -15,7 +15,7 @@ export default class Town{
         this.townSize = townSize;
         this.xpRates = xpRates;
         this.mapWidth = 80;
-        this.mapHeight = 20;
+        this.mapHeight = 40;
         this.tileSize = 64; // width and height of one map tile, in pixels
         this.tiles = {
         }
