@@ -24,6 +24,14 @@
 		bottom: 1rem;
 	}
 
+	.orb-stack {
+		right: 1rem;
+		bottom: calc(1rem + 4rem + 0.5rem);
+		width: 4rem;
+	}
+
+	.orb { --orb-size: 3rem; font-size: 1.2rem; }
+
 	.modal {
 		padding: 0.5rem;
 	}

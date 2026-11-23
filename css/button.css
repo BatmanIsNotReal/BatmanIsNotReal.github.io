@@ -101,3 +101,67 @@ input[type="submit"]:active {
 .price-short {
 	color: #e8808c;
 }
+
+/* ---------- Orbs above the blood button: each opens a pop-up ---------- */
+.orb-stack {
+	position: fixed;
+	right: 2rem;
+	bottom: calc(2rem + 5rem + 0.75rem); /* just above the blood button */
+	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.6rem;
+	width: 5rem;
+}
+
+.orb {
+	--orb-size: 3.6rem;
+	position: relative;
+	width: var(--orb-size);
+	height: var(--orb-size);
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	font-size: 1.5rem;
+	color: var(--bone);
+	background: radial-gradient(circle at 35% 30%, var(--stone), var(--blood-deep));
+	border: 2px solid var(--line);
+	border-radius: 50%;
+	box-shadow: 1px 1px 10px black;
+	cursor: pointer;
+}
+
+.orb:hover,
+.orb:focus-visible {
+	background: radial-gradient(circle at 35% 30%, var(--blood-bright), var(--blood-deep));
+	color: #fff;
+}
+
+/* A new line in the Updates orb while its pop-up is closed */
+.orb.has-news::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 0.9rem;
+	height: 0.9rem;
+	background-color: var(--gold);
+	border: 2px solid var(--ink);
+	border-radius: 50%;
+}
+
+.popup-content { width: min(100%, 42rem); margin-top: 6vh; }
+.popup-wide { width: min(100%, 56rem); }
+.popup-content .grid-item { margin-bottom: var(--gap); }
+
+/* The pixel-art pictures on the orbs (drawn in index.html, so they need no icon font) */
+.orb-icon {
+	width: 2.1rem;
+	height: 2.1rem;
+	display: block;
+	margin: 0 auto;
+}
+
+.orb-icon .accent { fill: var(--gold); }
+.orb:hover .orb-icon .accent { fill: #fff; }

@@ -141,6 +141,37 @@ for (let i = 0; i < tiles.length; i++){
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
+//ORBS: Upgrades, Updates and the vampire shops each open in their own pop-up
+{
+	const updatesOrb = document.getElementById("orbUpdates");
+	const openModals = () => [...document.querySelectorAll(".popup-modal")].filter((modal) => modal.style.display === "block");
+	for (const orb of document.querySelectorAll(".orb")){
+		const modal = document.getElementById(orb.dataset.opens);
+		const close = () => { modal.style.display = "none"; orb.focus(); };
+		orb.addEventListener("click", () => {
+			if (modal.style.display === "block") return close();
+			for (const other of openModals()) other.style.display = "none";
+			modal.style.display = "block";
+			if (orb === updatesOrb) orb.classList.remove("has-news");
+			const list = modal.querySelector("#townUpdates");
+			if (list) list.scrollTop = list.scrollHeight;
+			modal.querySelector(".popup-close").focus();
+		});
+		const closeButton = modal.querySelector(".popup-close");
+		closeButton.addEventListener("click", close);
+		closeButton.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " "){ event.preventDefault(); close(); } });
+		modal.addEventListener("click", (event) => { if (event.target === modal) close(); });
+	}
+	document.addEventListener("keydown", (event) => {
+		if (event.key === "Escape") for (const modal of openModals()) modal.style.display = "none";
+	});
+	// A gold dot on the Updates orb when something new was written while the pop-up is closed
+	const news = new MutationObserver(() => {
+		if (document.getElementById("updatesModal").style.display !== "block") updatesOrb.classList.add("has-news");
+	});
+	setTimeout(() => news.observe(document.getElementById("townUpdates"), { childList: true }), 1000); // not for the welcome line
+}
+
 //map zoom with the mouse wheel
 new MapZoom(document.querySelector(".map-scroll"));
 

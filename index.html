@@ -22,6 +22,13 @@
 		<i class="fas fa-tint"></i>
 	</div>
 
+	<!-- Orbs above the blood button: each opens its own pop-up (wired up in main.js) -->
+	<div class="orb-stack">
+		<button type="button" class="button orb" id="orbVampires" data-opens="vampiresModal" aria-label="Vampire animals and vampires" title="Vampire animals &amp; vampires"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M2 3h1v1h-1zM13 3h1v1h-1zM1 4h3v1h-3zM12 4h3v1h-3zM1 5h4v1h-4zM7 5h2v1h-2zM11 5h4v1h-4zM0 6h5v1h-5zM6 6h4v1h-4zM11 6h5v1h-5zM0 7h6v1h-6zM7 7h2v1h-2zM10 7h6v1h-6zM0 8h1v1h-1zM2 8h4v1h-4zM7 8h2v1h-2zM10 8h4v1h-4zM15 8h1v1h-1zM2 9h12v1h-12zM3 10h2v1h-2zM6 10h4v1h-4zM11 10h2v1h-2zM5 11h1v1h-1zM10 11h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1z"/><path class="accent" d="M7 11h2v1h-2z"/></svg></button>
+		<button type="button" class="button orb" id="orbUpgrades" data-opens="upgradesModal" aria-label="Upgrades" title="Upgrades"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M1 2h14v1h-14zM0 3h16v1h-16zM0 4h1v1h-1zM2 4h14v1h-14zM2 5h14v1h-14zM3 6h12v1h-12zM4 7h2v1h-2zM5 8h6v1h-6zM5 9h6v1h-6zM5 10h6v1h-6zM4 11h8v1h-8zM3 12h10v1h-10zM2 13h12v1h-12z"/><path class="accent" d="M6 7h6v1h-6z"/></svg></button>
+		<button type="button" class="button orb" id="orbUpdates" data-opens="updatesModal" aria-label="Updates" title="Updates"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M1 3h14v1h-14zM0 4h1v1h-1zM2 4h13v1h-13zM0 5h1v1h-1zM2 5h1v1h-1zM13 5h1v1h-1zM15 5h1v1h-1zM0 6h1v1h-1zM2 6h13v1h-13zM0 7h1v1h-1zM2 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM2 8h13v1h-13zM0 9h1v1h-1zM2 9h1v1h-1zM9 9h5v1h-5zM15 9h1v1h-1zM0 10h1v1h-1zM2 10h13v1h-13zM1 11h14v1h-14z"/><path class="accent" d="M3 5h10v1h-10zM3 7h10v1h-10zM3 9h6v1h-6z"/></svg></button>
+	</div>
+
 	<!-- Sign-up pop-up for new players (shown by main.js) -->
 	<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="signUpTitle">
 		<form name="signUp" id="signUpForm" autocomplete="off">
@@ -157,169 +164,8 @@
 				</div>
 			</div>
 
-			<fieldset class="updateBox" id="townUpdates">
-				<legend>Updates</legend>
-			</fieldset>
 
-			<div class="grid-item">
-				<h3 class="grid-item-title">Vampire animals</h3>
-				<div class="item2">
 
-					<div class="mosquito">
-						<p>mosquito: <span id="mosquitoCount"></span></p>
-						<div class="button buy-vamp-button" id="mosquito">Buy mosquito
-							<div class="hover">
-								<p>+blood/10 sec: 0.1</p>
-								<p>price blood: <span id="mosquitoCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="vampireRat">
-						<p>vampire rats: <span id="vampireRatCount"></span></p>
-						<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
-							<div class="hover">
-								<p>+blood/10 sec: 0.3</p>
-								<p>price blood: <span id="vampireRatCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="vampireBat">
-						<p>vampire bats: <span id="vampireBatCount"></span></p>
-						<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
-							<div class="hover">
-								<p>+blood/10 sec: 0.6</p>
-								<p>price blood: <span id="vampireBatCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="bloodHound">
-						<p>bloodhounds: <span id="bloodHoundCount"></span></p>
-						<div class="button buy-vamp-button" id="bloodHound">Buy bloodhound
-							<div class="hover">
-								<p>+blood/10 sec: 2</p>
-								<p>price blood: <span id="bloodHoundCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-				</div>
-			</div>
-
-			<div class="grid-item">
-				<h3 class="grid-item-title">Vampires</h3>
-				<div class="item2">
-
-					<div class="vampireSlave">
-						<p>vampire slaves: <span id="vampireSlaveCount"></span></p>
-						<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
-							<div class="hover">
-								<p>+blood/10 sec: 10</p>
-								<p>price blood: <span id="vampireSlaveCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="nightWalker">
-						<p>nightwalkers: <span id="nightWalkerCount"></span></p>
-						<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
-							<div class="hover">
-								<p>+blood/10 sec: 30</p>
-								<p>price blood: <span id="nightWalkerCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="badabook">
-						<p>badabooks: <span id="badabookCount"></span></p>
-						<div class="button buy-vamp-button" id="badabook">Buy badabook
-							<div class="hover">
-								<p>+blood/10 sec: 100</p>
-								<p>price blood: <span id="badabookCost"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="draugr">
-						<p>draugr: <span id="draugrCount"></span></p>
-						<div class="button buy-vamp-button" id="draugr">Buy draugr
-							<div class="hover">
-								<p>+blood/10 sec: 350</p>
-								<p>price blood: <span id="draugrCost"></span></p>
-								<p>price iron: <span id="draugrCostIron"></span></p>
-								<p>price bronze: <span id="draugrCostBronze"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="strigoi">
-						<p>strigoi: <span id="strigoiCount"></span></p>
-						<div class="button buy-vamp-button" id="strigoi">Buy strigoi
-							<div class="hover">
-								<p>+blood/10 sec: 700</p>
-								<p>price blood: <span id="strigoiCost"></span></p>
-								<p>price iron: <span id="strigoiCostIron"></span></p>
-								<p>price bronze: <span id="strigoiCostBronze"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="vampireMaster">
-						<p>vampire masters: <span id="vampireMasterCount"></span></p>
-						<div class="button buy-vamp-button" id="vampireMaster">Buy vampire master
-							<div class="hover">
-								<p>+blood/10 sec: 3000</p>
-								<p>price blood: <span id="vampireMasterCost"></span></p>
-								<p>price iron: <span id="vampireMasterCostIron"></span></p>
-								<p>price bronze: <span id="vampireMasterCostBronze"></span></p>
-								<p>price gold: <span id="vampireMasterCostGold"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="vampireElder">
-						<p>vampire elders: <span id="vampireElderCount"></span></p>
-						<div class="button buy-vamp-button" id="vampireElder">Buy vampire elder
-							<div class="hover">
-								<p>+blood/10 sec: 20000</p>
-								<p>price blood: <span id="vampireElderCost"></span></p>
-								<p>price iron: <span id="vampireElderCostIron"></span></p>
-								<p>price bronze: <span id="vampireElderCostBronze"></span></p>
-								<p>price gold: <span id="vampireElderCostGold"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="bloodDemon">
-						<p>blood demons: <span id="bloodDemonCount"></span></p>
-						<div class="button buy-vamp-button" id="bloodDemon">Buy blood demon
-							<div class="hover">
-								<p>+blood/10 sec: 130000</p>
-								<p>price blood: <span id="bloodDemonCost"></span></p>
-								<p>price iron: <span id="bloodDemonCostIron"></span></p>
-								<p>price bronze: <span id="bloodDemonCostBronze"></span></p>
-								<p>price gold: <span id="bloodDemonCostGold"></span></p>
-							</div>
-						</div>
-					</div>
-
-					<div class="bloodLeviathan">
-						<p>blood leviathans: <span id="bloodLeviathanCount"></span></p>
-						<div class="button buy-vamp-button" id="bloodLeviathan">Buy blood leviathan
-							<div class="hover">
-								<p>+blood/10 sec: 850000</p>
-								<p>price blood: <span id="bloodLeviathanCost"></span></p>
-								<p>price iron: <span id="bloodLeviathanCostIron"></span></p>
-								<p>price bronze: <span id="bloodLeviathanCostBronze"></span></p>
-								<p>price gold: <span id="bloodLeviathanCostGold"></span></p>
-							</div>
-						</div>
-					</div>
-
-				</div>
-			</div>
 
 			<div class="grid-item chat">
 				<div class="chat-head">
@@ -399,35 +245,216 @@
 				</div>
 			</div>
 			
-			<div class="grid-item">
-				<h3 class="grid-item-title">Upgrades</h3>
-
-				<div class="button buy-upgrade-button" id="ironHoe">Buy iron hoe
-					<p>Iron hoes: <span id="ironHoeAmmount"></span></p>
-					<div class="hover">
-						<p>+human food/10 sec: +10%</p>
-						<p>price iron: <span id="ironHoeCost"></span></p>
-					</div>
-				</div>
-
-				<div class="button buy-upgrade-button" id="ironAxe">Buy iron axe
-					<p>Iron axes: <span id="ironAxeAmmount"></span></p>
-					<div class="hover">
-						<p>+wood/10 sec: +10%</p>
-						<p>price iron: <span id="ironAxeCost"></span></p>
-					</div>
-				</div>
-
-				<div class="button buy-upgrade-button" id="ironPick">Buy iron pick
-					<p>Iron picks: <span id="ironPickAmmount"></span></p>
-					<div class="hover">
-						<p>+mining/10 sec: +10%</p>
-						<p>price iron: <span id="ironPickCost"></span></p>
-					</div>
-				</div>
-			</div>
 		</div>
 
+	</div>
+
+	<!-- Pop-ups opened by the orbs in the corner (moved here from the page; the ids are unchanged) -->
+	<div id="upgradesModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Upgrades">
+		<div class="modal-content popup-content">
+			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
+				<div class="grid-item">
+					<h3 class="grid-item-title">Upgrades</h3>
+	
+					<div class="button buy-upgrade-button" id="ironHoe">Buy iron hoe
+						<p>Iron hoes: <span id="ironHoeAmmount"></span></p>
+						<div class="hover">
+							<p>+human food/10 sec: +10%</p>
+							<p>price iron: <span id="ironHoeCost"></span></p>
+						</div>
+					</div>
+	
+					<div class="button buy-upgrade-button" id="ironAxe">Buy iron axe
+						<p>Iron axes: <span id="ironAxeAmmount"></span></p>
+						<div class="hover">
+							<p>+wood/10 sec: +10%</p>
+							<p>price iron: <span id="ironAxeCost"></span></p>
+						</div>
+					</div>
+	
+					<div class="button buy-upgrade-button" id="ironPick">Buy iron pick
+						<p>Iron picks: <span id="ironPickAmmount"></span></p>
+						<div class="hover">
+							<p>+mining/10 sec: +10%</p>
+							<p>price iron: <span id="ironPickCost"></span></p>
+						</div>
+					</div>
+				</div>
+		</div>
+	</div>
+
+	<div id="updatesModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Updates">
+		<div class="modal-content popup-content">
+			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
+				<fieldset class="updateBox" id="townUpdates">
+					<legend>Updates</legend>
+				</fieldset>
+		</div>
+	</div>
+
+	<div id="vampiresModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Vampire animals and vampires">
+		<div class="modal-content popup-content popup-wide">
+			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
+				<div class="grid-item">
+					<h3 class="grid-item-title">Vampire animals</h3>
+					<div class="item2">
+	
+						<div class="mosquito">
+							<p>mosquito: <span id="mosquitoCount"></span></p>
+							<div class="button buy-vamp-button" id="mosquito">Buy mosquito
+								<div class="hover">
+									<p>+blood/10 sec: 0.1</p>
+									<p>price blood: <span id="mosquitoCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="vampireRat">
+							<p>vampire rats: <span id="vampireRatCount"></span></p>
+							<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
+								<div class="hover">
+									<p>+blood/10 sec: 0.3</p>
+									<p>price blood: <span id="vampireRatCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="vampireBat">
+							<p>vampire bats: <span id="vampireBatCount"></span></p>
+							<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
+								<div class="hover">
+									<p>+blood/10 sec: 0.6</p>
+									<p>price blood: <span id="vampireBatCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="bloodHound">
+							<p>bloodhounds: <span id="bloodHoundCount"></span></p>
+							<div class="button buy-vamp-button" id="bloodHound">Buy bloodhound
+								<div class="hover">
+									<p>+blood/10 sec: 2</p>
+									<p>price blood: <span id="bloodHoundCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+					</div>
+				</div>
+	
+				<div class="grid-item">
+					<h3 class="grid-item-title">Vampires</h3>
+					<div class="item2">
+	
+						<div class="vampireSlave">
+							<p>vampire slaves: <span id="vampireSlaveCount"></span></p>
+							<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
+								<div class="hover">
+									<p>+blood/10 sec: 10</p>
+									<p>price blood: <span id="vampireSlaveCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="nightWalker">
+							<p>nightwalkers: <span id="nightWalkerCount"></span></p>
+							<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
+								<div class="hover">
+									<p>+blood/10 sec: 30</p>
+									<p>price blood: <span id="nightWalkerCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="badabook">
+							<p>badabooks: <span id="badabookCount"></span></p>
+							<div class="button buy-vamp-button" id="badabook">Buy badabook
+								<div class="hover">
+									<p>+blood/10 sec: 100</p>
+									<p>price blood: <span id="badabookCost"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="draugr">
+							<p>draugr: <span id="draugrCount"></span></p>
+							<div class="button buy-vamp-button" id="draugr">Buy draugr
+								<div class="hover">
+									<p>+blood/10 sec: 350</p>
+									<p>price blood: <span id="draugrCost"></span></p>
+									<p>price iron: <span id="draugrCostIron"></span></p>
+									<p>price bronze: <span id="draugrCostBronze"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="strigoi">
+							<p>strigoi: <span id="strigoiCount"></span></p>
+							<div class="button buy-vamp-button" id="strigoi">Buy strigoi
+								<div class="hover">
+									<p>+blood/10 sec: 700</p>
+									<p>price blood: <span id="strigoiCost"></span></p>
+									<p>price iron: <span id="strigoiCostIron"></span></p>
+									<p>price bronze: <span id="strigoiCostBronze"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="vampireMaster">
+							<p>vampire masters: <span id="vampireMasterCount"></span></p>
+							<div class="button buy-vamp-button" id="vampireMaster">Buy vampire master
+								<div class="hover">
+									<p>+blood/10 sec: 3000</p>
+									<p>price blood: <span id="vampireMasterCost"></span></p>
+									<p>price iron: <span id="vampireMasterCostIron"></span></p>
+									<p>price bronze: <span id="vampireMasterCostBronze"></span></p>
+									<p>price gold: <span id="vampireMasterCostGold"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="vampireElder">
+							<p>vampire elders: <span id="vampireElderCount"></span></p>
+							<div class="button buy-vamp-button" id="vampireElder">Buy vampire elder
+								<div class="hover">
+									<p>+blood/10 sec: 20000</p>
+									<p>price blood: <span id="vampireElderCost"></span></p>
+									<p>price iron: <span id="vampireElderCostIron"></span></p>
+									<p>price bronze: <span id="vampireElderCostBronze"></span></p>
+									<p>price gold: <span id="vampireElderCostGold"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="bloodDemon">
+							<p>blood demons: <span id="bloodDemonCount"></span></p>
+							<div class="button buy-vamp-button" id="bloodDemon">Buy blood demon
+								<div class="hover">
+									<p>+blood/10 sec: 130000</p>
+									<p>price blood: <span id="bloodDemonCost"></span></p>
+									<p>price iron: <span id="bloodDemonCostIron"></span></p>
+									<p>price bronze: <span id="bloodDemonCostBronze"></span></p>
+									<p>price gold: <span id="bloodDemonCostGold"></span></p>
+								</div>
+							</div>
+						</div>
+	
+						<div class="bloodLeviathan">
+							<p>blood leviathans: <span id="bloodLeviathanCount"></span></p>
+							<div class="button buy-vamp-button" id="bloodLeviathan">Buy blood leviathan
+								<div class="hover">
+									<p>+blood/10 sec: 850000</p>
+									<p>price blood: <span id="bloodLeviathanCost"></span></p>
+									<p>price iron: <span id="bloodLeviathanCostIron"></span></p>
+									<p>price bronze: <span id="bloodLeviathanCostBronze"></span></p>
+									<p>price gold: <span id="bloodLeviathanCostGold"></span></p>
+								</div>
+							</div>
+						</div>
+	
+					</div>
+				</div>
+		</div>
 	</div>
 
 	<!-- Build menu -->
