@@ -17,6 +17,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
+const { hasSlur } = require("./wordFilter");
 
 const PORT = Number(process.env.PORT) || 8000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -34,6 +35,7 @@ const FIRST_LOAD_MESSAGES = 50;    // what a brand new visitor sees
 const MAX_NAME_LENGTH = 20;
 const MAX_TEXT_LENGTH = 300;
 const MAX_BODY_BYTES = 4 * 1024;
+const MAX_PROFILE_BODY_BYTES = 32 * 1024; // a profile carries a snapshot of the map
 const RATE_LIMIT_COUNT = 5;        // messages ...
 const RATE_LIMIT_WINDOW_MS = 10000; // ... per 10 seconds per visitor
 
@@ -180,7 +182,7 @@ function sendJson(res, status, body) {
 	res.end(text);
 }
 
-function readJsonBody(req) {
+function readJsonBody(req, maxBytes = MAX_BODY_BYTES) {
 	return new Promise((resolve, reject) => {
 		let size = 0;
 		let tooBig = false;
@@ -188,7 +190,7 @@ function readJsonBody(req) {
 		req.on("data", (chunk) => {
 			if (tooBig) return; // keep draining, but ignore the rest of an oversized upload
 			size += chunk.length;
-			if (size > MAX_BODY_BYTES) {
+			if (size > maxBytes) {
 				tooBig = true;
 				chunks.length = 0;
 				reject(Object.assign(new Error("Message too large"), { status: 413 }));
@@ -289,6 +291,9 @@ async function handlePlayer(req, res) {
 	if (isPlayerRateLimited(clientIp(req))) {
 		return sendJson(res, 429, { error: "Saving too often. Try again in a moment." });
 	}
+	if (hasSlur(vampireName) || hasSlur(settlementName)) {
+		return sendJson(res, 400, { error: "That name is not allowed. Please choose another." });
+	}
 
 	// A vampire name can only belong to one player.
 	const key = nameKey(vampireName);
@@ -327,7 +332,113 @@ async function handlePlayer(req, res) {
 		createdAt: existing ? existing.createdAt : now,
 		updatedAt: now,
 		stats,
+		...(existing && existing.profile ? { profile: existing.profile } : {}),
 	});
+	savePlayers();
+	return sendJson(res, 200, { ok: true });
+}
+
+// ---------- Character pages ----------
+// POST /api/profile { id, avatar, bio, accent, isPublic, showResources, showMap, map? }
+//      Saves how the player looks and what they show on their page. The player must exist already.
+// GET  /api/profile?name=Vlad
+//      -> the public page of that player. A private page only gives name, "private": true and the avatar.
+// The numbers and the map come from the player's own browser (like everything in the player file),
+// so they can be faked. This is a showcase, not a ranking you can trust blindly.
+const isProfileRateLimited = createRateLimiter(20, 60000);
+const isProfileReadRateLimited = createRateLimiter(60, 60000);
+const AVATAR_KEYS = { skin: 6, hairStyle: 7, hairColor: 8, eyes: 5, eyeColor: 6, mouth: 5, cloak: 6, cloakColor: 8, accessory: 7 };
+const MAX_BIO_LENGTH = 150;
+const ACCENT_COUNT = 8;
+
+function cleanAvatar(value) {
+	const avatar = {};
+	const sent = value && typeof value === "object" ? value : {};
+	for (const [key, count] of Object.entries(AVATAR_KEYS)) {
+		const number = sent[key];
+		avatar[key] = Number.isInteger(number) && number >= 0 && number < count ? number : 0;
+	}
+	return avatar;
+}
+
+// The map as two strings: one digit per tile for what is there (0-8) and one character
+// for the building level (0-9, "a" = 10), row by row.
+function cleanMap(value) {
+	if (!value || typeof value !== "object") return null;
+	const { width, height, tiles, levels } = value;
+	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
+	const count = width * height;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-8]+$/.test(tiles)) return null;
+	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
+	return { width, height, tiles, levels };
+}
+
+async function handleProfile(req, res, url) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+
+	if (req.method === "GET") {
+		if (isProfileReadRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+		const name = clean(url.searchParams.get("name") || "", MAX_NAME_LENGTH);
+		const id = name ? nameOwners.get(nameKey(name)) : null;
+		const player = id ? players.get(id) : null;
+		if (!player) return sendJson(res, 404, { error: "No vampire with that name was found." });
+
+		const profile = player.profile || {};
+		const page = {
+			vampireName: player.vampireName,
+			avatar: profile.avatar || null,
+			accent: profile.accent || 0,
+			level: player.level || 1,
+			online: lastSeen.has(id) && Date.now() - lastSeen.get(id) < ONLINE_WINDOW_MS,
+		};
+		if (profile.isPublic === false) return sendJson(res, 200, { ...page, private: true });
+
+		page.settlementName = player.settlementName;
+		page.bio = profile.bio || "";
+		page.createdAt = player.createdAt;
+		page.diceWins = diceWins.get(id) || 0;
+		page.influence = player.stats.influence;
+		page.familiars = player.stats.familiars;
+		if (profile.showResources !== false) page.stats = player.stats;
+		if (profile.showMap !== false && profile.map) page.map = profile.map;
+		return sendJson(res, 200, page);
+	}
+
+	if (req.method !== "POST") {
+		res.writeHead(405, { Allow: "GET, POST, OPTIONS" });
+		return res.end();
+	}
+
+	let body;
+	try {
+		body = await readJsonBody(req, MAX_PROFILE_BODY_BYTES);
+	} catch (error) {
+		return sendJson(res, error.status || 400, { error: error.message });
+	}
+	body = body && typeof body === "object" ? body : {};
+
+	const id = typeof body.id === "string" ? body.id : "";
+	if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+	if (isProfileRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Saving too often. Try again in a moment." });
+	const player = players.get(id);
+	if (!player) return sendJson(res, 404, { error: "Create your vampire first." });
+
+	const bio = clean(body.bio, MAX_BIO_LENGTH);
+	if (hasSlur(bio)) return sendJson(res, 400, { error: "Please keep your description friendly. That text is not allowed." });
+
+	const previous = player.profile || {};
+	const accent = Number.isInteger(body.accent) && body.accent >= 0 && body.accent < ACCENT_COUNT ? body.accent : 0;
+	const map = ("map" in body && cleanMap(body.map)) || previous.map || null;
+	player.profile = {
+		avatar: cleanAvatar(body.avatar),
+		bio,
+		accent,
+		isPublic: body.isPublic !== false,
+		showResources: body.showResources !== false,
+		showMap: body.showMap !== false,
+		map,
+	};
+	player.updatedAt = Date.now();
 	savePlayers();
 	return sendJson(res, 200, { ok: true });
 }
@@ -817,6 +928,7 @@ const server = http.createServer((req, res) => {
 	const api = {
 		"/api/chat": () => handleChat(req, res, url),
 		"/api/player": () => handlePlayer(req, res),
+		"/api/profile": () => handleProfile(req, res, url),
 		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
 		"/api/online": () => handleOnline(req, res),
 		"/api/dice": () => handleDice(req, res),

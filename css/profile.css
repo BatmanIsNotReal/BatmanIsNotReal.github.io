@@ -1,0 +1,246 @@
+/* Character builder, "My character" window and the character page (player.html) */
+
+/* ---------- Builder ---------- */
+.avatar-builder {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	justify-content: center;
+	align-items: flex-start;
+	text-align: left;
+}
+
+.avatar-preview {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.avatar-canvas {
+	width: 128px;
+	height: 176px;
+	image-rendering: pixelated;
+	background-color: var(--stone);
+	border: 3px solid var(--line);
+}
+
+.avatar-rows {
+	flex: 1 1 13rem;
+	min-width: 12rem;
+}
+
+.avatar-row {
+	display: grid;
+	grid-template-columns: 8rem 2rem 1fr 2rem;
+	align-items: center;
+	gap: 0.25rem;
+	margin: 0.2rem 0;
+	font-size: 1.15rem;
+}
+
+.avatar-label { color: var(--bone-dim); }
+
+.avatar-value {
+	text-align: center;
+	color: var(--gold);
+}
+
+.avatar-step {
+	padding: 0.15rem 0;
+	color: var(--bone);
+	background-color: var(--stone);
+	border: 2px solid var(--line);
+	cursor: pointer;
+	font-size: 0.8rem;
+}
+
+.avatar-step:hover,
+.avatar-step:focus-visible { background-color: var(--blood); }
+
+.avatar-random { font-size: 0.7rem; }
+
+/* ---------- Switches (slider-style checkboxes) ---------- */
+.profile-switch {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	margin: 0.4rem 0;
+	text-align: left;
+	font-size: 1.2rem;
+	cursor: pointer;
+}
+
+.profile-switch input {
+	appearance: none;
+	flex: 0 0 auto;
+	position: relative;
+	width: 2.6rem;
+	height: 1.3rem;
+	margin: 0;
+	background-color: var(--stone);
+	border: 2px solid var(--line);
+	cursor: pointer;
+}
+
+.profile-switch input::after {
+	content: "";
+	position: absolute;
+	top: 1px;
+	left: 1px;
+	width: calc(1.3rem - 8px);
+	height: calc(1.3rem - 8px);
+	background-color: var(--bone-dim);
+	transition: transform 0.15s;
+}
+
+.profile-switch input:checked { background-color: var(--blood-deep); }
+
+.profile-switch input:checked::after {
+	transform: translateX(1.3rem);
+	background-color: var(--bone);
+}
+
+.profile-switch input:focus-visible { outline: 2px solid var(--gold); }
+
+.profile-switch small {
+	display: block;
+	font-size: 1rem;
+	color: var(--bone-dim);
+}
+
+.signup-builder-box { text-align: left; }
+.signup-builder-box h4 { margin: 0 0 0.5rem; text-align: center; font-weight: normal; color: var(--gold); }
+
+/* ---------- "My character" window ---------- */
+.profile-content { width: min(100%, 40rem); text-align: left; }
+.profile-content h3, .profile-content h4 { text-align: center; }
+
+.profile-content label.field {
+	display: block;
+	margin: 0.6rem 0 0.2rem;
+	color: var(--bone-dim);
+}
+
+.profile-content textarea {
+	width: 100%;
+	min-height: 4.5rem;
+	padding: 0.4rem 0.6rem;
+	resize: vertical;
+	font: inherit;
+	font-size: 1.2rem;
+	color: var(--bone);
+	background-color: var(--ink);
+	border: 2px solid var(--line);
+}
+
+.profile-count { text-align: right; font-size: 1rem; color: var(--bone-dim); }
+
+.accent-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+.accent-swatch {
+	width: 2rem;
+	height: 2rem;
+	padding: 0;
+	border: 2px solid var(--line);
+	cursor: pointer;
+}
+
+.accent-swatch[aria-pressed="true"] { outline: 3px solid var(--bone); }
+
+.profile-status { min-height: 1.4em; margin: 0.5rem 0; text-align: center; color: #e8808c; }
+.profile-status.good { color: #8fd19e; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: center; }
+.profile-actions a { color: var(--gold); }
+
+/* ---------- Links to character pages ---------- */
+a.player-link { color: inherit; text-decoration: none; }
+a.player-link:hover, a.player-link:focus-visible { text-decoration: underline; }
+
+/* ---------- Character page (player.html) ---------- */
+.player-page {
+	width: min(100%, 64rem);
+	margin: 0 auto;
+}
+
+.player-banner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 1.25rem;
+	padding: 1.25rem;
+	background-color: var(--accent, var(--blood));
+	background-image: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.65));
+	border: 3px solid var(--line);
+}
+
+.player-banner canvas {
+	width: 160px;
+	height: 220px;
+	image-rendering: pixelated;
+	background-color: rgba(0, 0, 0, 0.35);
+	border: 3px solid var(--line);
+}
+
+.player-banner h1 {
+	margin: 0;
+	font-size: 2.6rem;
+	letter-spacing: 0.05em;
+	text-shadow: 3px 3px 0 #000;
+	overflow-wrap: anywhere;
+}
+
+.player-banner .sub { margin: 0.2rem 0; font-size: 1.6rem; color: var(--bone); }
+.player-banner .bio { margin: 0.6rem 0 0; font-size: 1.4rem; max-width: 34rem; overflow-wrap: anywhere; }
+
+.online-dot {
+	display: inline-block;
+	width: 0.7rem;
+	height: 0.7rem;
+	margin-right: 0.3rem;
+	background-color: #6fcf7f;
+	border-radius: 50%;
+}
+
+.player-panel {
+	margin-top: var(--gap);
+	padding: 1rem;
+	background-color: var(--crypt);
+	border: 3px solid var(--line);
+	box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.player-panel h2 { margin: 0 0 0.6rem; font-size: 1.1rem; color: var(--gold); }
+
+.player-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+	gap: 0.5rem;
+}
+
+.player-stat {
+	padding: 0.4rem 0.6rem;
+	background-color: var(--stone);
+}
+
+.player-stat span { display: block; font-size: 1.05rem; color: var(--bone-dim); }
+.player-stat strong { font-size: 1.6rem; font-weight: normal; }
+
+.player-map-wrap { overflow-x: auto; }
+
+#playerMap {
+	display: block;
+	width: 100%;
+	height: auto;
+	image-rendering: pixelated;
+	border: 2px solid var(--ink);
+}
+
+.player-message { padding: 2rem 1rem; text-align: center; font-size: 1.6rem; }
+.player-back { display: inline-block; margin-bottom: var(--gap); color: var(--gold); font-size: 1.4rem; }
+
+@media (max-width: 600px) {
+	.avatar-row { grid-template-columns: 5rem 2rem 1fr 2rem; }
+	.player-banner { justify-content: center; text-align: center; }
+	.player-banner h1 { font-size: 2rem; }
+}

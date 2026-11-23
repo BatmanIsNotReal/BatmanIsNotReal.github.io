@@ -19,8 +19,10 @@ import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
 import UpgradeMenu from './js/town/UpgradeMenu.js';
+import AvatarBuilder from './js/profile/AvatarBuilder.js';
+import { ACCENTS, ACCENT_NAMES, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
-import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
+import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -31,6 +33,8 @@ const houseImages = ["src/smallHut.png", "src/house2.png"];
 let Inv = new Inventory();
 const Account = new Player("", "");
 let signedUp = false; // true once the player has chosen their names
+// How the player looks and what their character page shows (see js/profile and player.html)
+const Profile = { avatar: null, bio: "", accent: 0, isPublic: true, showResources: true, showMap: true };
 let myTown = new Town(houseSize, xpRates);
 const Upgrades = new Upgrade();
 
@@ -474,6 +478,9 @@ function cleanName(value){
 	return Array.from(text).slice(0, 20).join("");
 }
 
+const signUpBuilder = new AvatarBuilder(document.getElementById("signUpBuilder"), randomAvatar());
+const signUpPublic = document.getElementById("signUpPublic");
+
 function showSignUp(message = ""){
 	signUpError.textContent = message;
 	signUpForm.vName.value = Account.vampireName;
@@ -504,13 +511,101 @@ signUpForm.addEventListener("submit", async (event) => {
 
 	Account.vampireName = vampireName;
 	Account.houseName = settlementName;
+	Profile.avatar = signUpBuilder.getValue();
+	Profile.isPublic = signUpPublic.checked;
 	signedUp = true;
 	overlay.style.display = "none";
+	sendProfile(Profile, true); // the character page (nothing to wait for if the server is away)
 	chat?.lockName(vampireName);
 	howToPlay.showOnce();
 	updateBox.townUpdatesAdd("-- " + vampireName + " founds " + settlementName + " --", document);
 	save();
 })
+
+
+//MY CHARACTER (look, description and privacy of the character page)
+{
+	const modal = document.getElementById("profileModal");
+	const bio = document.getElementById("profileBio");
+	const bioCount = document.getElementById("profileBioCount");
+	const status = document.getElementById("profileStatus");
+	const switches = {
+		isPublic: document.getElementById("profilePublic"),
+		showResources: document.getElementById("profileShowResources"),
+		showMap: document.getElementById("profileShowMap"),
+	};
+	const accents = document.getElementById("profileAccents");
+	const viewLink = document.getElementById("profileView");
+	let accent = 0;
+	const builder = new AvatarBuilder(document.getElementById("profileBuilder"), randomAvatar());
+
+	ACCENTS.forEach((colour, index) => {
+		const swatch = document.createElement("button");
+		swatch.type = "button";
+		swatch.className = "accent-swatch";
+		swatch.style.backgroundColor = colour;
+		swatch.title = ACCENT_NAMES[index];
+		swatch.setAttribute("aria-label", ACCENT_NAMES[index]);
+		swatch.addEventListener("click", () => { accent = index; markAccent(); });
+		accents.appendChild(swatch);
+	});
+	function markAccent(){
+		[...accents.children].forEach((swatch, index) => swatch.setAttribute("aria-pressed", String(index === accent)));
+	}
+	// Hiding the page hides what is on it, so the two detail switches only matter while it is public
+	function syncSwitches(){
+		for (const key of ["showResources", "showMap"]) switches[key].disabled = !switches.isPublic.checked;
+	}
+	switches.isPublic.addEventListener("change", syncSwitches);
+	bio.addEventListener("input", () => { bioCount.textContent = String(Array.from(bio.value).length); });
+
+	function open(){
+		if (!signedUp) return;
+		builder.setValue(Profile.avatar || defaultAvatar(Account.vampireName));
+		bio.value = Profile.bio;
+		bioCount.textContent = String(Array.from(bio.value).length);
+		accent = Profile.accent;
+		markAccent();
+		for (const key of Object.keys(switches)) switches[key].checked = Profile[key];
+		syncSwitches();
+		status.textContent = "";
+		status.className = "profile-status";
+		viewLink.href = "player.html?name=" + encodeURIComponent(Account.vampireName);
+		modal.style.display = "block";
+		document.getElementById("profileSave").focus();
+	}
+	function close(){ modal.style.display = "none"; }
+
+	document.getElementById("profileButton").addEventListener("click", open);
+	document.getElementById("profileClose").addEventListener("click", close);
+	document.getElementById("profileClose").addEventListener("keydown", (event) => {
+		if (event.key === "Enter" || event.key === " "){ event.preventDefault(); close(); }
+	});
+	modal.addEventListener("click", (event) => { if (event.target === modal) close(); });
+	document.addEventListener("keydown", (event) => { if (event.key === "Escape" && modal.style.display === "block") close(); });
+
+	document.getElementById("profileSave").addEventListener("click", async () => {
+		const candidate = {
+			avatar: builder.getValue(),
+			bio: Array.from(bio.value.replace(/\s+/g, " ").trim()).slice(0, 150).join(""),
+			accent,
+			isPublic: switches.isPublic.checked,
+			showResources: switches.showResources.checked,
+			showMap: switches.showMap.checked,
+		};
+		status.className = "profile-status";
+		status.textContent = "Saving…";
+		const result = await sendProfile(candidate, true);
+		if (!result.ok && !result.offline){
+			status.textContent = result.error || "Could not save. Please try again.";
+			return;
+		}
+		Object.assign(Profile, candidate);
+		save();
+		status.className = "profile-status good";
+		status.textContent = result.offline ? "Saved on this computer. It will reach your page when the server is back." : "Saved.";
+	});
+}
 
 
 //SAVE / LOAD
@@ -568,6 +663,14 @@ const saveFields = {
 
 	xp: field(House, "xp"),
 	level: field(House, "level"),
+
+	profile: [() => Profile, (value) => {
+		if (!value || typeof value !== "object") return;
+		if (value.avatar && typeof value.avatar === "object") Profile.avatar = normalizeAvatar(value.avatar);
+		if (typeof value.bio === "string") Profile.bio = value.bio.slice(0, 150);
+		if (Number.isInteger(value.accent) && value.accent >= 0 && value.accent < ACCENTS.length) Profile.accent = value.accent;
+		for (const key of ["isPublic", "showResources", "showMap"]) if (typeof value[key] === "boolean") Profile[key] = value[key];
+	}],
 
 	vampireName: field(Account, "vampireName"),
 	houseName: field(Account, "houseName"),
@@ -638,9 +741,54 @@ function playerProfile(names = Account){
 	};
 }
 
+//The character page: look, description, privacy and a snapshot of the map
+function mapSnapshot(){
+	const count = myTown.mapWidth * myTown.mapHeight;
+	let tiles = "";
+	let levels = "";
+	for (let i = 0; i < count; i++){
+		const type = myTown.tiles["tile" + i];
+		tiles += Number.isInteger(type) && type > 0 && type <= 8 ? type : 0;
+		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
+	}
+	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
+}
+
+let profileLastSent = "";
+let profileLastTry = 0;
+
+// Answers { ok } , { ok: false, error } (the server refused) or { ok: false, offline: true }.
+// Without force it only sends when something changed, and at most once a minute.
+async function sendProfile(candidate = Profile, force = false){
+	const body = JSON.stringify({
+		id: playerSync.id,
+		avatar: normalizeAvatar(candidate.avatar || defaultAvatar(Account.vampireName)),
+		bio: candidate.bio,
+		accent: candidate.accent,
+		isPublic: candidate.isPublic,
+		showResources: candidate.showResources,
+		showMap: candidate.showMap,
+		map: mapSnapshot(),
+	});
+	if (!force && (body === profileLastSent || Date.now() - profileLastTry < 60000)) return { ok: true };
+	profileLastTry = Date.now();
+	try {
+		const response = await fetch(PROFILE_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+		if (response.ok){
+			profileLastSent = body;
+			return { ok: true };
+		}
+		const data = await response.json().catch(() => ({}));
+		return { ok: false, status: response.status, error: data.error || "" };
+	} catch {
+		return { ok: false, offline: true };
+	}
+}
+
 async function syncPlayerFile(){
 	const result = await playerSync.save(playerProfile());
-	if (result.status === 409 && signedUp){
+	if (result.ok) sendProfile();
+	if ((result.status === 409 || result.status === 400) && signedUp){
 		// The server says another player has this name (it could not be checked while offline).
 		signedUp = false;
 		save();

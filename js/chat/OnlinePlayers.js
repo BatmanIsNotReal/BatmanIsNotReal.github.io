@@ -2,6 +2,8 @@
 // Asks /api/online (the same address as the "Players online" counter) every 20 seconds.
 // If the server cannot be reached the list just keeps what it had.
 
+import { makeProfileLink } from "../profile/profileLink.js";
+
 const REFRESH_MS = 20000;
 
 export default class OnlinePlayers {
@@ -34,7 +36,10 @@ export default class OnlinePlayers {
 		this.list.replaceChildren();
 		for (const name of names) {
 			const item = this.doc.createElement("li");
-			item.textContent = name; // textContent: names are never read as HTML
+			const link = makeProfileLink(this.doc.createElement("a"), name);
+			link.className = "player-link";
+			link.textContent = name; // textContent: names are never read as HTML
+			item.appendChild(link);
 			this.list.appendChild(item);
 		}
 	}

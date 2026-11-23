@@ -1,6 +1,8 @@
 // Leaderboard pop-up: shows the best players saved on the server.
 // Talks to GET /api/leaderboard in server.js.
 
+import { makeProfileLink } from "../profile/profileLink.js";
+
 const LEADER_REFRESH_MS = 60000;
 
 export default class Leaderboard {
@@ -130,7 +132,14 @@ export default class Leaderboard {
 			];
 			cells.forEach((value, index) => {
 				const cell = document.createElement("td");
-				cell.textContent = String(value);
+				if (index === 1) {
+					const link = makeProfileLink(document.createElement("a"), player.vampireName);
+					link.className = "player-link";
+					link.textContent = String(value);
+					cell.appendChild(link);
+				} else {
+					cell.textContent = String(value);
+				}
 				if (index >= 3) cell.className = "number";
 				row.appendChild(cell);
 			});

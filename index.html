@@ -41,6 +41,14 @@
 					<label for="hName">Settlement name</label>
 					<input type="text" id="hName" name="hName" maxlength="20" required>
 				</div>
+				<div class="item15 signup-builder-box">
+					<h4>Build your vampire</h4>
+					<div id="signUpBuilder"></div>
+					<label class="profile-switch">
+						<input type="checkbox" id="signUpPublic" checked>
+						<span>Public character page<small>Other players can visit it. You can change this any time.</small></span>
+					</label>
+				</div>
 				<div class="item14">
 					<p class="signup-error" id="signUpError" role="alert"></p>
 					<button type="submit" class="button">Awaken</button>
@@ -64,6 +72,7 @@
 			<button type="button" class="button" id="helpButton">How to play</button>
 			<button type="button" class="button" id="diceButton">Dice</button>
 			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
+			<button type="button" class="button" id="profileButton">My character</button>
 			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
 				<i class="fas fa-volume-up"></i> <span>Sound on</span>
 			</button>
@@ -557,6 +566,38 @@
 
 			<h4>Recent games</h4>
 			<ul class="dice-list dice-recent" id="diceRecent"></ul>
+		</div>
+	</div>
+
+	<!-- My character: look, description and privacy of the character page (wired up in main.js) -->
+	<div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+		<div class="modal-content profile-content">
+			<div id="profileClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
+			<h3 id="profileTitle">My character</h3>
+			<div id="profileBuilder"></div>
+			<label class="field" for="profileBio">About me (shown on your page)</label>
+			<textarea id="profileBio" maxlength="150" placeholder="Who are you? What does your settlement stand for?"></textarea>
+			<div class="profile-count"><span id="profileBioCount">0</span>/150</div>
+			<label class="field" id="accentLabel">Banner colour</label>
+			<div class="accent-picker" id="profileAccents" role="group" aria-labelledby="accentLabel"></div>
+			<h4>Privacy</h4>
+			<label class="profile-switch">
+				<input type="checkbox" id="profilePublic">
+				<span>Public page<small>Off: nobody can see your stats, map or description. Your name and look still show.</small></span>
+			</label>
+			<label class="profile-switch">
+				<input type="checkbox" id="profileShowResources">
+				<span>Show my resources and stats</span>
+			</label>
+			<label class="profile-switch">
+				<input type="checkbox" id="profileShowMap">
+				<span>Show my map</span>
+			</label>
+			<p class="profile-status" id="profileStatus" role="status"></p>
+			<div class="profile-actions">
+				<button type="button" class="button" id="profileSave">Save</button>
+				<a id="profileView" href="player.html" target="_blank" rel="noopener">View my page</a>
+			</div>
 		</div>
 	</div>
 

@@ -1,6 +1,8 @@
 // Chat panel: shows messages from the chat server and sends new ones.
 // Talks to the API in server.js:  GET /api/chat?after=<id>   and   POST /api/chat
 
+import { makeProfileLink } from "../profile/profileLink.js";
+
 // GIFs: a message with a direct link to a picture from one of these sites shows the
 // picture. Only these sites are allowed, so a link cannot make everyone's browser
 // contact some random server.
@@ -182,8 +184,11 @@ export default class Chat {
 		time.className = "chat-time";
 		time.textContent = new Date(message.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-		const name = document.createElement("span");
-		name.className = "chat-name";
+		// Players' names open their character page; the Dice Master and Town Crier are not players
+		const isPlayer = message.name !== "Dice Master" && message.name !== "Town Crier";
+		const name = document.createElement(isPlayer ? "a" : "span");
+		name.className = isPlayer ? "chat-name player-link" : "chat-name";
+		if (isPlayer) makeProfileLink(name, String(message.name));
 		name.textContent = String(message.name);
 
 		const gif = findGifUrl(String(message.text));

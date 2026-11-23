@@ -80,7 +80,7 @@ img {
 }
 
 #overlay form {
-	width: min(100%, 30rem);
+	width: min(100%, 40rem);
 	max-height: 100%;
 	overflow-y: auto;
 	background-color: var(--ink);
@@ -95,6 +95,7 @@ img {
 		'title title'
 		'image name'
 		'image house'
+		'builder builder'
 		'confirm confirm';
 	gap: 0.5rem;
 	padding: 0.75rem;
@@ -125,6 +126,7 @@ img {
 .item12 { grid-area: name; }
 .item13 { grid-area: house; }
 .item14 { grid-area: confirm; }
+.item15 { grid-area: builder; }
 
 .signup-error {
 	min-height: 1.25em;
