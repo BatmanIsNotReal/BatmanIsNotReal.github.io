@@ -210,5 +210,12 @@ body.map-window .map-scroll {
 }
 
 .map-window-stats {
-	margin: 0.25rem 0 0.5rem;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.15rem 1.5rem;
+	margin: 0.25rem 0 0.35rem;
+}
+
+body.map-window .map-scroll {
+	max-height: calc(100vh - 11rem);
 }
