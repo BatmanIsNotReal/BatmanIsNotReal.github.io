@@ -4,6 +4,7 @@
 import { PROFILE_API_URL } from "../chat/chatConfig.js";
 import { ACCENTS, drawAvatar, defaultAvatar } from "./Avatar.js";
 import formatNumber from "../formatNumber.js";
+import MapZoom from "../MapZoom.js";
 
 const root = document.getElementById("playerRoot");
 const name = new URLSearchParams(location.search).get("name") || "";
@@ -83,6 +84,25 @@ function loadImage(src) {
 	});
 }
 
+// Look around by dragging with the mouse (touch screens scroll by themselves)
+function enableDragScroll(box) {
+	let start = null;
+	box.addEventListener("pointerdown", (event) => {
+		if (event.pointerType === "touch") return;
+		start = { x: event.clientX, y: event.clientY, left: box.scrollLeft, top: box.scrollTop };
+		box.setPointerCapture(event.pointerId);
+		box.classList.add("dragging");
+	});
+	box.addEventListener("pointermove", (event) => {
+		if (!start) return;
+		box.scrollLeft = start.left - (event.clientX - start.x);
+		box.scrollTop = start.top - (event.clientY - start.y);
+	});
+	const stop = () => { start = null; box.classList.remove("dragging"); };
+	box.addEventListener("pointerup", stop);
+	box.addEventListener("pointercancel", stop);
+}
+
 async function mapPanel(player) {
 	const { width, height, tiles, levels } = player.map;
 	const box = panel(player.settlementName);
@@ -103,9 +123,22 @@ async function mapPanel(player) {
 	canvas.height = height * SIZE;
 	canvas.setAttribute("role", "img");
 	canvas.setAttribute("aria-label", "Map of " + player.settlementName);
+	// The canvas is as wide as the tile size (a CSS variable) says, so MapZoom can zoom it like the game map
+	canvas.style.width = `calc(var(--tile-size) * ${width})`;
 	const wrap = element("div", "player-map-wrap");
 	wrap.appendChild(canvas);
-	box.appendChild(wrap);
+	const hint = element("p", "map-hint", "Scroll the mouse wheel to zoom, drag the map to look around.");
+	const zoom = new MapZoom(wrap, { size: 16, min: 8, max: 96, storageKey: null });
+	const buttons = element("div", "player-map-buttons");
+	for (const [label, text, action] of [["Zoom out", "\u2212", () => zoom.zoomBy(1 / 1.3)], ["Zoom in", "+", () => zoom.zoomBy(1.3)]]) {
+		const button = element("button", "button", text);
+		button.type = "button";
+		button.setAttribute("aria-label", label);
+		button.addEventListener("click", action);
+		buttons.appendChild(button);
+	}
+	box.append(hint, buttons, wrap);
+	enableDragScroll(wrap);
 
 	const images = {};
 	await Promise.all(Object.entries(TILE_IMAGES).map(async ([type, src]) => { images[type] = await loadImage(src); }));

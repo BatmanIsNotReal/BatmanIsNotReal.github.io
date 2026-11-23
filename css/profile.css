@@ -226,12 +226,23 @@ a.player-link:hover, a.player-link:focus-visible { text-decoration: underline; }
 .player-stat span { display: block; font-size: 1.05rem; color: var(--bone-dim); }
 .player-stat strong { font-size: 1.6rem; font-weight: normal; }
 
-.player-map-wrap { overflow-x: auto; }
+.player-map-wrap {
+	--tile-size: 16px; /* changed by js/MapZoom.js */
+	max-height: 40rem;
+	overflow: auto;
+	cursor: grab;
+	touch-action: pan-x pan-y;
+}
+
+.player-map-wrap.dragging { cursor: grabbing; user-select: none; }
+
+.player-map-buttons { display: flex; gap: 0.5rem; margin: 0.5rem 0; }
+.player-panel .map-hint { margin: 0.4rem 0; color: var(--bone-dim); font-size: 1.1rem; }
 
 #playerMap {
 	display: block;
-	width: 100%;
 	height: auto;
+	max-width: none;
 	image-rendering: pixelated;
 	border: 2px solid var(--ink);
 }

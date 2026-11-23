@@ -4,11 +4,12 @@
 const STORAGE_KEY = "vampireMapTileSize";
 
 export default class MapZoom{
-    constructor(scrollBox, { size = 64, min = 16, max = 128, step = 1.15 } = {}){
+    constructor(scrollBox, { size = 64, min = 16, max = 128, step = 1.15, storageKey = STORAGE_KEY } = {}){
         this.box = scrollBox;
         this.min = min;
         this.max = max;
         this.step = step;
+        this.storageKey = storageKey; // null: do not remember the zoom
         this.size = this.readSaved(size);
         this.apply(this.size);
         this.box.addEventListener("wheel", (event) => this.onWheel(event), { passive: false });
@@ -16,7 +17,8 @@ export default class MapZoom{
 
     readSaved(fallback){
         try {
-            const value = Number(localStorage.getItem(STORAGE_KEY));
+            if (!this.storageKey) return fallback;
+            const value = Number(localStorage.getItem(this.storageKey));
             if (value >= this.min && value <= this.max) return value;
         } catch { /* storage not available: use the default */ }
         return fallback;
@@ -37,7 +39,7 @@ export default class MapZoom{
         this.apply(newSize);
         this.box.scrollLeft = mapX * ratio - x;
         this.box.scrollTop = mapY * ratio - y;
-        try { localStorage.setItem(STORAGE_KEY, String(newSize)); } catch { /* ignore */ }
+        try { if (this.storageKey) localStorage.setItem(this.storageKey, String(newSize)); } catch { /* ignore */ }
     }
 
     zoomBy(factor, x, y){
