@@ -201,16 +201,18 @@ const buildingActions = {
 // so everything stays in one save.
 // What the walking familiars need to know (also used by the pop-out map)
 function familiarState(){
-	const mine = myTown.Buildings.Mine;
+	// Every building has familiars working in it (workersRequired each), on top of the free gatherers
+	const staff = (building) => building.ammount * building.workersRequired;
+	const { Farm, LumberMill, Mine, BloodTemple } = myTown.Buildings;
 	return {
 		width: myTown.mapWidth,
 		height: myTown.mapHeight,
 		tiles: myTown.tiles,
 		counts: {
-			food: Familiars.foodGather,
-			wood: Familiars.woodGather,
-			blood: Familiars.bloodGather,
-			mine: mine.ammount * mine.workersRequired,
+			food: Familiars.foodGather + staff(Farm),
+			wood: Familiars.woodGather + staff(LumberMill),
+			blood: Familiars.bloodGather + staff(BloodTemple),
+			mine: staff(Mine),
 			idle: Familiars.notWorking,
 		},
 		total: Familiars.ammount,
