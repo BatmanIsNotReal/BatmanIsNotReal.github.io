@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BLOOD & EARTH - Map</title>
+
+	<link rel="stylesheet" type="text/css" href="css/style.css" />
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+</head>
+
+<!-- The map in its own window. Opened by the "Pop out" button above the map in index.html.
+     It shows the map of the game window and builds through it, so keep the game window open. -->
+<body class="map-window">
+	<p class="map-window-note" id="mapWindowNote" hidden>The game window is not open (or was reloaded). Open the game and press Pop out above the map again.</p>
+
+	<div id="mapWindowContent" hidden>
+		<h3 class="grid-item-title"><span data-from="mapTitle"></span> - Familiars: <span data-from="familiarAmmount"></span></h3>
+		<p class="map-window-stats">
+			Room for familiars: <span data-from="familiarLimit"></span>
+			&nbsp;|&nbsp; Free familiars: <span data-from="familiarNotWorking"></span>
+			&nbsp;|&nbsp; Wood: <span data-from="woodCount"></span>
+		</p>
+		<div class="map-scroll">
+			<table id="map"></table>
+		</div>
+		<p class="map-hint">Click a tile to build. Scroll the mouse wheel over the map to zoom in and out</p>
+	</div>
+
+	<div id="myModal" class="modal">
+		<div class="modal-content">
+			<div id="close" class="close">&times;</div>
+			<h3>Build</h3>
+
+			<div class="button buy-building-button" id="buyHut">Buy hut
+				<div class="hover">
+					<p>Has place for 4 familiars</p>
+					<p>price wood: <span id="buildingHutCost"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyFarm">Buy farm
+				<div class="hover">
+					<p>Has place for 5 familiars</p>
+					<p>price wood: <span id="buildingFarmCost"></span></p>
+					<p>familiars required: <span id="buildingFarmFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyMine">Buy mine
+				<div class="hover">
+					<p>Has place for 10 familiars</p>
+					<p>price wood: <span id="buildingMineCost"></span></p>
+					<p>familiars required: <span id="buildingMineFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyLumberMill">Buy lumber mill
+				<div class="hover">
+					<p>Has place for 5 familiars</p>
+					<p>price wood: <span id="buildingLumberMillCost"></span></p>
+					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyBloodTemple">Buy blood temple
+				<div class="hover">
+					<p>A place of worship to thy master</p>
+					<p>Each round: 10% chance of +25% influence for 3 rounds</p>
+						<p>A blessing consumes 20% of your blood</p>
+					<p>Build on grassland. Has no place for familiars</p>
+					<p>price: <span id="buildingBloodTempleWood"></span> wood,
+						<span id="buildingBloodTempleIron"></span> iron,
+						<span id="buildingBloodTempleBronze"></span> bronze,
+						<span id="buildingBloodTempleGold"></span> gold</p>
+					<p>familiars required: <span id="buildingBloodTempleFamiliarsRequired"></span></p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="module">
+		import MapZoom from './js/MapZoom.js';
+
+		// The game window is the one that opened this window.
+		function findGame() {
+			try {
+				const w = window.opener;
+				if (w && !w.closed && w.vampireMap) return { win: w, map: w.vampireMap };
+			} catch { /* cannot be reached */ }
+			return null;
+		}
+
+		const game = findGame();
+		if (!game) {
+			document.getElementById("mapWindowNote").hidden = false;
+		} else {
+			document.getElementById("mapWindowContent").hidden = false;
+			const { width, height } = game.map;
+
+			// The same table of tiles as in the game window
+			const table = document.getElementById("map");
+			let index = 0;
+			for (let row = 0; row < height; row++) {
+				const tr = document.createElement("tr");
+				for (let col = 0; col < width; col++) {
+					const td = document.createElement("td");
+					const img = document.createElement("img");
+					img.id = "tile" + index++;
+					img.className = "tile";
+					td.appendChild(img);
+					tr.appendChild(td);
+				}
+				table.appendChild(tr);
+			}
+			new MapZoom(document.querySelector(".map-scroll"));
+
+			const modal = document.getElementById("myModal");
+			let currentTile = "";
+			table.addEventListener("click", (event) => {
+				if (!event.target.classList.contains("tile")) return;
+				currentTile = event.target.id;
+				sync();
+				modal.style.display = "block";
+			});
+			document.getElementById("close").addEventListener("click", () => { modal.style.display = "none"; });
+			window.addEventListener("click", (event) => { if (event.target === modal) modal.style.display = "none"; });
+			window.addEventListener("keydown", (event) => { if (event.key === "Escape") modal.style.display = "none"; });
+			for (const button of document.getElementsByClassName("buy-building-button")) {
+				button.addEventListener("click", () => {
+					modal.style.display = "none";
+					try { game.map.build(button.id, currentTile, window); } catch (error) { console.error(error); }
+					sync();
+				});
+			}
+
+			// Copies what the game window shows: tile pictures, names, prices
+			function sync() {
+				let source;
+				try {
+					if (game.win.closed || !game.win.vampireMap) throw new Error("gone");
+					source = game.win.document;
+				} catch {
+					clearInterval(timer);
+					document.getElementById("mapWindowContent").hidden = true;
+					modal.style.display = "none";
+					document.getElementById("mapWindowNote").hidden = false;
+					return;
+				}
+				const tiles = game.map.tiles();
+				for (const id in tiles) {
+					const img = document.getElementById(id);
+					if (!img || img.dataset.type === String(tiles[id])) continue;
+					const src = game.map.imageFor(tiles[id]);
+					if (src) { img.src = String(src); img.dataset.type = String(tiles[id]); }
+				}
+				for (const element of document.querySelectorAll("[data-from]")) {
+					const from = source.getElementById(element.dataset.from);
+					if (from) element.textContent = from.textContent;
+				}
+				for (const span of modal.querySelectorAll("span[id]")) {
+					const from = source.getElementById(span.id);
+					if (from) { span.textContent = from.textContent; span.className = from.className; }
+				}
+			}
+			sync();
+			const timer = setInterval(sync, 1000);
+		}
+	</script>
+</body>
+
+</html>

@@ -18,7 +18,7 @@ import DiceGame from './js/dice/DiceGame.js';
 import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
-import formatNumber from './js/formatNumber.js';
+import formatNumber, { formatRate } from './js/formatNumber.js';
 import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
@@ -137,6 +137,28 @@ const buildingActions = {
 	buyBloodTemple: (id) => myTown.buyBloodTemple(Inv, Familiars, document, currentTile, id),
 };
 
+// What the separate map window (map.html) uses: it shows this window's map and builds through it,
+// so everything stays in one save.
+window.vampireMap = {
+	width: myTown.mapWidth,
+	height: myTown.mapHeight,
+	tiles: () => myTown.tiles,
+	imageFor: (type) => myTown.tileImage(type),
+	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
+	// are shown in the map window, where the player is looking.
+	build(buttonId, tileId, mapWindow){
+		if (!buildingActions[buttonId] || !(tileId in myTown.tiles)) return;
+		const mainAlert = window.alert;
+		window.alert = (text) => mapWindow.alert(text);
+		try {
+			currentTile = tileId;
+			buildingActions[buttonId](buttonId);
+		} finally {
+			window.alert = mainAlert;
+		}
+	},
+};
+
 for (const button of buyBuildingButtons){
 	button.addEventListener("click", (event) => {
 		const id = event.currentTarget.id;
@@ -187,6 +209,13 @@ try {
 } catch (error) {
 	console.error("Chat could not start:", error);
 }
+
+//Map in a separate window (map.html)
+document.getElementById("mapPopout")?.addEventListener("click", () => {
+	const popup = window.open("map.html", "vampireHouseMap", "popup=yes,width=1000,height=780");
+	if (popup) popup.focus();
+	else alert("Your browser blocked the pop-up window. Allow pop-ups for this page and try again.");
+});
 
 //Dice button next to the chat opens the dice game in a separate window (dice.html).
 //The header button still opens the pop-up inside the game.
@@ -263,6 +292,7 @@ function displayUpdate(){
 
 	document.getElementById("familiarNotWorking").innerHTML = Familiars.getNotWorking();
 	document.getElementById("familiarAmmount").innerHTML = Familiars.ammount;
+	document.getElementById("mapTitle").textContent = Account.houseName || "World map"; // the settlement name the player chose
 
 	//inventory
 	showStorage("humanFoodCount", Inv.getHumanFoodAmmount());
@@ -279,16 +309,16 @@ function displayUpdate(){
 	
 	//gathering
 	document.getElementById("humanFoodGather").innerHTML = Familiars.getHumanFoodGather();
-	document.getElementById("newHumanFoodPerRound").innerHTML = Inv.getNewHumanFoodPerRound(Familiars);
-	document.getElementById("newHumanFoodPerRoundStat").innerHTML = Inv.getNewHumanFoodPerRound();
+	showRate("newHumanFoodPerRound", Inv.getNewHumanFoodPerRound(Familiars));
+	showRate("newHumanFoodPerRoundStat", Inv.getNewHumanFoodPerRound());
 	
 	document.getElementById("bloodVictimGather").innerHTML = Familiars.getBloodGather();
-	document.getElementById("newBloodPerRound").innerHTML = Inv.getBloodPerRound(Familiars, Account);
-	document.getElementById("newBloodPerRoundStat").innerHTML = Inv.getNewBloodPerRound();
+	showRate("newBloodPerRound", Inv.getBloodPerRound(Familiars, Account));
+	showRate("newBloodPerRoundStat", Inv.getNewBloodPerRound());
 	
 	document.getElementById("woodGather").innerHTML = Familiars.getWoodGather();
-	document.getElementById("newWoodPerRound").innerHTML = Inv.getWoodPerRound(Familiars);
-	document.getElementById("newWoodPerRoundStat").innerHTML = Inv.getNewWoodPerRound();
+	showRate("newWoodPerRound", Inv.getWoodPerRound(Familiars));
+	showRate("newWoodPerRoundStat", Inv.getNewWoodPerRound());
 
 	for (const [id, vampire] of Object.entries(vampireTypes)){
 		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
@@ -622,6 +652,13 @@ function announceLevelUp(level){
 	} catch (error) {
 		console.error("Level-up announcement failed:", error);
 	}
+}
+
+// Income per 10 seconds, rounded (659.3k); hovering shows the exact rounded amount
+function showRate(id, amount){
+	const element = document.getElementById(id);
+	element.textContent = formatRate(amount);
+	element.title = (Math.round(amount * 10) / 10).toLocaleString("en-US");
 }
 
 // Storage line with an easy-to-read number (1.2M); hovering shows the exact amount

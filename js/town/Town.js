@@ -263,28 +263,78 @@ export default class Town{
         }
     }
 
+    // Natural-looking terrain for a new map: smooth noise makes big lakes, mountain ranges and
+    // forests instead of single random tiles. The shares stay the same as before: about 17% water,
+    // 9% mountains and 22% forest, the rest is grass for buildings.
     newTileMap(document){
-        for (let name in this.tiles){
-            let n = this.getRandomInt(1, 100);
-            if (n > 1 && n < 50){
-                this.tiles[name] = 0;
-            }
-            //Water
-            if (n > 50 && n < 70){
-                this.tiles[name] = 2;
-            }
-            //Rock
-            if (n > 70 && n < 80){
-                this.tiles[name] = 3;
-            }
-            //Forest
-            if (n > 80 && n < 100){
-                this.tiles[name] = 6;
-            }
+        const width = this.mapWidth;
+        const height = this.mapHeight;
+        const count = width * height;
 
-            
+        const height_ = this.smoothNoise(width, height);   // low = water, high = mountains
+        const wetness = this.smoothNoise(width, height);   // high = forest
+
+        // Where the thresholds lie follows from the shares, so every map has similar amounts
+        const WATER = 0.17, ROCK = 0.09, FOREST = 0.22;
+        const order = (values) => values.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]).map((pair) => pair[1]);
+        const byHeight = order(height_);
+
+        const type = new Array(count).fill(0);
+        for (let i = 0; i < Math.round(count * WATER); i++) type[byHeight[i]] = 2;                 // lakes in the lowest ground
+        for (let i = 0; i < Math.round(count * ROCK); i++) type[byHeight[count - 1 - i]] = 3;      // mountains on the highest
+
+        const dry = order(wetness).reverse().filter((i) => type[i] === 0);                         // wettest grass first
+        for (let i = 0; i < Math.round(count * FOREST) && i < dry.length; i++) type[dry[i]] = 6;
+
+        // Tidy up: a tile surrounded by something else joins its surroundings (no single stray tiles)
+        for (let pass = 0; pass < 2; pass++){
+            const next = type.slice();
+            for (let y = 0; y < height; y++){
+                for (let x = 0; x < width; x++){
+                    const around = {};
+                    let neighbours = 0;
+                    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+                        const nx = x + dx, ny = y + dy;
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+                        const t = type[ny * width + nx];
+                        around[t] = (around[t] || 0) + 1;
+                        neighbours++;
+                    }
+                    const me = type[y * width + x];
+                    if ((around[me] || 0) === 0 && neighbours > 2){
+                        next[y * width + x] = Number(Object.keys(around).sort((a, b) => around[b] - around[a])[0]);
+                    }
+                }
+            }
+            for (let i = 0; i < count; i++) type[i] = next[i];
         }
-        
+
+        for (let i = 0; i < count; i++) this.tiles["tile" + i] = type[i];
+    }
+
+    // Smooth random landscape: random values on a coarse grid, blended together at three
+    // sizes (big shapes plus finer detail). Returns one number per tile, row by row.
+    smoothNoise(width, height){
+        const layers = [{ size: 10, weight: 1 }, { size: 5, weight: 0.5 }, { size: 2.5, weight: 0.25 }];
+        const values = new Array(width * height).fill(0);
+        for (const { size, weight } of layers){
+            const gridW = Math.ceil(width / size) + 2;
+            const gridH = Math.ceil(height / size) + 2;
+            const grid = Array.from({ length: gridW * gridH }, () => Math.random());
+            const smooth = (t) => t * t * (3 - 2 * t);
+            for (let y = 0; y < height; y++){
+                for (let x = 0; x < width; x++){
+                    const gx = x / size, gy = y / size;
+                    const x0 = Math.floor(gx), y0 = Math.floor(gy);
+                    const tx = smooth(gx - x0), ty = smooth(gy - y0);
+                    const at = (cx, cy) => grid[cy * gridW + cx];
+                    const top = at(x0, y0) * (1 - tx) + at(x0 + 1, y0) * tx;
+                    const bottom = at(x0, y0 + 1) * (1 - tx) + at(x0 + 1, y0 + 1) * tx;
+                    values[y * width + x] += (top * (1 - ty) + bottom * ty) * weight;
+                }
+            }
+        }
+        return values;
     }
 
     getRandomInt(min, max){

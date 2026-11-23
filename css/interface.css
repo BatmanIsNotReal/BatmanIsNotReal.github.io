@@ -193,3 +193,22 @@ img.tile {
 	font-size: 0.8rem;
 	opacity: 0.7;
 }
+
+/* The map in its own window (map.html) */
+body.map-window {
+	padding: 0.75rem;
+}
+
+body.map-window .map-scroll {
+	max-height: calc(100vh - 8.5rem);
+}
+
+.map-window-note {
+	margin: 2rem 1rem;
+	text-align: center;
+	color: var(--bone);
+}
+
+.map-window-stats {
+	margin: 0.25rem 0 0.5rem;
+}

@@ -17,3 +17,11 @@ export default function formatNumber(value) {
 	const text = String(tenths / 10);   // 1.25 -> 1.2, 100 -> 100
 	return text + UNITS[unit];
 }
+
+// Income per 10 seconds: small values keep one decimal (0.1, 0.3, 12.5), big ones are short like storage (659.3k).
+// 659322.4999 -> 659.3k; 0.30000000000000004 -> 0.3
+export function formatRate(value) {
+	value = Number(value) || 0;
+	if (value >= 1000) return formatNumber(value);
+	return String(Math.round(value * 10) / 10);
+}
