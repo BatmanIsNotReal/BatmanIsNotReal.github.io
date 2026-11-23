@@ -31,7 +31,7 @@
 			<span>Gold: <span data-from="goldCount"></span></span>
 		</p>
 		<div class="map-scroll">
-			<table id="map"></table>
+			<div class="map-stage" id="mapStage"><table id="map"></table></div>
 		</div>
 		<p class="map-hint">Click a tile to build. Scroll the mouse wheel over the map to zoom in and out</p>
 	</div>
@@ -104,6 +104,7 @@
 	<script type="module">
 		import MapZoom from './js/MapZoom.js';
 		import UpgradeMenu from './js/town/UpgradeMenu.js';
+		import FamiliarWalkers from './js/town/FamiliarWalkers.js';
 
 		// The game window is the one that opened this window.
 		function findGame() {
@@ -137,6 +138,7 @@
 				table.appendChild(tr);
 			}
 			new MapZoom(document.querySelector(".map-scroll"));
+			new FamiliarWalkers(document.getElementById("mapStage"), () => game.map.familiars());
 
 			const modal = document.getElementById("myModal");
 			let currentTile = "";

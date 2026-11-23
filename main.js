@@ -19,6 +19,7 @@ import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
 import UpgradeMenu from './js/town/UpgradeMenu.js';
+import FamiliarWalkers from './js/town/FamiliarWalkers.js';
 import AvatarBuilder from './js/profile/AvatarBuilder.js';
 import { ACCENTS, ACCENT_NAMES, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
@@ -141,6 +142,8 @@ for (let i = 0; i < tiles.length; i++){
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
+new FamiliarWalkers(document.getElementById("mapStage"), familiarState);
+
 //ORBS: Upgrades, Updates and the vampire shops each open in their own pop-up
 {
 	const updatesOrb = document.getElementById("orbUpdates");
@@ -196,7 +199,26 @@ const buildingActions = {
 
 // What the separate map window (map.html) uses: it shows this window's map and builds through it,
 // so everything stays in one save.
+// What the walking familiars need to know (also used by the pop-out map)
+function familiarState(){
+	const mine = myTown.Buildings.Mine;
+	return {
+		width: myTown.mapWidth,
+		height: myTown.mapHeight,
+		tiles: myTown.tiles,
+		counts: {
+			food: Familiars.foodGather,
+			wood: Familiars.woodGather,
+			blood: Familiars.bloodGather,
+			mine: mine.ammount * mine.workersRequired,
+			idle: Familiars.notWorking,
+		},
+		total: Familiars.ammount,
+	};
+}
+
 window.vampireMap = {
+	familiars: familiarState,
 	width: myTown.mapWidth,
 	height: myTown.mapHeight,
 	tiles: () => myTown.tiles,

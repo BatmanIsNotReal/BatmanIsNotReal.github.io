@@ -256,3 +256,44 @@ body.map-window .map-scroll {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+
+/* ---------- Familiars walking on the map (js/town/FamiliarWalkers.js) ---------- */
+.map-stage {
+	position: relative;
+	width: max-content;
+	margin: 0 auto;
+}
+
+.familiar-layer {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	pointer-events: none; /* clicks go through to the tiles */
+	z-index: 3;
+}
+
+.familiar {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: calc(var(--tile-size) * 0.22);
+	height: calc(var(--tile-size) * 0.35);
+	margin: calc(var(--tile-size) * -0.35) 0 0 calc(var(--tile-size) * -0.11); /* feet at the spot */
+}
+
+.familiar i {
+	display: block;
+	width: 100%;
+	height: 100%;
+	background: var(--figure) center / 100% 100% no-repeat;
+	animation: familiar-bob 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes familiar-bob {
+	from { translate: 0 0; }
+	to   { translate: 0 calc(var(--tile-size) * -0.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.familiar-layer { display: none; }
+}
