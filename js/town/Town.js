@@ -8,16 +8,18 @@ import Water from './terrain/Water.js';
 import Forest from './terrain/Forest.js';
 import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
+import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
 
 export default class Town{
     constructor(townSize, xpRates){
         this.townSize = townSize;
         this.xpRates = xpRates;
         this.mapWidth = 80;
-        this.mapHeight = 40;
+        this.mapHeight = 20;
         this.tileSize = 64; // width and height of one map tile, in pixels
         this.tiles = {
         }
+        this.tileLevels = {}; // upgrade level of the buildings: tile id -> 1..10 (no entry = level 0)
         this.Buildings ={
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
             Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
@@ -267,6 +269,7 @@ export default class Town{
     // forests instead of single random tiles. The shares stay the same as before: about 17% water,
     // 9% mountains and 22% forest, the rest is grass for buildings.
     newTileMap(document){
+        this.tileLevels = {};
         const width = this.mapWidth;
         const height = this.mapHeight;
         const count = width * height;
@@ -364,6 +367,13 @@ export default class Town{
             const src = this.tileImage(this.tiles[name]);
             const image = document.getElementById(name);
             if (src && image.getAttribute("src") !== String(src)) image.src = String(src);
+            // the level badge on upgraded buildings (drawn by CSS from data-level)
+            const cell = image.parentElement;
+            const level = String(this.tileLevels[name] || 0);
+            if (cell && (cell.dataset.level || "0") !== level){
+                if (level === "0") delete cell.dataset.level;
+                else cell.dataset.level = level;
+            }
         }
     }
 
@@ -384,6 +394,94 @@ export default class Town{
         }
     }
 
+    // ---------- Upgrading buildings ----------
+
+    // The upgradable building on a tile ("Farm", "Mine", ...), or null
+    upgradeKey(tileId){
+        return UPGRADABLE[this.tiles[tileId]] || null;
+    }
+
+    levelOf(tileId){
+        return this.tileLevels[tileId] || 0;
+    }
+
+    // The levels of all buildings of one tile type, in map order
+    levelsOf(type){
+        const levels = [];
+        for (const id in this.tiles){
+            if (this.tiles[id] === type) levels.push(this.tileLevels[id] || 0);
+        }
+        return levels;
+    }
+
+    // Everything the upgrade menu shows about a tile
+    upgradeInfo(tileId, inventory, familiar){
+        const key = this.upgradeKey(tileId);
+        if (!key) return null;
+        const level = this.levelOf(tileId);
+        const atMax = level >= MAX_LEVEL;
+        const info = {
+            tileId, key, level, max: MAX_LEVEL, atMax,
+            name: this.Buildings[key].name,
+            now: effectText(key, level),
+            next: atMax ? null : effectText(key, level + 1),
+            costs: [], canAfford: false,
+        };
+        if (atMax) return info;
+
+        const price = costFor(key, level);
+        const have = {
+            wood: inventory.items.wood, iron: inventory.items.iron, bronze: inventory.items.bronze,
+            gold: inventory.items.gold, blood: inventory.items.blood, familiars: familiar.getNotWorking(),
+        };
+        const labels = { wood: "wood", iron: "iron", bronze: "bronze", gold: "gold", blood: "blood", familiars: "free familiars" };
+        for (const kind of Object.keys(labels)){
+            if (price[kind] > 0) info.costs.push({ kind, label: labels[kind], need: price[kind], have: have[kind], short: have[kind] < price[kind] });
+        }
+        info.canAfford = info.costs.every((cost) => !cost.short);
+        return info;
+    }
+
+    // Buys the next level. Returns { ok, message }.
+    upgradeTile(tileId, inventory, familiar, updatebox, document){
+        const info = this.upgradeInfo(tileId, inventory, familiar);
+        if (!info) return { ok: false, message: "There is nothing to upgrade here." };
+        if (info.atMax) return { ok: false, message: "This building is fully upgraded." };
+        if (!info.canAfford){
+            const missing = info.costs.filter((cost) => cost.short).map((cost) => cost.label);
+            return { ok: false, message: "You do not have enough " + missing.join(", ") + "." };
+        }
+        const price = {};
+        for (const cost of info.costs) price[cost.kind] = cost.need;
+        inventory.useWood(price.wood || 0);
+        inventory.useIron(price.iron || 0);
+        inventory.useBronze(price.bronze || 0);
+        inventory.useGold(price.gold || 0);
+        inventory.useBlood(price.blood || 0);
+        familiar.notWorking -= price.familiars || 0; // these familiars now work on the upgrade
+        const level = info.level + 1;
+        this.tileLevels[tileId] = level;
+        if (info.key === "Hut") familiar.addMaxLimit(HUT_ROOM_PER_LEVEL);
+        if (updatebox) updatebox.townUpdatesAdd("Your " + info.name.toLowerCase() + " was upgraded to level " + level + ".", document);
+        return { ok: true, message: info.name + " upgraded to level " + level + "." };
+    }
+
+    // Puts saved levels onto the map (same row/column handling as loadTiles)
+    loadTileLevels(saved, savedWidth = 40){
+        this.tileLevels = {};
+        if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
+        for (const [name, level] of Object.entries(saved)){
+            const match = /^tile(\d+)$/.exec(name);
+            if (!match || !Number.isInteger(level) || level < 1 || level > MAX_LEVEL) continue;
+            const index = Number(match[1]);
+            const row = Math.floor(index / savedWidth);
+            const col = index % savedWidth;
+            if (row >= this.mapHeight || col >= this.mapWidth) continue;
+            const id = "tile" + (row * this.mapWidth + col);
+            if (this.upgradeKey(id)) this.tileLevels[id] = level;
+        }
+    }
+
     update(document){
         this.updateTileImages(document);
 
@@ -392,16 +490,16 @@ export default class Town{
 
     updateTen(inv, document, updatebox, familiar){
         this.Buildings.Hut.updateTen(familiar, updatebox);
-        this.Buildings.Mine.updateTen(inv, document, updatebox);
-        this.Buildings.Farm.updateTen(inv, document, updatebox);
-        this.Buildings.LumberMill.updateTen(inv, document, updatebox);
+        this.Buildings.Mine.updateTen(inv, document, updatebox, this.levelsOf(4));
+        this.Buildings.Farm.updateTen(inv, document, updatebox, this.levelsOf(5));
+        this.Buildings.LumberMill.updateTen(inv, document, updatebox, this.levelsOf(7));
     }
 
     // Influence multiplier of this round (the Blood Temple's blessing).
     // Call once per round, before the house counts the influence.
     // A new blessing consumes part of the player's blood (inventory).
     influenceMultiplier(document, updatebox, inventory){
-        return this.Buildings.BloodTemple.updateTen(document, updatebox, inventory);
+        return this.Buildings.BloodTemple.updateTen(document, updatebox, inventory, this.levelsOf(8));
     }
 
     // newGrid(document){

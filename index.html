@@ -462,7 +462,7 @@
 				<div class="hover">
 					<p>A place of worship to thy master</p>
 					<p>Each round: 10% chance of +25% influence for 3 rounds</p>
-						<p>A blessing consumes 20% of your blood</p>
+						<p>A blessing consumes 10% of your blood</p>
 					<p>Build on grassland. Has no place for familiars</p>
 					<p>price: <span id="buildingBloodTempleWood"></span> wood,
 						<span id="buildingBloodTempleIron"></span> iron,
@@ -471,6 +471,19 @@
 					<p>familiars required: <span id="buildingBloodTempleFamiliarsRequired"></span></p>
 				</div>
 			</div>
+		</div>
+	</div>
+
+	<!-- Upgrade a building (opens when you click a building on the map; js/town/UpgradeMenu.js) -->
+	<div id="upgradeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
+		<div class="modal-content upgrade-content">
+			<div id="upgradeClose" class="close">&times;</div>
+			<h3 id="upgradeTitle">Upgrade</h3>
+			<p id="upgradeNow"></p>
+			<p id="upgradeNext"></p>
+			<ul id="upgradeCosts"></ul>
+			<button type="button" class="button" id="upgradeButton">Upgrade</button>
+			<p id="upgradeMessage" role="status"></p>
 		</div>
 	</div>
 
@@ -494,6 +507,8 @@
 				<li>
 					<strong>Build on the map.</strong> Click a tile to open the build menu. Huts make room for more familiars,
 					farms give food, lumber mills (on forest) give wood, and mines (on rock) give iron, bronze and gold.
+					Click one of your buildings to upgrade it (up to level 10) for more output, more room or stronger blessings.
+					Upgrades cost resources, blood and free familiars.
 					Scroll the mouse wheel over the map to zoom.
 				</li>
 				<li>
@@ -503,7 +518,7 @@
 				</li>
 				<li>
 					<strong>Aim high.</strong> The Blood Temple is the late-game goal: each round it may bless you with
-					extra influence, but a blessing eats 20% of your blood. Check the leaderboard, chat with other players,
+					extra influence, but a blessing eats 10% of your blood. Check the leaderboard, chat with other players,
 					and expect a random event now and then.
 				</li>
 			</ol>

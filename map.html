@@ -76,7 +76,7 @@
 				<div class="hover">
 					<p>A place of worship to thy master</p>
 					<p>Each round: 10% chance of +25% influence for 3 rounds</p>
-						<p>A blessing consumes 20% of your blood</p>
+						<p>A blessing consumes 10% of your blood</p>
 					<p>Build on grassland. Has no place for familiars</p>
 					<p>price: <span id="buildingBloodTempleWood"></span> wood,
 						<span id="buildingBloodTempleIron"></span> iron,
@@ -88,8 +88,22 @@
 		</div>
 	</div>
 
+	<!-- Upgrade a building (opens when you click a building on the map; js/town/UpgradeMenu.js) -->
+	<div id="upgradeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
+		<div class="modal-content upgrade-content">
+			<div id="upgradeClose" class="close">&times;</div>
+			<h3 id="upgradeTitle">Upgrade</h3>
+			<p id="upgradeNow"></p>
+			<p id="upgradeNext"></p>
+			<ul id="upgradeCosts"></ul>
+			<button type="button" class="button" id="upgradeButton">Upgrade</button>
+			<p id="upgradeMessage" role="status"></p>
+		</div>
+	</div>
+
 	<script type="module">
 		import MapZoom from './js/MapZoom.js';
+		import UpgradeMenu from './js/town/UpgradeMenu.js';
 
 		// The game window is the one that opened this window.
 		function findGame() {
@@ -126,11 +140,18 @@
 
 			const modal = document.getElementById("myModal");
 			let currentTile = "";
+			// Your buildings open the upgrade menu (it works through the game window, like building does)
+			const upgradeMenu = new UpgradeMenu(document, {
+				getInfo: (id) => game.map.upgradeInfo(id),
+				upgrade: (id) => game.map.upgrade(id),
+				onUpgraded: () => sync(),
+			});
 			table.addEventListener("click", (event) => {
 				if (!event.target.classList.contains("tile")) return;
 				currentTile = event.target.id;
 				sync();
-				modal.style.display = "block";
+				if (game.map.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
+				else modal.style.display = "block";
 			});
 			document.getElementById("close").addEventListener("click", () => { modal.style.display = "none"; });
 			window.addEventListener("click", (event) => { if (event.target === modal) modal.style.display = "none"; });
@@ -163,6 +184,16 @@
 					const src = game.map.imageFor(tiles[id]);
 					if (src) { img.src = String(src); img.dataset.type = String(tiles[id]); }
 				}
+				// level badges and the open upgrade menu
+				const levels = game.map.levels();
+				for (const id in tiles) {
+					const cell = document.getElementById(id)?.parentElement;
+					const level = String(levels[id] || 0);
+					if (cell && (cell.dataset.level || "0") !== level) {
+						if (level === "0") delete cell.dataset.level; else cell.dataset.level = level;
+					}
+				}
+				if (upgradeMenu.isOpen()) upgradeMenu.render();
 				for (const element of document.querySelectorAll("[data-from]")) {
 					const from = source.getElementById(element.dataset.from);
 					if (from) element.textContent = from.textContent;

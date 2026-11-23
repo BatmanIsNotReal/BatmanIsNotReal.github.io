@@ -1,3 +1,4 @@
+import { outputMultiplier } from "../BuildingUpgrades.js";
 import Building from "../Building.js";
 import updateBox from "../updateBox/updatesBox.js";
 
@@ -13,11 +14,13 @@ export default class LumberMill{
         this.gain = 1;
     }
 
-    checkForLoot(inv, document, updatebox){
+    // levels: the upgrade level of each building of this kind (see BuildingUpgrades.js)
+    checkForLoot(inv, document, updatebox, levels = []){
         for (let i = 0; i < this.ammount; i++){
+            const gain = this.gain * outputMultiplier(levels[i] || 0);
             var chance = this.getRandomInt(0, 10);
             if (chance < 5){
-                var ammount = this.getRandomInt(10*this.gain, 30*this.gain);
+                var ammount = this.getRandomInt(10*gain, 30*gain);
                 updatebox.townUpdatesAdd("Your lumber mill produced " + ammount + " wood.", document);
                 inv.addWood(ammount);
             }
@@ -32,7 +35,7 @@ export default class LumberMill{
         return Math.floor(Math.random() * (max - min) + min);
     }
 
-    updateTen(inv, document, updatebox){
-        this.checkForLoot(inv, document, updatebox);
+    updateTen(inv, document, updatebox, levels = []){
+        this.checkForLoot(inv, document, updatebox, levels);
     }
 }

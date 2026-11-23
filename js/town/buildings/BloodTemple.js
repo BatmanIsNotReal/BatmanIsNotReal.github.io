@@ -1,7 +1,9 @@
 // The Blood Temple: a place of worship to thy master.
 // Every round each temple has a 10% chance to start a blessing that boosts the
 // influence the house gains by 25% for 3 rounds. The master asks for a sacrifice:
-// 20% of the player's blood is consumed each time a blessing starts.
+// 10% of the player's blood is consumed each time a blessing starts.
+import { templeChance, templeBoost } from "../BuildingUpgrades.js";
+
 export default class BloodTemple{
     constructor(name, description, capacity, imgsrc, cost, workersRequired){
         this.name = name;
@@ -15,23 +17,26 @@ export default class BloodTemple{
         this.blessingBoost = 1.25;           // +25% influence
         this.blessingRounds = 3;
         this.blessingRoundsLeft = 0;
-        this.bloodSacrifice = 0.20;          // share of the player's blood consumed by a blessing
+        this.bloodSacrifice = 0.10;          // share of the player's blood consumed by a blessing
     }
 
     // Runs once per round, before the influence of that round is counted.
     // Returns the influence multiplier for this round (1 when there is no blessing).
-    updateTen(document, updatebox, inventory){
+    // levels: the upgrade level of each temple. A higher level makes that temple's blessing more likely;
+    // the best temple decides how strong a blessing is.
+    updateTen(document, updatebox, inventory, levels = []){
         if (this.ammount < 1){
             this.blessingRoundsLeft = 0;
             return 1;
         }
         if (this.blessingRoundsLeft < 1){
             for (let i = 0; i < this.ammount; i++){
-                if (Math.random() < this.blessingChance){
+                if (Math.random() < templeChance(levels[i] || 0)){
                     this.blessingRoundsLeft = this.blessingRounds;
+                    this.blessingBoost = templeBoost(Math.max(0, ...levels)); // the boost of this blessing
                     const sacrificed = Math.floor(inventory.items.blood * this.bloodSacrifice);
                     inventory.useBlood(sacrificed);
-                    updatebox.townUpdatesAdd("Your master smiles upon the Blood Temple! Influence gain +25% for " + this.blessingRounds + " rounds. The temple consumed " + sacrificed + " blood (20%).", document);
+                    updatebox.townUpdatesAdd("Your master smiles upon the Blood Temple! Influence gain +" + Math.round((this.blessingBoost - 1) * 100) + "% for " + this.blessingRounds + " rounds. The temple consumed " + sacrificed + " blood (" + Math.round(this.bloodSacrifice * 100) + "%).", document);
                     break;
                 }
             }

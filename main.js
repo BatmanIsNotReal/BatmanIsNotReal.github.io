@@ -18,6 +18,7 @@ import DiceGame from './js/dice/DiceGame.js';
 import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
+import UpgradeMenu from './js/town/UpgradeMenu.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
 import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL } from './js/chat/chatConfig.js';
 
@@ -118,9 +119,20 @@ for (let i = 0; i < buyVampireButtons.length; i++) {
 	})
 }
 
-// open modal box
+// Upgrade menu for your buildings
+const upgradeMenu = new UpgradeMenu(document, {
+	getInfo: (id) => myTown.upgradeInfo(id, Inv, Familiars),
+	upgrade: (id) => myTown.upgradeTile(id, Inv, Familiars, updateBox, document),
+	onUpgraded: () => { musicHandler.playToolUpgrade(); save(); },
+});
+
+// Click a tile: your buildings open the upgrade menu, other tiles the build menu
 for (let i = 0; i < tiles.length; i++){
-	tiles[i].addEventListener("click", () => {currentTile = tiles[i].id; modal.style.display = "block"});
+	tiles[i].addEventListener("click", () => {
+		currentTile = tiles[i].id;
+		if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
+		else modal.style.display = "block";
+	});
 }
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
@@ -143,6 +155,14 @@ window.vampireMap = {
 	width: myTown.mapWidth,
 	height: myTown.mapHeight,
 	tiles: () => myTown.tiles,
+	levels: () => myTown.tileLevels,
+	upgradeKey: (id) => myTown.upgradeKey(id),
+	upgradeInfo: (id) => myTown.upgradeInfo(id, Inv, Familiars),
+	upgrade: (id) => {
+		const result = myTown.upgradeTile(id, Inv, Familiars, updateBox, document);
+		if (result.ok){ musicHandler.playToolUpgrade(); save(); }
+		return result;
+	},
 	imageFor: (type) => myTown.tileImage(type),
 	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
 	// are shown in the map window, where the player is looking.
@@ -333,6 +353,7 @@ function displayUpdate(){
 	}
 	
 	document.getElementById("familiarLimit").innerHTML = Familiars.maxLimit;
+	if (upgradeMenu.isOpen()) upgradeMenu.render();
 
 	document.getElementById("buildingHutCost").innerHTML = myTown.Buildings.Hut.cost;
 	document.getElementById("buildingMineCost").innerHTML = myTown.Buildings.Mine.cost;
@@ -579,6 +600,7 @@ function load(){
 		// The Overloard was renamed Vampire Master: owners keep theirs
 		if (savegame.vampireMasterAmmount === undefined && savegame.overloardAmmount > 0) VampireMaster.ammount = savegame.overloardAmmount;
 		myTown.loadTiles(savegame.tiles, savegame.mapWidth);
+		myTown.loadTileLevels(savegame.tileLevels, savegame.mapWidth);
 		signedUp = savegame.signedUp === true;
 		// Fire guards no longer exist: their familiars are free to work elsewhere again
 		if (savegame.fireGuard > 0) Familiars.notWorking += savegame.fireGuard;
@@ -627,7 +649,7 @@ async function syncPlayerFile(){
 }
 
 function save(){
-	const data = { signedUp, tiles: myTown.tiles, mapWidth: myTown.mapWidth, mapHeight: myTown.mapHeight };
+	const data = { signedUp, tiles: myTown.tiles, tileLevels: myTown.tileLevels, mapWidth: myTown.mapWidth, mapHeight: myTown.mapHeight };
 	for (const [key, [get]] of Object.entries(saveFields)) data[key] = get();
 
 	try {

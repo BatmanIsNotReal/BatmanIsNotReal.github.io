@@ -1,3 +1,4 @@
+import { outputMultiplier } from "../BuildingUpgrades.js";
 import Building from "../Building.js";
 import updateBox from "../updateBox/updatesBox.js";
 
@@ -18,24 +19,26 @@ export default class Mine{
 
     }
 
-    checkForLoot(inv, document, updatebox){
+    // levels: the upgrade level of each building of this kind (see BuildingUpgrades.js)
+    checkForLoot(inv, document, updatebox, levels = []){
         for (let i = 0; i < this.ammount; i++){
+            const gain = this.gain * outputMultiplier(levels[i] || 0);
             var chance = this.getRandomInt(0, 1000);
             if (chance <= 300){
                 //your miners discovered an ore of iron
-                var ammount = this.getRandomInt(10*this.gain, 30*this.gain);
+                var ammount = this.getRandomInt(10*gain, 30*gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
                 inv.addIron(ammount);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
-                var ammount = this.getRandomInt(5*this.gain, 20*this.gain);
+                var ammount = this.getRandomInt(5*gain, 20*gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
                 inv.addBronze(ammount);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
-                var ammount = this.getRandomInt(2*this.gain, 12*this.gain);
+                var ammount = this.getRandomInt(2*gain, 12*gain);
                 updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
                 inv.addGold(ammount);
             }
@@ -49,7 +52,7 @@ export default class Mine{
     }
 
 
-    updateTen(inv, document, updatebox){
-        this.checkForLoot(inv, document, updatebox);
+    updateTen(inv, document, updatebox, levels = []){
+        this.checkForLoot(inv, document, updatebox, levels);
     }
 }

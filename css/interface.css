@@ -219,3 +219,38 @@ body.map-window .map-scroll {
 body.map-window .map-scroll {
 	max-height: calc(100vh - 11rem);
 }
+
+/* Level badge on upgraded buildings (data-level is set on the map cell by Town.updateTileImages) */
+#map td { position: relative; }
+
+#map td[data-level]::after {
+	content: "Lv " attr(data-level);
+	position: absolute;
+	right: 2px;
+	bottom: 2px;
+	padding: 0 0.25em;
+	font-size: calc(var(--tile-size) * 0.2);
+	line-height: 1.25;
+	color: var(--gold);
+	background: rgba(0, 0, 0, 0.72);
+	pointer-events: none;
+}
+
+/* Upgrade pop-up */
+.upgrade-content ul {
+	margin: 0.5rem 0 0.75rem;
+	padding-left: 1.2rem;
+}
+
+.upgrade-content #upgradeMessage {
+	min-height: 1.25em;
+	margin: 0.6rem 0 0;
+}
+
+.upgrade-content .upgrade-good { color: var(--gold); }
+.upgrade-content .upgrade-bad { color: #e8808c; }
+
+.upgrade-content button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
