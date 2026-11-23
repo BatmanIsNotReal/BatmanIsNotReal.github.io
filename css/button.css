@@ -151,8 +151,7 @@ input[type="submit"]:active {
 	border-radius: 50%;
 }
 
-.popup-content { width: min(100%, 42rem); margin-top: 6vh; }
-.popup-wide { width: min(100%, 56rem); }
+.popup-content { max-width: 100%; margin-top: 6vh; } /* width and left edge are set by main.js (same as the map and chat) */
 .popup-content .grid-item { margin-bottom: var(--gap); }
 
 /* The pixel-art pictures on the orbs (drawn in index.html, so they need no icon font) */

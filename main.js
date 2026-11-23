@@ -145,6 +145,15 @@ window.addEventListener("click", (event) => {if (event.target == modal){modal.st
 {
 	const updatesOrb = document.getElementById("orbUpdates");
 	const openModals = () => [...document.querySelectorAll(".popup-modal")].filter((modal) => modal.style.display === "block");
+	// The pop-ups are as wide as the middle column (map and chat) and sit right over it
+	const fitToMiddleColumn = (modal) => {
+		const column = document.querySelector(".flex-column.main").getBoundingClientRect();
+		const content = modal.querySelector(".modal-content");
+		const padding = parseFloat(getComputedStyle(modal).paddingLeft) || 0;
+		content.style.width = column.width + "px";
+		content.style.marginLeft = Math.max(0, column.left - padding) + "px";
+	};
+	window.addEventListener("resize", () => openModals().forEach(fitToMiddleColumn));
 	for (const orb of document.querySelectorAll(".orb")){
 		const modal = document.getElementById(orb.dataset.opens);
 		const close = () => { modal.style.display = "none"; orb.focus(); };
@@ -152,6 +161,7 @@ window.addEventListener("click", (event) => {if (event.target == modal){modal.st
 			if (modal.style.display === "block") return close();
 			for (const other of openModals()) other.style.display = "none";
 			modal.style.display = "block";
+			fitToMiddleColumn(modal);
 			if (orb === updatesOrb) orb.classList.remove("has-news");
 			const list = modal.querySelector("#townUpdates");
 			if (list) list.scrollTop = list.scrollHeight;
