@@ -255,3 +255,20 @@ a.player-link:hover, a.player-link:focus-visible { text-decoration: underline; }
 	.player-banner { justify-content: center; text-align: center; }
 	.player-banner h1 { font-size: 2rem; }
 }
+
+/* ---------- Attributes (level points) ---------- */
+.attributes-content { width: min(100%, 30rem); }
+.attribute-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; text-align: left; }
+.attribute-name { flex: 1; font-size: 1.4rem; }
+.attribute-name small { display: block; font-size: 1rem; color: var(--bone-dim); }
+.attribute-plus { min-width: 2.6rem; }
+.attribute-plus:disabled { opacity: 0.35; cursor: default; }
+.attribute-points-line button { margin-left: 0.5rem; font-size: 0.6rem; padding: 0.2rem 0.5rem; }
+.attribute-points-line.has-points { color: var(--gold); }
+
+/* Helmets in the "My character" window */
+.helmet-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; margin: 0.4rem 0 0.8rem; }
+.helmet-choice { width: 3.4rem; height: 4.4rem; padding: 0.2rem; display: flex; align-items: center; justify-content: center; color: var(--bone-dim); background: var(--stone); border: 3px solid var(--line); cursor: pointer; }
+.helmet-choice canvas { width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain; }
+.helmet-choice[aria-pressed="true"] { border-color: var(--gold); }
+.helmet-choice:disabled { opacity: 0.45; cursor: not-allowed; }

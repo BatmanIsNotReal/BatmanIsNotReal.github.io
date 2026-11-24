@@ -158,7 +158,8 @@
 				if (!event.target.classList.contains("tile")) return;
 				currentTile = event.target.id;
 				sync();
-				if (game.map.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
+				if (game.map.tiles()[currentTile] === 9) { game.map.openCave(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				else if (game.map.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 				else modal.style.display = "block";
 			});
 			document.getElementById("close").addEventListener("click", () => { modal.style.display = "none"; });

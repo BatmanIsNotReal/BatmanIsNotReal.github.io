@@ -14,6 +14,7 @@ const SYNC_MS = 2000;
 const STEP_MS = 300;
 
 // Tile types of the map
+const CAVE = 9;
 const HUT = 1, WATER = 2, ROCK = 3, MINE = 4, FARM = 5, LUMBER_MILL = 7, TEMPLE = 8;
 const HOME_TYPE = { food: FARM, wood: LUMBER_MILL, blood: TEMPLE, mine: MINE, idle: HUT };
 const JOBS = Object.keys(HOME_TYPE);
@@ -71,7 +72,7 @@ export default class FamiliarWalkers {
 			const index = Number(id.slice(4));
 			const type = tiles[id];
 			const spot = { x: index % width, y: Math.floor(index / width) };
-			if (type !== WATER && type !== ROCK) walkable.add(index);
+			if (type !== WATER && type !== ROCK && type !== CAVE) walkable.add(index);
 			for (const job of JOBS) if (type === HOME_TYPE[job]) buildings[job].push(spot);
 		}
 		return { buildings, walkable, width, height: state.height };

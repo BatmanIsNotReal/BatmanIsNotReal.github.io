@@ -334,6 +334,56 @@ function palette(avatar) {
 	};
 }
 
+
+// ---------- Helmets (found in the underground, one for each level) ----------
+// Drawn over the head. Their own colours: M metal  m dark metal  F flame  f ember  D shadow  V violet  r dark red
+const HELMET_COLORS = { M: "#9aa0ae", m: "#4c505c", F: "#f39a2c", f: "#c4381c", D: "#241a30", V: "#9a4ad0", r: "#5c0f1a", O: "#f0e6c8" };
+export const HELMETS = [
+	{ name: "None", part: null },
+	{ name: "Gnawed Rat Skull", part: { y: 1, rows: [
+		".....PPPPPP.....",
+		"....PPPPPPPP....",
+		"....PKPPPPKP....",
+		"....PPPKKPPP....",
+		"....P.PPPP.P....",
+	] } },
+	{ name: "Bone Crown", part: { y: 0, rows: [
+		"....P..PP..P....",
+		"....PP.PP.PP....",
+		"....PPPPPPPP....",
+		"....GPPGGPPG....",
+		"....PPPPPPPP....",
+	] } },
+	{ name: "Crimson Cowl", part: { y: 2, rows: [
+		".....RRRRRR.....",
+		"....RRRRRRRR....",
+		"...RRRRRRRRRR...",
+		"...RRr....rRR...",
+		"...RR......RR...",
+		"...Rr......rR...",
+		"...Rr......rR...",
+	] } },
+	{ name: "Molten Horns", part: { y: 0, rows: [
+		"..F..........F..",
+		"..FF........FF..",
+		"..fFF......FFf..",
+		"...fFmmmmmmFf...",
+		"....mmMMMMmm....",
+		"....mMMMMMMm....",
+		"....mm....mm....",
+	] } },
+	{ name: "Helm of the Black Throne", part: { y: 1, rows: [
+		"......GGGG......",
+		".....GGVVGG.....",
+		"....DDDVVDDD....",
+		"...DDDDDDDDDD...",
+		"...DmDDDDDDmD...",
+		"...Dm......mD...",
+		"...Dm......mD...",
+	] } },
+];
+export const HELMET_COUNT = HELMETS.length - 1;
+
 function paint(context, part, colors) {
 	if (!part) return;
 	part.rows.forEach((row, rowIndex) => {
@@ -347,7 +397,7 @@ function paint(context, part, colors) {
 }
 
 // Draws the figure at its real size (16 x 22 pixels); show the canvas bigger with CSS (image-rendering: pixelated).
-export function drawAvatar(canvas, value) {
+export function drawAvatar(canvas, value, helmet = 0) {
 	const avatar = normalizeAvatar(value);
 	canvas.width = WIDTH;
 	canvas.height = HEIGHT;
@@ -360,6 +410,7 @@ export function drawAvatar(canvas, value) {
 	paint(context, MOUTHS[avatar.mouth].part, colors);
 	paint(context, HAIR[avatar.hairStyle].part, colors);
 	paint(context, ACCESSORIES[avatar.accessory].part, colors);
+	if (HELMETS[helmet] && HELMETS[helmet].part) paint(context, HELMETS[helmet].part, { ...colors, ...HELMET_COLORS });
 }
 
 // Banner colours for the character page

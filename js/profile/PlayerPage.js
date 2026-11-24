@@ -5,13 +5,14 @@ import { PROFILE_API_URL } from "../chat/chatConfig.js";
 import { ACCENTS, drawAvatar, defaultAvatar } from "./Avatar.js";
 import formatNumber from "../formatNumber.js";
 import MapZoom from "../MapZoom.js";
+import { ATTRIBUTE_KEYS, ATTRIBUTE_LABELS } from "../rules.mjs";
 
 const root = document.getElementById("playerRoot");
 const name = new URLSearchParams(location.search).get("name") || "";
 
 const TILE_IMAGES = {
 	0: "src/grass.png", 1: "src/smallHut.png", 2: "src/water.png", 3: "src/rock.png", 4: "src/mine.png",
-	5: "src/farm.png", 6: "src/forest.png", 7: "src/lumbermill.png", 8: "src/bloodtemple.png",
+	5: "src/farm.png", 6: "src/forest.png", 7: "src/lumbermill.png", 8: "src/bloodtemple.png", 9: "src/cave.png",
 };
 const BUILDINGS = [["Huts", 1], ["Farms", 5], ["Mines", 4], ["Lumber mills", 7], ["Blood temples", 8]];
 const STATS = [
@@ -34,7 +35,7 @@ function banner(player, isPrivate) {
 	const box = element("div", "player-banner");
 	box.style.setProperty("--accent", ACCENTS[player.accent] || ACCENTS[0]);
 	const canvas = document.createElement("canvas");
-	drawAvatar(canvas, player.avatar || defaultAvatar(player.vampireName));
+	drawAvatar(canvas, player.avatar || defaultAvatar(player.vampireName), player.helmet || 0);
 	canvas.setAttribute("role", "img");
 	canvas.setAttribute("aria-label", "Portrait of " + player.vampireName);
 
@@ -69,6 +70,7 @@ function statsPanel(player) {
 		add("Influence", formatNumber(player.influence || 0));
 		add("Familiars", formatNumber(player.familiars || 0));
 	}
+	if (player.attributes) for (const key of ATTRIBUTE_KEYS) add(ATTRIBUTE_LABELS[key], player.attributes[key]);
 	add("Dice wins", formatNumber(player.diceWins || 0));
 	if (player.createdAt) add("Joined", new Date(player.createdAt).toLocaleDateString());
 	box.appendChild(grid);

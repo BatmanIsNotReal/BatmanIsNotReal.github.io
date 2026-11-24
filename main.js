@@ -20,10 +20,15 @@ import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
 import UpgradeMenu from './js/town/UpgradeMenu.js';
 import FamiliarWalkers from './js/town/FamiliarWalkers.js';
+import AttributesMenu from './js/profile/AttributesMenu.js';
+import { defaultAttributes, cleanAttributes, pointsAvailable } from './js/rules.mjs';
 import AvatarBuilder from './js/profile/AvatarBuilder.js';
-import { ACCENTS, ACCENT_NAMES, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
+import CaveMenu from './js/underground/CaveMenu.js';
+import Underground from './js/underground/Underground.js';
+import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
+import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
-import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL } from './js/chat/chatConfig.js';
+import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -35,7 +40,9 @@ let Inv = new Inventory();
 const Account = new Player("", "");
 let signedUp = false; // true once the player has chosen their names
 // How the player looks and what their character page shows (see js/profile and player.html)
-const Profile = { avatar: null, bio: "", accent: 0, isPublic: true, showResources: true, showMap: true };
+// Health, Defence, Strength and Magic (levels); the points to spend come from the player level
+const Attributes = defaultAttributes();
+const Profile = { avatar: null, bio: "", accent: 0, isPublic: true, showResources: true, showMap: true, helmet: 0, helmetsOwned: [] };
 let myTown = new Town(houseSize, xpRates);
 const Upgrades = new Upgrade();
 
@@ -138,7 +145,8 @@ const upgradeMenu = new UpgradeMenu(document, {
 for (let i = 0; i < tiles.length; i++){
 	tiles[i].addEventListener("click", () => {
 		currentTile = tiles[i].id;
-		if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
+		if (myTown.tiles[currentTile] === 9) caveMenu.open();
+		else if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 		else modal.style.display = "block";
 	});
 }
@@ -242,6 +250,7 @@ window.vampireMap = {
 		return result;
 	},
 	imageFor: (type) => myTown.tileImage(type),
+	openCave: () => caveMenu.open(),
 	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
 	// are shown in the map window, where the player is looking.
 	build(buttonId, tileId, mapWindow){
@@ -403,6 +412,9 @@ function displayUpdate(){
 	document.getElementById("familiarCost").innerHTML = Familiars.getCost();
 	
 	document.getElementById("levelStat").innerHTML = House.level;
+	const attributePoints = pointsAvailable(House.level, Attributes);
+	document.getElementById("attributePointsStat").textContent = attributePoints;
+	document.getElementById("attributePointsLine").classList.toggle("has-points", attributePoints > 0);
 	document.getElementById("xpReturnDisplayStat").innerHTML = House.xpReturnDisplay();
 	
 	//gathering
@@ -522,7 +534,7 @@ window.setInterval(function(){
 	//House
 	const influenceMultiplier = myTown.influenceMultiplier(document, updateBox, Inv);
 	const newLevel = House.updateTen(Account, document, influenceMultiplier);
-	if (newLevel) announceLevelUp(newLevel);
+	if (newLevel) levelUp(newLevel);
 
 	//Player
 
@@ -544,7 +556,7 @@ window.setInterval(function(){
 	// ...but only once the first building stands: nothing happens to a settlement that has not started
 	const buildings = myTown.Buildings;
 	const hasBuilding = [buildings.Hut, buildings.Mine, buildings.Farm, buildings.LumberMill, buildings.BloodTemple].some((building) => building.ammount > 0);
-	if (hasBuilding && getRandomInt(0, 100) < 10){
+	if (hasBuilding && !underground.active && getRandomInt(0, 100) < 10){
 		eventHandler.getRandomEvent(document);
 	}
 	//Familiars
@@ -637,6 +649,27 @@ signUpForm.addEventListener("submit", async (event) => {
 	const viewLink = document.getElementById("profileView");
 	let accent = 0;
 	const builder = new AvatarBuilder(document.getElementById("profileBuilder"), randomAvatar());
+	const helmetRow = document.getElementById("profileHelmets");
+	let helmet = 0;
+	function drawHelmets(){
+		helmetRow.textContent = "";
+		for (let number = 0; number <= HELMET_COUNT; number++){
+			const owned = number === 0 || Profile.helmetsOwned.includes(number);
+			const button = document.createElement("button");
+			button.type = "button";
+			button.className = "helmet-choice";
+			button.disabled = !owned;
+			button.setAttribute("aria-pressed", String(helmet === number));
+			button.title = owned ? HELMETS[number].name : "Not found yet: " + DUNGEONS[number - 1].name + " (1 in 800 kills)";
+			if (owned){
+				const canvas = document.createElement("canvas");
+				drawAvatar(canvas, builder.getValue(), number);
+				button.appendChild(canvas);
+			} else button.textContent = "?";
+			button.addEventListener("click", () => { helmet = number; drawHelmets(); });
+			helmetRow.appendChild(button);
+		}
+	}
 
 	ACCENTS.forEach((colour, index) => {
 		const swatch = document.createElement("button");
@@ -664,6 +697,8 @@ signUpForm.addEventListener("submit", async (event) => {
 		bio.value = Profile.bio;
 		bioCount.textContent = String(Array.from(bio.value).length);
 		accent = Profile.accent;
+		helmet = Profile.helmetsOwned.includes(Profile.helmet) ? Profile.helmet : 0;
+		drawHelmets();
 		markAccent();
 		for (const key of Object.keys(switches)) switches[key].checked = Profile[key];
 		syncSwitches();
@@ -688,6 +723,7 @@ signUpForm.addEventListener("submit", async (event) => {
 			avatar: builder.getValue(),
 			bio: Array.from(bio.value.replace(/\s+/g, " ").trim()).slice(0, 150).join(""),
 			accent,
+			helmet,
 			isPublic: switches.isPublic.checked,
 			showResources: switches.showResources.checked,
 			showMap: switches.showMap.checked,
@@ -763,12 +799,15 @@ const saveFields = {
 	xp: field(House, "xp"),
 	level: field(House, "level"),
 
+	attributes: [() => Attributes, (value) => Object.assign(Attributes, cleanAttributes(value))],
 	profile: [() => Profile, (value) => {
 		if (!value || typeof value !== "object") return;
 		if (value.avatar && typeof value.avatar === "object") Profile.avatar = normalizeAvatar(value.avatar);
 		if (typeof value.bio === "string") Profile.bio = value.bio.slice(0, 150);
 		if (Number.isInteger(value.accent) && value.accent >= 0 && value.accent < ACCENTS.length) Profile.accent = value.accent;
 		for (const key of ["isPublic", "showResources", "showMap"]) if (typeof value[key] === "boolean") Profile[key] = value[key];
+		if (Array.isArray(value.helmetsOwned)) Profile.helmetsOwned = value.helmetsOwned.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);
+		if (Number.isInteger(value.helmet) && (value.helmet === 0 || Profile.helmetsOwned.includes(value.helmet))) Profile.helmet = value.helmet;
 	}],
 
 	vampireName: field(Account, "vampireName"),
@@ -823,6 +862,8 @@ function load(){
 		House.applyLevel(House.level); // house name, size and next milestone follow from the level
 	}
 
+	myTown.ensureCave(document); // every map has one entrance to the underground
+
 	if (signedUp) chat?.lockName(Account.vampireName);
 	else showSignUp();
 }
@@ -853,7 +894,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 8 ? type : 0;
+		tiles += Number.isInteger(type) && type > 0 && type <= 9 ? type : 0;
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
@@ -873,6 +914,8 @@ async function sendProfile(candidate = Profile, force = false){
 		isPublic: candidate.isPublic,
 		showResources: candidate.showResources,
 		showMap: candidate.showMap,
+		attributes: { ...Attributes },
+		helmet: candidate.helmet ?? Profile.helmet,
 		map: mapSnapshot(),
 	});
 	if (!force && (body === profileLastSent || Date.now() - profileLastTry < 60000)) return { ok: true };
@@ -881,6 +924,8 @@ async function sendProfile(candidate = Profile, force = false){
 		const response = await fetch(PROFILE_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body });
 		if (response.ok){
 			profileLastSent = body;
+			const data = await response.json().catch(() => ({}));
+			if (Array.isArray(data.helmets)) Profile.helmetsOwned = data.helmets.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);
 			return { ok: true };
 		}
 		const data = await response.json().catch(() => ({}));
@@ -913,8 +958,80 @@ function save(){
 	if (signedUp) syncPlayerFile();
 }
 
+//ATTRIBUTES
+const attributesMenu = new AttributesMenu(document, Attributes, () => House.level, () => { displayUpdate(); save(); sendProfile(Profile, true); });
+document.getElementById("attributesButton").addEventListener("click", () => attributesMenu.open(false));
+
+
+//THE UNDERGROUND (cave on the map -> menu -> full-screen fight; the fight runs on the server)
+const soloUnderground = new URLSearchParams(location.search).has("solo"); // ?solo: runs in this browser, for trying alone
+let pendingLevel = 0;
+const LOSS_KINDS = ["wood", "iron", "bronze", "gold"];
+const underground = new Underground(document, {
+	url: UNDERGROUND_WS_URL,
+	solo: soloUnderground,
+	helmetChance: new URLSearchParams(location.search).has("helmets") ? 1 : undefined,
+	getPlayer: () => ({ id: playerSync.id, name: Account.vampireName, level: House.level, avatar: Profile.avatar || defaultAvatar(Account.vampireName), helmet: Profile.helmet, attributes: cleanAttributes({ ...Attributes }) }),
+	// The server decides who may enter from what it knows: make sure that is up to date
+	prepare: async () => {
+		if (soloUnderground) return;
+		await playerSync.save(playerProfile());
+		await sendProfile(Profile, true);
+	},
+	onReward: (reward) => {
+		const parts = [];
+		for (const kind of LOSS_KINDS) if (reward[kind] > 0){ Inv.items[kind] += reward[kind]; parts.push("+" + reward[kind] + " " + kind); }
+		if (reward.xp > 0){ gainInfluence(reward.xp); parts.push("+" + reward.xp + " influence"); }
+		displayUpdate();
+		return parts.join(" ") + (reward.name ? " (" + reward.name + ")" : "");
+	},
+	onDied: (by) => {
+		const lost = [];
+		for (const kind of LOSS_KINDS){
+			const amount = Math.floor(Inv.items[kind] * DEATH_LOSS);
+			if (amount > 0){ Inv.items[kind] -= amount; lost.push(amount + " " + kind); }
+		}
+		displayUpdate();
+		save();
+		return "Slain by " + by + "." + (lost.length ? " You lost " + lost.join(", ") + "." : "");
+	},
+	onHelmet: (message) => {
+		if (Array.isArray(message.owned)) Profile.helmetsOwned = message.owned.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);
+		save();
+		return "You found the " + (HELMET_NAMES[message.dungeon] || "helmet") + "! Put it on in My character.";
+	},
+	onClose: () => {
+		displayUpdate();
+		save();
+		if (pendingLevel){ const level = pendingLevel; pendingLevel = 0; announceLevelUp(level); }
+	},
+});
+const caveMenu = new CaveMenu(document, {
+	apiUrl: UNDERGROUND_API_URL,
+	getLevel: () => House.level,
+	canEnter: () => signedUp || soloUnderground,
+	onEnter: (dungeonId) => underground.open(dungeonId),
+});
+
+// Influence from the underground: levels up like any other influence. The level-up window waits
+// until you are back up (it would hide behind the fight).
+function gainInfluence(amount){
+	House.xp += amount;
+	let guard = 0;
+	while (House.xp >= House.xpNext && guard++ < 50){
+		House.xp -= House.xpNext;
+		House.applyLevel(House.level + 1);
+		levelUp(House.level);
+	}
+}
+function levelUp(level){
+	if (underground.active) pendingLevel = level;
+	else announceLevelUp(level);
+}
+
 //LEVELS
 function announceLevelUp(level){
+	attributesMenu.open(true); // 5 new points to spend
 	updateBox.townUpdatesAdd("-- Level up! " + Account.vampireName + " is now level " + level + " (" + House.currentHouse + ") --", document);
 	const levelStat = document.getElementById("levelStat");
 	levelStat.classList.remove("level-up");

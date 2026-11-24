@@ -137,6 +137,8 @@
 				<h3 class="grid-item-title">Stats</h3>
 				<p>Level: <span id="levelStat"></span></p>
 				<p>Influence: <span id="xpReturnDisplayStat"></span></p>
+				<p id="attributePointsLine" class="attribute-points-line">Attribute points: <span id="attributePointsStat">0</span>
+					<button type="button" class="button" id="attributesButton">Spend</button></p>
 				<p>blood/10 sec: <span id="newBloodPerRoundStat"></span></p>
 				<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"></span></p>
 				<p>wood/10 sec: <span id="newWoodPerRoundStat"></span></p>
@@ -586,12 +588,47 @@
 		</div>
 	</div>
 
+	<!-- The cave: the way into the underground (js/underground/CaveMenu.js, wired up in main.js) -->
+	<div id="caveModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="caveTitle">
+		<div class="modal-content cave-content">
+			<h3 id="caveTitle">The Cave</h3>
+			<p id="caveText">You have found an entrance to the underground. Here you may find many foul creatures, including other vampires</p>
+			<div id="caveChoice" class="cave-actions">
+				<button type="button" class="button" id="caveEnter">Enter the underground</button>
+				<button type="button" class="button" id="caveNo">No thanks</button>
+			</div>
+			<div id="caveLevels" hidden>
+				<p id="caveNote" class="cave-note"></p>
+				<div id="caveLevelRows" class="cave-levels"></div>
+				<button type="button" class="button" id="caveBack">Back</button>
+			</div>
+			<h4>In the underground now</h4>
+			<ul id="caveWho" class="cave-who"></ul>
+			<p class="cave-hint">Played with keyboard and mouse. Dying costs 2% of your wood, iron, bronze and gold.</p>
+		</div>
+	</div>
+
+	<!-- Level points: Health, Defence, Strength, Magic (opens on every level-up; wired up in main.js) -->
+	<div id="attributesModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="attributesTitle">
+		<div class="modal-content attributes-content">
+			<h3 id="attributesTitle">Attributes</h3>
+			<p id="attributesIntro"></p>
+			<div id="attributesRows"></div>
+			<div class="profile-actions">
+				<button type="button" class="button" id="attributesApply">Apply</button>
+				<button type="button" class="button" id="attributesLater">Later</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- My character: look, description and privacy of the character page (wired up in main.js) -->
 	<div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
 		<div class="modal-content profile-content">
 			<div id="profileClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
 			<h3 id="profileTitle">My character</h3>
 			<div id="profileBuilder"></div>
+			<label class="field" id="helmetLabel">Helmet (found in the underground)</label>
+			<div class="helmet-picker" id="profileHelmets" role="group" aria-labelledby="helmetLabel"></div>
 			<label class="field" for="profileBio">About me (shown on your page)</label>
 			<textarea id="profileBio" maxlength="150" placeholder="Who are you? What does your settlement stand for?"></textarea>
 			<div class="profile-count"><span id="profileBioCount">0</span>/150</div>

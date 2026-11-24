@@ -333,6 +333,7 @@ async function handlePlayer(req, res) {
 		updatedAt: now,
 		stats,
 		...(existing && existing.profile ? { profile: existing.profile } : {}),
+		...(existing && existing.helmets ? { helmets: existing.helmets } : {}),
 	});
 	savePlayers();
 	return sendJson(res, 200, { ok: true });
@@ -349,6 +350,22 @@ const isProfileRateLimited = createRateLimiter(20, 60000);
 const isProfileReadRateLimited = createRateLimiter(60, 60000);
 const AVATAR_KEYS = { skin: 6, hairStyle: 7, hairColor: 8, eyes: 5, eyeColor: 6, mouth: 5, cloak: 6, cloakColor: 8, accessory: 7 };
 const MAX_BIO_LENGTH = 150;
+const ATTRIBUTE_KEYS = ["health", "defence", "strength", "magic"];
+const POINTS_PER_LEVEL = 5;
+
+// Four levels from 1 up. Nobody can have more than 5 points per level reached (the level is also
+// reported by the player, so this stops mistakes and casual cheating, not a determined one).
+function cleanAttributes(value, level, fallback) {
+	const result = {};
+	let spent = 0;
+	for (const key of ATTRIBUTE_KEYS) {
+		const number = value && typeof value === "object" ? value[key] : undefined;
+		if (!Number.isInteger(number) || number < 1 || number > 999) return fallback || { health: 1, defence: 1, strength: 1, magic: 1 };
+		result[key] = number;
+		spent += number - 1;
+	}
+	return spent <= POINTS_PER_LEVEL * Math.max(0, (level || 1) - 1) ? result : fallback || { health: 1, defence: 1, strength: 1, magic: 1 };
+}
 const ACCENT_COUNT = 8;
 
 function cleanAvatar(value) {
@@ -361,14 +378,14 @@ function cleanAvatar(value) {
 	return avatar;
 }
 
-// The map as two strings: one digit per tile for what is there (0-8) and one character
+// The map as two strings: one digit per tile for what is there (0-9) and one character
 // for the building level (0-9, "a" = 10), row by row.
 function cleanMap(value) {
 	if (!value || typeof value !== "object") return null;
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-8]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }
@@ -388,6 +405,7 @@ async function handleProfile(req, res, url) {
 			vampireName: player.vampireName,
 			avatar: profile.avatar || null,
 			accent: profile.accent || 0,
+			helmet: profile.helmet || 0,
 			level: player.level || 1,
 			online: lastSeen.has(id) && Date.now() - lastSeen.get(id) < ONLINE_WINDOW_MS,
 		};
@@ -397,6 +415,8 @@ async function handleProfile(req, res, url) {
 		page.bio = profile.bio || "";
 		page.createdAt = player.createdAt;
 		page.diceWins = diceWins.get(id) || 0;
+		page.helmet = profile.helmet || 0;
+		page.attributes = profile.attributes || cleanAttributes(null);
 		page.influence = player.stats.influence;
 		page.familiars = player.stats.familiars;
 		if (profile.showResources !== false) page.stats = player.stats;
@@ -437,10 +457,12 @@ async function handleProfile(req, res, url) {
 		showResources: body.showResources !== false,
 		showMap: body.showMap !== false,
 		map,
+		helmet: "helmet" in body ? (body.helmet === 0 || (player.helmets || []).includes(body.helmet) ? body.helmet : previous.helmet || 0) : previous.helmet || 0,
+		attributes: "attributes" in body ? cleanAttributes(body.attributes, player.level, previous.attributes) : previous.attributes || cleanAttributes(null),
 	};
 	player.updatedAt = Date.now();
 	savePlayers();
-	return sendJson(res, 200, { ok: true });
+	return sendJson(res, 200, { ok: true, helmets: player.helmets || [] });
 }
 
 // ---------- Active players API ----------
@@ -831,6 +853,7 @@ const MIME_TYPES = {
 	".html": "text/html; charset=utf-8",
 	".css": "text/css; charset=utf-8",
 	".js": "text/javascript; charset=utf-8",
+	".mjs": "text/javascript; charset=utf-8",
 	".json": "application/json; charset=utf-8",
 	".txt": "text/plain; charset=utf-8",
 	".png": "image/png",
@@ -922,6 +945,226 @@ function sendFile(req, res, filePath, stats) {
 	fs.createReadStream(filePath).on("error", () => res.destroy()).pipe(res);
 }
 
+
+// ---------- The underground ----------
+// GET /api/underground      -> { dungeons: [ { id, name, min, max, pvp, players: [vampire names] } ] }
+// WebSocket /ws/underground -> the fights themselves. The client sends
+//      { t: "join", id, dungeon }            once (id = the player's own id, never shown to others)
+//      { t: "in", mx, my, aim, claw, fire }  about 20 times a second
+//      { t: "leave" }
+//   and receives hello / roster / s (snapshots) / reward / helmet / died / error.
+// The fights are calculated here (js/underground/world.mjs), so nobody can hit from across the map.
+// What a fight earns is sent to the player's browser, which adds it to the player's own storage.
+let RULES = null, WORLD = null;
+const ugWorlds = new Map();   // dungeon id -> { world, conns: Map(pid -> conn), dungeon }
+const ugByPlayer = new Map(); // player id -> conn (one connection per player)
+let ugNextPid = 1;
+const UG_MAX_CONNECTIONS = 300;
+const UG_MAX_PER_IP = 4;
+const UG_MAX_MESSAGE = 2048;
+const UG_IDLE_MS = 30000;
+const ugIpCount = new Map();
+const isUndergroundListRateLimited = createRateLimiter(60, 60000);
+
+function wsSend(conn, object) {
+	if (conn.closed) return;
+	const payload = Buffer.from(JSON.stringify(object));
+	wsWrite(conn, 1, payload);
+}
+
+function wsWrite(conn, opcode, payload) {
+	let header;
+	if (payload.length < 126) header = Buffer.from([0x80 | opcode, payload.length]);
+	else if (payload.length < 65536) { header = Buffer.alloc(4); header[0] = 0x80 | opcode; header[1] = 126; header.writeUInt16BE(payload.length, 2); }
+	else { header = Buffer.alloc(10); header[0] = 0x80 | opcode; header[1] = 127; header.writeBigUInt64BE(BigInt(payload.length), 2); }
+	try { conn.socket.write(Buffer.concat([header, payload])); } catch { /* socket is gone */ }
+}
+
+function wsClose(conn, code = 1000) {
+	if (conn.closed) return;
+	const payload = Buffer.alloc(2);
+	payload.writeUInt16BE(code, 0);
+	wsWrite(conn, 8, payload);
+	conn.socket.end();
+	ugDrop(conn);
+}
+
+function ugDrop(conn) {
+	if (conn.closed) return;
+	conn.closed = true;
+	ugIpCount.set(conn.ip, Math.max(0, (ugIpCount.get(conn.ip) || 1) - 1));
+	if (conn.room) {
+		conn.room.world.removePlayer(conn.pid);
+		conn.room.conns.delete(conn.pid);
+		if (conn.room.conns.size === 0) ugWorlds.delete(conn.room.dungeon.id);
+		else ugRoster(conn.room);
+	}
+	if (conn.playerId && ugByPlayer.get(conn.playerId) === conn) ugByPlayer.delete(conn.playerId);
+}
+
+function ugRoster(room) {
+	const roster = {};
+	for (const [pid, c] of room.conns) roster[pid] = { name: c.name, avatar: c.avatar, helmet: c.helmet, level: c.level };
+	for (const c of room.conns.values()) wsSend(c, { t: "roster", players: roster });
+}
+
+function ugRoom(dungeon) {
+	let room = ugWorlds.get(dungeon.id);
+	if (room) return room;
+	room = { dungeon, conns: new Map() };
+	room.world = new WORLD.World(dungeon.id, {
+		onKill(pid, monster, reward) {
+			const conn = room.conns.get(pid);
+			if (conn) wsSend(conn, { t: "reward", ...reward, name: monster.name });
+		},
+		onHelmet(pid, dungeonId) {
+			const conn = room.conns.get(pid);
+			const player = conn && players.get(conn.playerId);
+			if (!player) return;
+			player.helmets = Array.isArray(player.helmets) ? player.helmets : [];
+			const isNew = !player.helmets.includes(dungeonId);
+			if (isNew) { player.helmets.push(dungeonId); savePlayers(); }
+			wsSend(conn, { t: "helmet", dungeon: dungeonId, name: RULES.HELMET_NAMES[dungeonId], isNew, owned: player.helmets });
+			postChatAnnouncement(`${player.vampireName} found the ${RULES.HELMET_NAMES[dungeonId]} in ${room.dungeon.name}!`, CRIER_NAME);
+		},
+		onDeath(pid, by) {
+			const conn = room.conns.get(pid);
+			if (conn) wsSend(conn, { t: "died", by });
+		},
+		onPlayerKill(killerPid, victimPid, victimLevel) {
+			const conn = room.conns.get(killerPid);
+			if (conn) wsSend(conn, { t: "reward", xp: 25 * Math.max(1, victimLevel || 1), name: "a rival vampire" });
+		},
+	});
+	ugWorlds.set(dungeon.id, room);
+	return room;
+}
+
+function ugJoin(conn, message) {
+	if (conn.room) return;
+	const id = typeof message.id === "string" ? message.id : "";
+	const player = /^[a-f0-9]{32}$/.test(id) ? players.get(id) : null;
+	if (!player) return wsSend(conn, { t: "error", error: "Create your vampire first (it has to be saved on the server)." });
+	const dungeon = RULES.dungeonById(Number(message.dungeon));
+	if (!dungeon) return wsSend(conn, { t: "error", error: "That place does not exist." });
+	if (!RULES.canEnter(dungeon, player.level || 1)) return wsSend(conn, { t: "error", error: `You must be level ${dungeon.min} to enter ${dungeon.name}.` });
+	const old = ugByPlayer.get(id);
+	if (old) wsClose(old, 4000);
+
+	const room = ugRoom(dungeon);
+	const profile = player.profile || {};
+	const attributes = cleanAttributes(profile.attributes, player.level, null);
+	conn.playerId = id;
+	conn.pid = String(ugNextPid++);
+	conn.name = player.vampireName;
+	conn.level = player.level || 1;
+	conn.avatar = profile.avatar || null;
+	conn.helmet = profile.helmet || 0;
+	conn.room = room;
+	conn.lastInput = Date.now();
+	ugByPlayer.set(id, conn);
+	room.conns.set(conn.pid, conn);
+	room.world.addPlayer(conn.pid, { name: conn.name, level: conn.level, stats: attributes });
+	lastSeen.set(id, Date.now());
+	wsSend(conn, { t: "hello", you: conn.pid, dungeon: dungeon.id, name: dungeon.name, pvp: !!dungeon.pvp });
+	ugRoster(room);
+}
+
+function ugReceive(conn, text) {
+	let message;
+	try { message = JSON.parse(text); } catch { return; }
+	if (!message || typeof message !== "object") return;
+	if (message.t === "join") return ugJoin(conn, message);
+	if (message.t === "in" && conn.room) {
+		conn.lastInput = Date.now();
+		conn.room.world.input(conn.pid, message);
+	} else if (message.t === "leave") wsClose(conn);
+}
+
+// Parses what the browser sends: masked text frames, pings and closes
+function ugParse(conn) {
+	for (;;) {
+		const b = conn.buffer;
+		if (b.length < 2) return;
+		const opcode = b[0] & 0x0f;
+		const fin = (b[0] & 0x80) !== 0;
+		const masked = (b[1] & 0x80) !== 0;
+		let length = b[1] & 0x7f;
+		let offset = 2;
+		if (length === 126) { if (b.length < 4) return; length = b.readUInt16BE(2); offset = 4; }
+		else if (length === 127) { if (b.length < 10) return; const big = b.readBigUInt64BE(2); if (big > BigInt(UG_MAX_MESSAGE)) return wsClose(conn, 1009); length = Number(big); offset = 10; }
+		if (!masked || length > UG_MAX_MESSAGE || !fin) return wsClose(conn, 1002);
+		if (b.length < offset + 4 + length) return;
+		const mask = b.subarray(offset, offset + 4);
+		const data = Buffer.from(b.subarray(offset + 4, offset + 4 + length));
+		for (let i = 0; i < data.length; i++) data[i] ^= mask[i & 3];
+		conn.buffer = b.subarray(offset + 4 + length);
+
+		const now = Date.now();
+		if (now - conn.windowStart > 1000) { conn.windowStart = now; conn.windowCount = 0; }
+		if (++conn.windowCount > 60) return wsClose(conn, 1008);
+
+		if (opcode === 1) ugReceive(conn, data.toString("utf8"));
+		else if (opcode === 8) return wsClose(conn);
+		else if (opcode === 9) wsWrite(conn, 10, data);
+		else if (opcode !== 10) return wsClose(conn, 1003);
+		if (conn.closed) return;
+	}
+}
+
+function onUpgrade(req, socket) {
+	const url = new URL(req.url, "http://localhost");
+	const key = req.headers["sec-websocket-key"];
+	if (url.pathname !== "/ws/underground" || !key || String(req.headers.upgrade).toLowerCase() !== "websocket" || !RULES) {
+		socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+		return;
+	}
+	const ip = clientIp(req);
+	if (ugIpCount.get(ip) >= UG_MAX_PER_IP || [...ugIpCount.values()].reduce((a, b) => a + b, 0) >= UG_MAX_CONNECTIONS) {
+		socket.end("HTTP/1.1 429 Too Many Requests\r\nConnection: close\r\n\r\n");
+		return;
+	}
+	ugIpCount.set(ip, (ugIpCount.get(ip) || 0) + 1);
+	const accept = crypto.createHash("sha1").update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest("base64");
+	socket.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + accept + "\r\n\r\n");
+	socket.setNoDelay(true);
+	const conn = { socket, ip, buffer: Buffer.alloc(0), closed: false, room: null, windowStart: Date.now(), windowCount: 0, lastInput: Date.now() };
+	socket.on("data", (chunk) => {
+		conn.buffer = Buffer.concat([conn.buffer, chunk]);
+		if (conn.buffer.length > UG_MAX_MESSAGE * 4) return wsClose(conn, 1009);
+		ugParse(conn);
+	});
+	socket.on("close", () => ugDrop(conn));
+	socket.on("error", () => ugDrop(conn));
+	setTimeout(() => { if (!conn.room) wsClose(conn, 1008); }, 10000).unref();
+}
+
+// 20 steps a second for every level that has players in it
+setInterval(() => {
+	const now = Date.now();
+	for (const room of ugWorlds.values()) {
+		for (const conn of [...room.conns.values()]) {
+			if (now - conn.lastInput > UG_IDLE_MS) { wsSend(conn, { t: "error", error: "You were away for too long." }); wsClose(conn, 4001); continue; }
+			lastSeen.set(conn.playerId, now);
+		}
+		if (room.conns.size === 0) continue;
+		room.world.step(1 / WORLD.TICK_RATE);
+		const snapshot = room.world.snapshot();
+		const text = Buffer.from(JSON.stringify(snapshot));
+		for (const conn of room.conns.values()) wsWrite(conn, 1, text);
+	}
+}, 50);
+
+function handleUndergroundList(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (isUndergroundListRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	const dungeons = RULES.DUNGEONS.map((d) => {
+		const room = ugWorlds.get(d.id);
+		return { id: d.id, name: d.name, min: d.min, max: d.max, pvp: !!d.pvp, players: room ? [...room.conns.values()].map((c) => c.name).slice(0, 50) : [] };
+	});
+	return sendJson(res, 200, { dungeons });
+}
+
 // ---------- Start ----------
 const server = http.createServer((req, res) => {
 	const url = new URL(req.url, "http://localhost");
@@ -932,6 +1175,7 @@ const server = http.createServer((req, res) => {
 		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
 		"/api/online": () => handleOnline(req, res),
 		"/api/dice": () => handleDice(req, res),
+		"/api/underground": async () => handleUndergroundList(req, res),
 	}[url.pathname];
 	if (api) {
 		api().catch((error) => {
@@ -942,11 +1186,16 @@ const server = http.createServer((req, res) => {
 		serveStatic(req, res, url);
 	}
 });
+server.on("upgrade", onUpgrade);
 
 loadMessages();
 loadPlayers();
 loadDice();
 
+// The shared rules are ES modules; this file is not, so they are loaded with import() before starting.
+Promise.all([import("./js/rules.mjs"), import("./js/underground/world.mjs")]).then(([rules, world]) => {
+RULES = rules;
+WORLD = world;
 server.listen(PORT, HOST, () => {
 	console.log("Vampire House is running.");
 	console.log(`  On this computer:  http://localhost:${PORT}`);
@@ -957,3 +1206,4 @@ server.listen(PORT, HOST, () => {
 	}
 	console.log("Press Ctrl+C to stop.");
 });
+}).catch((error) => { console.error("Could not load js/rules.mjs and js/underground/world.mjs. Upload the whole game folder.", error); process.exit(1); });

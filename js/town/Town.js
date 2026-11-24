@@ -26,6 +26,7 @@ export default class Town{
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
             Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
             Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
+            Cave: new Rock("Cave", "an entrance to the underground", 0, '../../../src/cave.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
@@ -361,6 +362,7 @@ export default class Town{
             6: B.Forest,
             7: B.LumberMill,
             8: B.BloodTemple,
+            9: B.Cave,
         }[type]?.imgsrc;
     }
 
@@ -387,7 +389,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 8) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 9) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -399,6 +401,32 @@ export default class Town{
     // ---------- Upgrading buildings ----------
 
     // The upgradable building on a tile ("Farm", "Mine", ...), or null
+    // The entrance to the underground (tile type 9): every map has exactly one. Maps made before
+    // the cave existed get it on a bare rock tile, preferably one next to open ground.
+    ensureCave(document){
+        const width = this.mapWidth, height = this.mapHeight, count = width * height;
+        const caves = [];
+        for (let i = 0; i < count; i++) if (this.tiles["tile" + i] === 9) caves.push(i);
+        let spot = caves[0];
+        for (const extra of caves.slice(1)) this.tiles["tile" + extra] = 3;
+        if (spot === undefined){
+            const open = (i) => i >= 0 && i < count && this.tiles["tile" + i] === 0;
+            const rocks = [];
+            for (let i = 0; i < count; i++){
+                if (this.tiles["tile" + i] !== 3) continue;
+                const x = i % width;
+                const near = (x > 0 && open(i - 1)) || (x < width - 1 && open(i + 1)) || open(i - width) || open(i + width);
+                rocks.push({ i, near, d: Math.abs(x - width / 2) + Math.abs(Math.floor(i / width) - height / 2) });
+            }
+            rocks.sort((a, b) => (b.near - a.near) || (a.d - b.d));
+            spot = rocks.length ? rocks[0].i : Math.floor(count / 2) + Math.floor(width / 2);
+            this.tiles["tile" + spot] = 9;
+            delete this.tileLevels["tile" + spot];
+        }
+        if (document) this.updateTileImages(document);
+        return spot;
+    }
+
     upgradeKey(tileId){
         return UPGRADABLE[this.tiles[tileId]] || null;
     }
