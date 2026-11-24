@@ -20,6 +20,29 @@ function seeded(seed) {
 
 const dist = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
 
+// Moves something by (dx, dy), keeping it inside the arena and sliding around the walls. Shared with the
+// browser, which uses it to move your own character at once instead of waiting for the server.
+export function slide(obstacles, e, dx, dy, r) {
+	e.x = Math.max(r, Math.min(ARENA.width - r, e.x + dx));
+	e.y = Math.max(r, Math.min(ARENA.height - r, e.y + dy));
+	for (const o of obstacles) {
+		const d = dist(e.x, e.y, o.x, o.y);
+		const min = o.r + r;
+		if (d < min) {
+			const k = d === 0 ? 0 : (min - d) / d;
+			e.x += (e.x - o.x) * k + (d === 0 ? min : 0);
+			e.y += (e.y - o.y) * k;
+		}
+	}
+}
+
+// What the player's keys do in `dt` seconds
+export function walk(obstacles, e, mx, my, dt) {
+	const len = Math.hypot(mx, my);
+	if (len > 1) { mx /= len; my /= len; }
+	slide(obstacles, e, mx * PLAYER_SPEED * dt, my * PLAYER_SPEED * dt, PLAYER_RADIUS);
+}
+
 // The walls of a level are the same every time (seeded by the level number), so the browser can draw
 // them without the server sending them.
 export function obstaclesFor(dungeonId) {
@@ -84,7 +107,7 @@ export class World {
 			id, name: info.name || "Vampire", level: info.level || 1, stats,
 			x: at.x, y: at.y, hp: maxHealth(stats.health), maxHp: maxHealth(stats.health),
 			mx: 0, my: 0, aim: 0, face: 1, claw: false, fire: false, clawCd: 0, fireCd: 0,
-			dead: false, respawn: 0, shield: SHIELD_SECONDS, kills: 0,
+			dead: false, respawn: 0, shield: SHIELD_SECONDS, kills: 0, seq: 0,
 		};
 		this.players.set(id, p);
 		return p;
@@ -105,6 +128,7 @@ export class World {
 		p.aim = num(data.aim, -7, 7);
 		p.claw = !!data.claw;
 		p.fire = !!data.fire;
+		if (Number.isInteger(data.seq)) p.seq = data.seq;
 	}
 
 	// ---- one step of the simulation ----
@@ -134,7 +158,7 @@ export class World {
 		const len = Math.hypot(mx, my);
 		if (len > 1) { mx /= len; my /= len; }
 		if (mx !== 0) p.face = mx < 0 ? -1 : 1;
-		this.move(p, mx * PLAYER_SPEED * dt, my * PLAYER_SPEED * dt, PLAYER_RADIUS);
+		walk(this.obstacles, p, mx, my, dt);
 
 		if (p.claw && p.clawCd <= 0) this.doClaw(p);
 		if (p.fire && p.fireCd <= 0) this.doFire(p);
@@ -142,17 +166,7 @@ export class World {
 
 	// Moves with sliding along walls
 	move(e, dx, dy, r) {
-		e.x = Math.max(r, Math.min(ARENA.width - r, e.x + dx));
-		e.y = Math.max(r, Math.min(ARENA.height - r, e.y + dy));
-		for (const o of this.obstacles) {
-			const d = dist(e.x, e.y, o.x, o.y);
-			const min = o.r + r;
-			if (d < min) {
-				const k = d === 0 ? 0 : (min - d) / d;
-				e.x += (e.x - o.x) * k + (d === 0 ? min : 0);
-				e.y += (e.y - o.y) * k;
-			}
-		}
+		slide(this.obstacles, e, dx, dy, r);
 	}
 
 	doClaw(p) {
@@ -338,7 +352,7 @@ export class World {
 		const r = (v) => Math.round(v);
 		const snap = {
 			t: "s",
-			p: [...this.players.values()].map((p) => [p.id, r(p.x), r(p.y), r(p.hp), p.maxHp, p.face, Math.round(p.aim * 100) / 100, (p.dead ? 1 : 0) | (p.shield > 0 ? 2 : 0), p.kills]),
+			p: [...this.players.values()].map((p) => [p.id, r(p.x), r(p.y), r(p.hp), p.maxHp, p.face, Math.round(p.aim * 100) / 100, (p.dead ? 1 : 0) | (p.shield > 0 ? 2 : 0), p.kills, p.seq]),
 			m: this.monsters.map((m) => [m.id, m.type, r(m.x), r(m.y), r(m.hp), m.maxHp, m.state, m.face, m.hurt > 0 ? 1 : 0]),
 			b: this.shots.map((s) => [s.id, r(s.x), r(s.y)]),
 			f: this.fx,

@@ -3,9 +3,13 @@
 // this file connects to it, sends what the player does and draws what comes back.
 // With ?solo in the address the same World runs in the browser instead, for trying things out alone.
 import { ARENA, PLAYER_RADIUS, CLAW, dungeonById, monstersOf } from "../rules.mjs";
-import { World, TICK_RATE, obstaclesFor } from "./world.mjs";
+import { World, TICK_RATE, obstaclesFor, walk } from "./world.mjs";
 import { drawAvatar, defaultAvatar, normalizeAvatar } from "../profile/Avatar.js";
 import { monsterSprite } from "./sprites.js";
+
+// Other things are drawn this long ago, between two snapshots, so that they move smoothly
+// even when the network delivers them unevenly. Your own character is not delayed (see predicted movement).
+const INTERP_MS = 100;
 
 const THEMES = {
 	1: { floor: "#1a1510", tile: "#211b14", wall: "#4a4036", glow: "#6a5a44" },
@@ -147,7 +151,7 @@ export default class Underground {
 		this.dungeonId = dungeonId;
 		this.resetInput();
 		this.mouse = { x: 0, y: 0 };
-		this.snap = null; this.prev = null; this.cam = { x: 0, y: 0 };
+		this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
@@ -237,18 +241,28 @@ export default class Underground {
 
 	snapshot(m) {
 		const now = performance.now();
-		const players = new Map(m.p.map((a) => [a[0], { id: a[0], x: a[1], y: a[2], hp: a[3], maxHp: a[4], face: a[5], aim: a[6], dead: !!(a[7] & 1), shield: !!(a[7] & 2), kills: a[8] }]));
+		const players = new Map(m.p.map((a) => [a[0], { id: a[0], x: a[1], y: a[2], hp: a[3], maxHp: a[4], face: a[5], aim: a[6], dead: !!(a[7] & 1), shield: !!(a[7] & 2), kills: a[8], seq: a[9] }]));
 		const monsters = new Map(m.m.map((a) => [a[0], { id: a[0], type: a[1], x: a[2], y: a[3], hp: a[4], maxHp: a[5], state: a[6], face: a[7], hurt: a[8] }]));
-		this.prev = this.snap;
 		this.snap = { time: now, players, monsters, shots: m.b.map((a) => ({ id: a[0], x: a[1], y: a[2] })) };
+		this.buf.push(this.snap);
+		if (this.buf.length > 12) this.buf.shift();
 		for (const fx of m.f) {
-			const entry = { ...fx, t0: now };
+			// effects wait for the delayed picture, so a hit shows up when you see the monster get hit
+			const entry = { ...fx, t0: now + INTERP_MS };
 			if (fx.k === "boom") entry.parts = Array.from({ length: 10 }, () => ({ a: Math.random() * 6.28, s: 40 + Math.random() * 90 }));
 			this.fx.push(entry);
 		}
 		const mine = players.get(this.me);
 		if (mine) {
 			this.dead = mine.dead;
+			// Predicted movement: the server's position is a little old. Take it, replay the moves it has
+			// not processed yet, and pull the character we show gently towards that.
+			this.pending = this.pending.filter((input) => input.seq > mine.seq);
+			const target = { x: mine.x, y: mine.y };
+			if (!mine.dead) for (const input of this.pending) walk(this.obstacles, target, input.mx, input.my, 1 / TICK_RATE);
+			const error = this.pred ? Math.hypot(target.x - this.pred.x, target.y - this.pred.y) : Infinity;
+			if (!this.pred || mine.dead || error > 120) this.pred = target;
+			else { this.pred.x += (target.x - this.pred.x) * 0.25; this.pred.y += (target.y - this.pred.y) * 0.25; }
 			const pct = Math.max(0, Math.min(1, mine.hp / mine.maxHp));
 			this.ui.hpFill.style.width = pct * 100 + "%";
 			this.ui.hpText.textContent = `${mine.hp} / ${mine.maxHp}`;
@@ -272,25 +286,47 @@ export default class Underground {
 		const k = this.keys;
 		const mx = (k.right ? 1 : 0) - (k.left ? 1 : 0);
 		const my = (k.down ? 1 : 0) - (k.up ? 1 : 0);
-		const pos = this.pose(this.me, performance.now());
 		let aim = 0;
-		if (pos) aim = Math.atan2(this.mouse.y - (pos.y - this.cam.y), this.mouse.x - (pos.x - this.cam.x));
-		this.conn.send({ t: "in", mx, my, aim: Math.round(aim * 100) / 100, claw: this.input.claw, fire: this.input.fire });
+		if (this.pred) aim = Math.atan2(this.mouse.y - (this.pred.y - this.cam.y), this.mouse.x - (this.pred.x - this.cam.x));
+		const seq = ++this.seq;
+		this.pending.push({ seq, mx, my });
+		if (this.pending.length > 40) this.pending.shift();
+		this.conn.send({ t: "in", seq, mx, my, aim: Math.round(aim * 100) / 100, claw: this.input.claw, fire: this.input.fire });
 	}
 
 	// ---- drawing ----
-	pose(id, now) {
-		if (!this.snap) return null;
-		const cur = this.snap.players.get(id);
-		if (!cur) return null;
-		const before = this.prev?.players.get(id);
-		return this.lerpEntity(before, cur, now);
+	// Your own character moves at once with your keys (the same rules as the server's); this runs every frame
+	advance(now) {
+		const dt = Math.min(0.05, Math.max(0, (now - (this.lastFrame || now)) / 1000));
+		this.lastFrame = now;
+		if (!this.pred || this.dead) return;
+		const k = this.keys;
+		const mx = (k.right ? 1 : 0) - (k.left ? 1 : 0);
+		const my = (k.down ? 1 : 0) - (k.up ? 1 : 0);
+		if (mx) this.myFace = mx < 0 ? -1 : 1;
+		walk(this.obstacles, this.pred, mx, my, dt);
 	}
 
-	lerpEntity(before, cur, now) {
-		if (!before) return cur;
-		const a = Math.max(0, Math.min(1, (now - this.snap.time) / (1000 / TICK_RATE)));
-		return { ...cur, x: before.x + (cur.x - before.x) * a, y: before.y + (cur.y - before.y) * a };
+	// Everything else, as it was INTERP_MS ago, blended between the two snapshots around that moment
+	view(now) {
+		const buf = this.buf;
+		if (!buf.length) return null;
+		const rt = now - INTERP_MS;
+		let a = buf[0], b = buf[0];
+		for (let i = buf.length - 1; i >= 0; i--) {
+			if (buf[i].time <= rt) { a = buf[i]; b = buf[i + 1] || buf[i]; break; }
+		}
+		const t = a === b ? 1 : Math.max(0, Math.min(1, (rt - a.time) / (b.time - a.time)));
+		const mix = (from, to) => (from ? { ...to, x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t } : to);
+		const players = new Map();
+		for (const [id, p] of b.players) players.set(id, mix(a.players.get(id), p));
+		const mine = players.get(this.me);
+		const latest = this.snap.players.get(this.me);
+		if (mine && latest && this.pred) players.set(this.me, { ...latest, x: this.pred.x, y: this.pred.y, face: this.myFace });
+		const monsters = [...b.monsters.values()].map((m) => mix(a.monsters.get(m.id), m));
+		const shotsBefore = new Map(a.shots.map((x) => [x.id, x]));
+		const shots = b.shots.map((x) => mix(shotsBefore.get(x.id), x));
+		return { players, monsters, shots };
 	}
 
 	avatarFor(id) {
@@ -314,21 +350,24 @@ export default class Underground {
 		ctx.imageSmoothingEnabled = false;
 		ctx.fillStyle = "#050305";
 		ctx.fillRect(0, 0, W, H);
-		const me = this.snap ? this.pose(this.me, now) : null;
+		this.advance(now);
+		const view = this.view(now);
+		const me = view ? view.players.get(this.me) : null;
 		const focus = me || { x: ARENA.width / 2, y: ARENA.height / 2 };
 		this.cam = {
 			x: ARENA.width <= W ? (ARENA.width - W) / 2 : Math.max(0, Math.min(ARENA.width - W, focus.x - W / 2)),
 			y: ARENA.height <= H ? (ARENA.height - H) / 2 : Math.max(0, Math.min(ARENA.height - H, focus.y - H / 2)),
 		};
-		if (!this.snap) return;
+		if (!view) return;
+		this.v = view;
 		ctx.save();
 		ctx.translate(-Math.round(this.cam.x), -Math.round(this.cam.y));
 		this.drawFloor(ctx, W, H);
 		this.drawObstacles(ctx);
 
 		const things = [];
-		for (const cur of this.snap.players.values()) things.push({ y: cur.y, kind: "p", e: this.lerpEntity(this.prev?.players.get(cur.id), cur, now) });
-		for (const cur of this.snap.monsters.values()) things.push({ y: cur.y, kind: "m", e: this.lerpEntity(this.prev?.monsters.get(cur.id), cur, now) });
+		for (const p of view.players.values()) things.push({ y: p.y, kind: "p", e: p });
+		for (const m of view.monsters) things.push({ y: m.y, kind: "m", e: m });
 		things.sort((a, b) => a.y - b.y);
 		for (const t of things) (t.kind === "p" ? this.drawPlayer(ctx, t.e, now) : this.drawMonster(ctx, t.e, now));
 		this.drawShots(ctx, now);
@@ -434,7 +473,7 @@ export default class Underground {
 	}
 
 	drawShots(ctx, now) {
-		for (const s of this.snap.shots) {
+		for (const s of this.v.shots) {
 			const g = ctx.createRadialGradient(s.x, s.y, 1, s.x, s.y, 14);
 			g.addColorStop(0, "#fff"); g.addColorStop(0.35, "#d27bff"); g.addColorStop(1, "rgba(120,30,200,0)");
 			ctx.fillStyle = g;
@@ -446,8 +485,9 @@ export default class Underground {
 		this.fx = this.fx.filter((f) => now - f.t0 < 900);
 		for (const f of this.fx) {
 			const age = (now - f.t0) / 1000;
+			if (age < 0) continue;
 			if (f.k === "claw" && age < 0.22) {
-				const owner = this.snap.players.get(f.p);
+				const owner = this.v.players.get(f.p);
 				const ox = owner ? owner.x : f.x, oy = owner ? owner.y : f.y;
 				ctx.strokeStyle = `rgba(255,235,220,${1 - age / 0.22})`; ctx.lineWidth = 3;
 				for (const r of [34, 48, 62]) {

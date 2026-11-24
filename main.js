@@ -1006,6 +1006,7 @@ const underground = new Underground(document, {
 		if (pendingLevel){ const level = pendingLevel; pendingLevel = 0; announceLevelUp(level); }
 	},
 });
+window.vampireUnderground = underground; // for testing
 const caveMenu = new CaveMenu(document, {
 	apiUrl: UNDERGROUND_API_URL,
 	getLevel: () => House.level,
