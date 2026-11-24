@@ -126,12 +126,23 @@ export default class FamiliarWalkers {
 		return { element, job, home: null, x: 0, y: 0, nextMove: Date.now() + Math.random() * 2000 };
 	}
 
+	// A figure is a box exactly one tile big, standing where its walk starts. Walking moves it with a
+	// transform (percent of its own size = tiles), which the browser animates without redrawing the map.
+	// Animating left/top instead made the page repaint the whole map 60 times a second.
 	place(walker, x, y, animate, seconds = 0) {
 		const { element } = walker;
-		// Percent of the map, not pixels: zooming changes the tile size but must not make anyone move
-		element.style.transition = animate ? `left ${seconds}s linear, top ${seconds}s linear` : "none";
-		element.style.left = ((x / this.map.width) * 100).toFixed(3) + "%";
-		element.style.top = ((y / this.map.height) * 100).toFixed(3) + "%";
+		if (walker.anim) { walker.anim.cancel(); walker.anim = null; }
+		const fromX = animate ? walker.x : x, fromY = animate ? walker.y : y;
+		this.layer.style.setProperty("--map-w", this.map.width);
+		this.layer.style.setProperty("--map-h", this.map.height);
+		element.style.left = ((fromX / this.map.width) * 100).toFixed(3) + "%";
+		element.style.top = ((fromY / this.map.height) * 100).toFixed(3) + "%";
+		if (animate) {
+			walker.anim = element.animate(
+				[{ transform: "translate(0, 0)" }, { transform: `translate(${((x - fromX) * 100).toFixed(2)}%, ${((y - fromY) * 100).toFixed(2)}%)` }],
+				{ duration: seconds * 1000, easing: "linear", fill: "forwards" },
+			);
+		}
 		element.firstChild.style.transform = x < walker.x && animate ? "scaleX(-1)" : "";
 		walker.x = x;
 		walker.y = y;
