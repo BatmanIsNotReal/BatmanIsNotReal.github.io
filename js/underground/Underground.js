@@ -151,7 +151,7 @@ export default class Underground {
 		this.dungeonId = dungeonId;
 		this.resetInput();
 		this.mouse = { x: 0, y: 0 };
-		this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
+		this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
@@ -261,8 +261,8 @@ export default class Underground {
 			const target = { x: mine.x, y: mine.y };
 			if (!mine.dead) for (const input of this.pending) walk(this.obstacles, target, input.mx, input.my, 1 / TICK_RATE);
 			const error = this.pred ? Math.hypot(target.x - this.pred.x, target.y - this.pred.y) : Infinity;
-			if (!this.pred || mine.dead || error > 120) this.pred = target;
-			else { this.pred.x += (target.x - this.pred.x) * 0.25; this.pred.y += (target.y - this.pred.y) * 0.25; }
+			if (!this.pred || mine.dead || error > 120) { this.pred = target; this.fix = { x: 0, y: 0 }; }
+			else this.fix = { x: target.x - this.pred.x, y: target.y - this.pred.y }; // eased in by advance(), never jumped
 			const pct = Math.max(0, Math.min(1, mine.hp / mine.maxHp));
 			this.ui.hpFill.style.width = pct * 100 + "%";
 			this.ui.hpText.textContent = `${mine.hp} / ${mine.maxHp}`;
@@ -305,6 +305,13 @@ export default class Underground {
 		const my = (k.down ? 1 : 0) - (k.up ? 1 : 0);
 		if (mx) this.myFace = mx < 0 ? -1 : 1;
 		walk(this.obstacles, this.pred, mx, my, dt);
+		// The server's view differs from ours by a few pixels that change from update to update. Close the
+		// gap slowly (and not at all when it is tiny), so the character glides instead of twitching.
+		if (this.fix && Math.hypot(this.fix.x, this.fix.y) > 3) {
+			const part = 1 - Math.exp(-3 * dt);
+			this.pred.x += this.fix.x * part; this.pred.y += this.fix.y * part;
+			this.fix.x -= this.fix.x * part; this.fix.y -= this.fix.y * part;
+		}
 	}
 
 	// Everything else, as it was INTERP_MS ago, blended between the two snapshots around that moment
