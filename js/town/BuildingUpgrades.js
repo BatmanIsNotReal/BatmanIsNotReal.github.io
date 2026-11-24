@@ -24,7 +24,7 @@ const BASE = {
 	Farm:        { wood: 300,   iron: 60,    bronze: 40,   gold: 6,   blood: 1000,   workers: 5,  familiarFactor: 0.2 },
 	LumberMill:  { wood: 400,   iron: 80,    bronze: 50,   gold: 8,   blood: 1200,   workers: 5,  familiarFactor: 0.2 },
 	Mine:        { wood: 1500,  iron: 500,   bronze: 300,  gold: 50,  blood: 20000,  workers: 10, familiarFactor: 0.2 },
-	Hut:         { wood: 150,   iron: 30,    bronze: 20,   gold: 3,   blood: 500,    workers: 5,  familiarFactor: 0.2 },
+	Hut:         { wood: 150,   iron: 30,    bronze: 20,   gold: 3,   blood: 500,    workers: 0,  familiarFactor: 0 }, // huts cost no familiars
 	BloodTemple: { wood: 4000,  iron: 6000,  bronze: 2000, gold: 400, blood: 500000, workers: 40, familiarFactor: 0.1 },
 };
 const COST_GROWTH = 1.5;   // resources: every level costs 50% more than the one before
