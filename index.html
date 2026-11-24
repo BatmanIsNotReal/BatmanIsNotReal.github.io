@@ -80,6 +80,7 @@
 			<button type="button" class="button" id="diceButton">Dice</button>
 			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
 			<button type="button" class="button" id="profileButton">My character</button>
+			<button type="button" class="button" id="optionsButton">Options</button>
 			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
 				<i class="fas fa-volume-up"></i> <span>Sound on</span>
 			</button>
@@ -585,6 +586,17 @@
 
 			<h4>Recent games</h4>
 			<ul class="dice-list dice-recent" id="diceRecent"></ul>
+		</div>
+	</div>
+
+	<!-- Options (this browser only) -->
+	<div id="optionsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="optionsTitle">
+		<div class="modal-content cave-content">
+			<h3 id="optionsTitle">Options</h3>
+			<label class="field" for="densitySlider">Walking familiars on the map: <span id="densityValue"></span></label>
+			<input type="range" id="densitySlider" min="0" max="100" step="10">
+			<p class="cave-hint">Fewer figures make the game lighter on your computer. 0% hides them all.</p>
+			<div class="cave-actions"><button type="button" class="button" id="optionsClose">Close</button></div>
 		</div>
 	</div>
 

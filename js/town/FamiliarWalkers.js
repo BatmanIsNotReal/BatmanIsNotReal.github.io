@@ -9,6 +9,14 @@
 
 const FAMILIARS_PER_FIGURE = 10;
 const MAX_FIGURES = 60;
+// The player's own choice (Options): what share of those figures is really shown. Kept in this browser.
+export const DENSITY_KEY = "familiarDensity";
+export function readDensity() {
+	try {
+		const value = Number(localStorage.getItem(DENSITY_KEY));
+		return localStorage.getItem(DENSITY_KEY) !== null && value >= 0 && value <= 100 ? value / 100 : 0.5;
+	} catch { return 0.5; }
+}
 const WALK_RADIUS = 2.5; // tiles away from the building
 const SYNC_MS = 2000;
 const STEP_MS = 300;
@@ -53,7 +61,7 @@ export default class FamiliarWalkers {
 	shares(state) {
 		const counts = JOBS.map((job) => Math.max(0, state.counts[job] || 0));
 		const sum = counts.reduce((a, b) => a + b, 0);
-		const figures = Math.min(MAX_FIGURES, Math.ceil(Math.max(state.total || sum, 0) / FAMILIARS_PER_FIGURE));
+		const figures = Math.ceil(Math.min(MAX_FIGURES, Math.ceil(Math.max(state.total || sum, 0) / FAMILIARS_PER_FIGURE)) * readDensity());
 		if (!sum || !figures) return Object.fromEntries(JOBS.map((job) => [job, 0]));
 		const exact = counts.map((count) => (count / sum) * figures);
 		const result = exact.map(Math.floor);
@@ -86,6 +94,7 @@ export default class FamiliarWalkers {
 	}
 
 	sync() {
+		if (!this.layer) return;
 		if (document.body.classList.contains("ug-active")) return; // nobody is looking while the underground is open
 		let state;
 		try { state = this.getState(); } catch { return; }

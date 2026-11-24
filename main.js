@@ -19,6 +19,7 @@ import HowToPlay from './js/HowToPlay.js';
 import OnlineCounter from './js/OnlineCounter.js';
 import OnlinePlayers from './js/chat/OnlinePlayers.js';
 import UpgradeMenu from './js/town/UpgradeMenu.js';
+import { DENSITY_KEY, readDensity } from './js/town/FamiliarWalkers.js';
 import FamiliarWalkers from './js/town/FamiliarWalkers.js';
 import AttributesMenu from './js/profile/AttributesMenu.js';
 import { defaultAttributes, cleanAttributes, pointsAvailable } from './js/rules.mjs';
@@ -153,7 +154,7 @@ for (let i = 0; i < tiles.length; i++){
 span.addEventListener("click", () => {modal.style.display = "none"});
 window.addEventListener("click", (event) => {if (event.target == modal){modal.style.display = "none"}});
 
-new FamiliarWalkers(document.getElementById("mapStage"), familiarState);
+const familiarWalkers = new FamiliarWalkers(document.getElementById("mapStage"), familiarState);
 
 //ORBS: Upgrades, Updates and the vampire shops each open in their own pop-up
 {
@@ -962,6 +963,27 @@ function save(){
 const attributesMenu = new AttributesMenu(document, Attributes, () => House.level, () => { displayUpdate(); save(); sendProfile(Profile, true); });
 document.getElementById("attributesButton").addEventListener("click", () => attributesMenu.open(false));
 
+
+//OPTIONS (this browser only): how many walking familiars are drawn
+{
+	const modal = document.getElementById("optionsModal");
+	const slider = document.getElementById("densitySlider");
+	const label = document.getElementById("densityValue");
+	const show = () => { label.textContent = slider.value + "%"; };
+	document.getElementById("optionsButton").addEventListener("click", () => {
+		slider.value = Math.round(readDensity() * 100);
+		show();
+		modal.style.display = "block";
+	});
+	slider.addEventListener("input", () => {
+		show();
+		try { localStorage.setItem(DENSITY_KEY, slider.value); } catch { /* the choice just is not remembered */ }
+		familiarWalkers.sync();
+	});
+	const close = () => { modal.style.display = "none"; };
+	document.getElementById("optionsClose").addEventListener("click", close);
+	modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+}
 
 //THE UNDERGROUND (cave on the map -> menu -> full-screen fight; the fight runs on the server)
 const soloUnderground = new URLSearchParams(location.search).has("solo"); // ?solo: runs in this browser, for trying alone
