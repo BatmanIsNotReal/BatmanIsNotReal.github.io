@@ -30,3 +30,6 @@ body.ug-active { overflow: hidden; }
 .ug-line.bad { color: #ff8a8a; }
 .ug-message { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 0.8rem 1.4rem; background: rgba(10, 6, 8, 0.85); border: 3px solid var(--line); font-size: 1.3rem; text-align: center; max-width: 80vw; pointer-events: none; }
 .ug-message.stuck { border-color: var(--blood-bright); }
+
+/* While you are down there the game behind is not painted at all (smoother fights) */
+body.ug-active > *:not(.ug-overlay) { visibility: hidden; }

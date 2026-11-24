@@ -86,6 +86,7 @@ export default class FamiliarWalkers {
 	}
 
 	sync() {
+		if (document.body.classList.contains("ug-active")) return; // nobody is looking while the underground is open
 		let state;
 		try { state = this.getState(); } catch { return; }
 		if (!state || !state.tiles) return;
@@ -143,7 +144,7 @@ export default class FamiliarWalkers {
 	// Every so often a figure picks a spot near its building and walks there in a straight line
 	step() {
 		const map = this.map;
-		if (!map || document.hidden) return;
+		if (!map || document.hidden || document.body.classList.contains("ug-active")) return;
 		const now = Date.now();
 		for (const walker of this.walkers) {
 			if (!walker.home || now < walker.nextMove) continue;
