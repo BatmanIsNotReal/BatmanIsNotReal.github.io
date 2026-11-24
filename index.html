@@ -100,36 +100,36 @@
 				<h3 class="grid-item-title">Storage</h3>
 
 				<div class="blood hover-parent">
-					<p>Blood: <span id="bloodCount"></span></p>
+					<p>Blood: <span id="bloodCount"></span><span class="trend" id="bloodTrend"></span></p>
 					<div class="hover">
 						<p>blood/10 sec: <span id="newBloodPerRound"></span></p>
 					</div>
 				</div>
 
 				<div class="humanFood hover-parent">
-					<p>Human food: <span id="humanFoodCount"></span></p>
+					<p>Human food: <span id="humanFoodCount"></span><span class="trend" id="humanFoodTrend"></span></p>
 					<div class="hover">
 						<p>Food/10 sec: <span id="newHumanFoodPerRound"></span></p>
 					</div>
 				</div>
 
 				<div class="wood hover-parent">
-					<p>Wood: <span id="woodCount"></span></p>
+					<p>Wood: <span id="woodCount"></span><span class="trend" id="woodTrend"></span></p>
 					<div class="hover">
 						<p>Wood/10 sec: <span id="newWoodPerRound"></span></p>
 					</div>
 				</div>
 
 				<div class="iron hover-parent">
-					<p>Iron: <span id="ironCount"></span></p>
+					<p>Iron: <span id="ironCount"></span><span class="trend" id="ironTrend"></span></p>
 				</div>
 
 				<div class="bronze hover-parent">
-					<p>Bronze: <span id="bronzeCount"></span></p>
+					<p>Bronze: <span id="bronzeCount"></span><span class="trend" id="bronzeTrend"></span></p>
 				</div>
 
 				<div class="gold hover-parent">
-					<p>Gold: <span id="goldCount"></span></p>
+					<p>Gold: <span id="goldCount"></span><span class="trend" id="goldTrend"></span></p>
 				</div>
 			</div>
 
@@ -259,7 +259,7 @@
 					<div class="button buy-upgrade-button" id="ironHoe">Buy iron hoe
 						<p>Iron hoes: <span id="ironHoeAmmount"></span></p>
 						<div class="hover">
-							<p>+human food/10 sec: +10%</p>
+							<p>+human food/10 sec: +3%</p>
 							<p>price iron: <span id="ironHoeCost"></span></p>
 						</div>
 					</div>
@@ -267,7 +267,7 @@
 					<div class="button buy-upgrade-button" id="ironAxe">Buy iron axe
 						<p>Iron axes: <span id="ironAxeAmmount"></span></p>
 						<div class="hover">
-							<p>+wood/10 sec: +10%</p>
+							<p>+wood/10 sec: +3%</p>
 							<p>price iron: <span id="ironAxeCost"></span></p>
 						</div>
 					</div>
@@ -275,7 +275,7 @@
 					<div class="button buy-upgrade-button" id="ironPick">Buy iron pick
 						<p>Iron picks: <span id="ironPickAmmount"></span></p>
 						<div class="hover">
-							<p>+mining/10 sec: +10%</p>
+							<p>+mining/10 sec: +3%</p>
 							<p>price iron: <span id="ironPickCost"></span></p>
 						</div>
 					</div>
@@ -520,6 +520,9 @@
 			<ul id="upgradeCosts"></ul>
 			<button type="button" class="button" id="upgradeButton">Upgrade</button>
 			<p id="upgradeMessage" role="status"></p>
+			<hr class="upgrade-divider">
+			<button type="button" class="button demolish-button" id="demolishButton">Demolish</button>
+			<p id="demolishNote" class="demolish-note"></p>
 		</div>
 	</div>
 

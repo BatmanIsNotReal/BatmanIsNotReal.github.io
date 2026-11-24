@@ -98,6 +98,9 @@
 			<ul id="upgradeCosts"></ul>
 			<button type="button" class="button" id="upgradeButton">Upgrade</button>
 			<p id="upgradeMessage" role="status"></p>
+			<hr class="upgrade-divider">
+			<button type="button" class="button demolish-button" id="demolishButton">Demolish</button>
+			<p id="demolishNote" class="demolish-note"></p>
 		</div>
 	</div>
 
@@ -147,6 +150,9 @@
 				getInfo: (id) => game.map.upgradeInfo(id),
 				upgrade: (id) => game.map.upgrade(id),
 				onUpgraded: () => sync(),
+				demolishInfo: (id) => game.map.demolishInfo(id),
+				demolish: (id) => game.map.demolish(id),
+				onDemolished: () => sync(),
 			});
 			table.addEventListener("click", (event) => {
 				if (!event.target.classList.contains("tile")) return;

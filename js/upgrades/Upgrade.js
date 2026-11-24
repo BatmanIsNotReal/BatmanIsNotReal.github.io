@@ -3,15 +3,19 @@ import IronAxe from "./tools/ironAxe.js";
 import IronHoe from "./tools/IronHoe.js";
 import IronPick from "./tools/IronPick.js";
 
-// Every upgrade you buy makes the next one of the same kind 10% more expensive.
-const PRICE_GROWTH = 1.1;
+// Every tool you buy makes the next one of the same kind 20% more expensive, but only adds 3% to what
+// its buildings produce (compounding). The price therefore grows faster than the gain, so every extra
+// tool pays back more slowly and there is a point where buying more is not worth it any more.
+// (Before: +10% output for +10% price, which paid back at the same speed forever.)
+const PRICE_GROWTH = 1.2;
+const GAIN_PERCENT = 3;
 
 export default class Upgrade{
     constructor(){
         this.tools = {
-            ironHoe: new IronHoe(50, 10, 0),
-            ironAxe: new IronAxe(100, 10, 0),
-            ironPick: new IronPick(200, 10, 0),
+            ironHoe: new IronHoe(50, GAIN_PERCENT, 0),
+            ironAxe: new IronAxe(100, GAIN_PERCENT, 0),
+            ironPick: new IronPick(200, GAIN_PERCENT, 0),
         };
 
         // The price follows from how many have been bought (so it is also right after loading a save)
@@ -23,6 +27,15 @@ export default class Upgrade{
             });
         }
 
+    }
+
+    // The output of the buildings follows from how many tools were bought (also right after loading a save,
+    // so saves made with the old +10% tools get the new, weaker bonus)
+    applyGains(farm, lumbermill, mine){
+        const gain = (tool) => Number(Math.pow(1 + tool.gainPercent / 100, tool.ammount).toFixed(6));
+        farm.gain = gain(this.tools.ironHoe);
+        lumbermill.gain = gain(this.tools.ironAxe);
+        mine.gain = gain(this.tools.ironPick);
     }
 
     buyIronHoe(inv, updatebox, farm){

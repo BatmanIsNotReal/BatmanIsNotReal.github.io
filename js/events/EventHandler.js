@@ -1,10 +1,16 @@
 import Event from "./Event.js";
 
-// Random events. What they cost grows with the player's level:
-//   items:     (5 + 2 x level)% of the storage, at most 40%   (level 1: 7%, level 10: 25%)
-//   familiars: a few, plus 1 more for every 3 levels (rebel) or 2 levels (sirens),
-//              but never more than half of them
-const lossPercent = (level) => Math.min(5 + 2 * level, 40);
+// Random events. They start gentle and get harsher with the player's level:
+//   witch:     takes 1% of every kind of storage at level 1, 2% at level 5, 3.3% at level 10, 5.8% at level 20
+//              (at most 6%) when she escapes your search, and half as much again if you ignore her
+//   rebel:     1 familiar lost at levels 1-2 when ignored, one more for every 3 levels (more if the search fails)
+//   sirens:    1 familiar lost at level 1, one more for every 2 levels
+//   A single event never takes more than half of the familiars (and at least 1).
+// Killing the witch pays 3% of one kind of storage (at least 10 per level).
+const WITCH_MAX_PERCENT = 6;
+const witchPercent = (level) => Math.min(WITCH_MAX_PERCENT, 1 + 0.25 * (level - 1));
+const WITCH_IGNORED_FACTOR = 1.5;
+const WITCH_STASH_PERCENT = 3;
 
 const ITEM_NAMES = {blood: "blood", humanFood: "human food", wood: "wood", iron: "iron", bronze: "bronze", gold: "gold"};
 
@@ -32,7 +38,9 @@ function loseFamiliars(familiars, count){
 
 export default class EventHandler{
     // inventory, familiars and house are what the events can take from (and house.level sets how much)
-    constructor(inventory, familiars, house){
+    // onEvent: called when an event pops up (the game plays a sound with it)
+    constructor(inventory, familiars, house, onEvent = () => {}){
+        this.onEvent = onEvent;
         this.inventory = inventory;
         this.familiars = familiars;
         this.house = house;
@@ -43,16 +51,16 @@ export default class EventHandler{
                         // her stash is worth more at higher levels
                         const kinds = ["blood", "humanFood", "wood"];
                         const kind = kinds[this.getRandomInt(0, kinds.length)];
-                        const reward = 10 * game.level;
+                        const reward = Math.max(10 * game.level, Math.floor(game.inventory.items[kind] * WITCH_STASH_PERCENT / 100));
                         game.inventory.items[kind] += reward;
                         this.conOneText = "you found and killed the witch. In her hut you find " + reward + " " + ITEM_NAMES[kind] + ".";
                     }else{
-                        const taken = takePercent(game.inventory, lossPercent(game.level));
+                        const taken = takePercent(game.inventory, witchPercent(game.level));
                         this.conOneText = "you found nothing. The witch thief escaped with stolen goods: " + taken + ".";
                     }
                 },
                 function conTwo(game){
-                    const taken = takePercent(game.inventory, lossPercent(game.level) / 2);
+                    const taken = takePercent(game.inventory, witchPercent(game.level) * WITCH_IGNORED_FACTOR);
                     this.conTwoText = "You ignore the witch, and she helps herself to your storage: " + taken + ".";
                 }),
             2: new Event("rebel familiar", "a familiar has decided to rebel against you.", "MAKE AN EXAMPLE OF HIM", "LET IT PASS",
@@ -73,11 +81,11 @@ export default class EventHandler{
                     if (this.getRandomInt(0, 100) < 50){
                         this.conOneText = "you found the sirens and retrieved your familiars.";
                     }else{
-                        this.conOneText = "you found nothing. The familiars are lost. " + loseFamiliars(game.familiars, 3 + Math.floor(game.level / 2));
+                        this.conOneText = "you found nothing. The familiars are lost. " + loseFamiliars(game.familiars, 1 + Math.floor(game.level / 2));
                     }
                 },
                 function conTwo(game){
-                    this.conTwoText = "You ignore it, and the familiars are lost. " + loseFamiliars(game.familiars, 3 + Math.floor(game.level / 2));
+                    this.conTwoText = "You ignore it, and the familiars are lost. " + loseFamiliars(game.familiars, 1 + Math.floor(game.level / 2));
                 }),
         }
     }
@@ -94,6 +102,7 @@ export default class EventHandler{
         const modaleventbox = document.getElementById("modal-event");
 
         modaleventbox.style.display = "block";
+        this.onEvent();
 
 
         // getRandomInt leaves out its upper limit, so +1 or the last event could never be drawn

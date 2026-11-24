@@ -56,3 +56,17 @@
 .grid-item.map {
 	overflow-x: auto;
 }
+
+/* Little triangle after a storage amount: green up = more earned than used last round, red down = the opposite */
+.trend { display: inline-block; margin-left: 0.4em; vertical-align: middle; }
+
+.trend-up,
+.trend-down {
+	width: 0;
+	height: 0;
+	border-left: 0.35em solid transparent;
+	border-right: 0.35em solid transparent;
+}
+
+.trend-up { border-bottom: 0.6em solid #5fd17a; }
+.trend-down { border-top: 0.6em solid #e0475a; }

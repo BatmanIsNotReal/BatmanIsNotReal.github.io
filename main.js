@@ -96,7 +96,7 @@ const Timer = new Timers();
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
 
-let eventHandler = new EventHandler(Inv, Familiars, House);
+let eventHandler = new EventHandler(Inv, Familiars, House, () => musicHandler.playSpell());
 
 var modal = document.getElementById("myModal");
 var span = document.getElementById("close");
@@ -129,6 +129,9 @@ const upgradeMenu = new UpgradeMenu(document, {
 	getInfo: (id) => myTown.upgradeInfo(id, Inv, Familiars),
 	upgrade: (id) => myTown.upgradeTile(id, Inv, Familiars, updateBox, document),
 	onUpgraded: () => { musicHandler.playToolUpgrade(); save(); },
+	demolishInfo: (id) => myTown.demolishInfo(id, Familiars),
+	demolish: (id) => myTown.demolishTile(id, Inv, Familiars, updateBox, document),
+	onDemolished: () => { displayUpdate(); save(); },
 });
 
 // Click a tile: your buildings open the upgrade menu, other tiles the build menu
@@ -230,6 +233,12 @@ window.vampireMap = {
 	upgrade: (id) => {
 		const result = myTown.upgradeTile(id, Inv, Familiars, updateBox, document);
 		if (result.ok){ musicHandler.playToolUpgrade(); save(); }
+		return result;
+	},
+	demolishInfo: (id) => myTown.demolishInfo(id, Familiars),
+	demolish: (id) => {
+		const result = myTown.demolishTile(id, Inv, Familiars, updateBox, document);
+		if (result.ok){ displayUpdate(); save(); }
 		return result;
 	},
 	imageFor: (type) => myTown.tileImage(type),
@@ -483,8 +492,27 @@ window.setInterval(function(){
 	
 }, 1000);
 
+//Which way each resource went in the last round: more earned than used (up), or the opposite (down).
+//Only what the game does by itself counts (gathering, mining, feeding, blessings), not what the player buys.
+const STORAGE_KINDS = ["blood", "humanFood", "wood", "iron", "bronze", "gold"];
+const lastRoundChange = {};
+
+function showTrends(){
+	for (const kind of STORAGE_KINDS){
+		const element = document.getElementById(kind + "Trend");
+		const change = lastRoundChange[kind] || 0;
+		const direction = change > 0.0001 ? "up" : change < -0.0001 ? "down" : "";
+		element.className = direction ? "trend trend-" + direction : "trend";
+		const amount = formatNumber(Math.abs(change) < 10 ? Math.round(Math.abs(change) * 10) / 10 : Math.round(Math.abs(change)));
+		element.title = direction === "up" ? "Earned more than used last round (+" + amount + ")"
+			: direction === "down" ? "Used more than earned last round (-" + amount + ")" : "";
+		element.setAttribute("aria-label", direction ? (direction === "up" ? "rising" : "falling") : "");
+	}
+}
+
 //every 10 seconds
 window.setInterval(function(){
+	const before = { ...Inv.items };
 
 	//Familiars
 	Familiars.update(Inv, House);
@@ -503,6 +531,10 @@ window.setInterval(function(){
 
 	//Town
 	myTown.updateTen(Inv, document, updateBox, Familiars);
+
+	for (const kind of STORAGE_KINDS) lastRoundChange[kind] = Inv.items[kind] - before[kind];
+	showTrends();
+
 	//save
 	save();
 }, 10000);
@@ -510,7 +542,10 @@ window.setInterval(function(){
 //every minute
 window.setInterval(function(){
 	//Event handler - every minute has a 10% chance of triggering an event
-	if (getRandomInt(0, 100) < 10){
+	// ...but only once the first building stands: nothing happens to a settlement that has not started
+	const buildings = myTown.Buildings;
+	const hasBuilding = [buildings.Hut, buildings.Mine, buildings.Farm, buildings.LumberMill, buildings.BloodTemple].some((building) => building.ammount > 0);
+	if (hasBuilding && getRandomInt(0, 100) < 10){
 		eventHandler.getRandomEvent(document);
 	}
 	//Familiars
@@ -767,6 +802,7 @@ function load(){
 		}
 		// The Overloard was renamed Vampire Master: owners keep theirs
 		if (savegame.vampireMasterAmmount === undefined && savegame.overloardAmmount > 0) VampireMaster.ammount = savegame.overloardAmmount;
+		Upgrades.applyGains(myTown.Buildings.Farm, myTown.Buildings.LumberMill, myTown.Buildings.Mine); // tool bonuses follow the number of tools
 		myTown.loadTiles(savegame.tiles, savegame.mapWidth);
 		myTown.loadTileLevels(savegame.tileLevels, savegame.mapWidth);
 		signedUp = savegame.signedUp === true;

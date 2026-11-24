@@ -297,3 +297,8 @@ body.map-window .map-scroll {
 @media (prefers-reduced-motion: reduce) {
 	.familiar-layer { display: none; }
 }
+
+/* Demolish (in the upgrade pop-up) */
+.upgrade-content .upgrade-divider { margin: 1rem 0 0.75rem; border: 0; border-top: 1px solid var(--line); }
+.upgrade-content .demolish-note { margin: 0.5rem 0 0; font-size: 1rem; color: var(--bone-dim); }
+.upgrade-content .demolish-confirm { background-color: var(--blood); color: #fff; }

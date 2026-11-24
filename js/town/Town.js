@@ -10,6 +10,8 @@ import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
 import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
 
+const DEMOLISH_REFUND = 0.7; // share of the building price you get back
+
 export default class Town{
     constructor(townSize, xpRates){
         this.townSize = townSize;
@@ -464,6 +466,56 @@ export default class Town{
         if (info.key === "Hut") familiar.addMaxLimit(HUT_ROOM_PER_LEVEL);
         if (updatebox) updatebox.townUpdatesAdd("Your " + info.name.toLowerCase() + " was upgraded to level " + level + ".", document);
         return { ok: true, message: info.name + " upgraded to level " + level + "." };
+    }
+
+    // ---------- Demolishing buildings ----------
+    // Demolishing gives back 70% of the building's price (not of the upgrades). The workers and the
+    // familiars that were busy upgrading become free again, and the room the building gave is gone.
+    // A mine leaves bare rock and a lumber mill leaves forest, as that is what they were built on.
+    demolishInfo(tileId, familiar){
+        const key = this.upgradeKey(tileId);
+        if (!key) return null;
+        const building = this.Buildings[key];
+        const level = this.levelOf(tileId);
+        const price = typeof building.cost === "object" ? building.cost : { wood: building.cost };
+        const refunds = [];
+        for (const kind of Object.keys(price)){
+            const amount = Math.floor(price[kind] * DEMOLISH_REFUND);
+            if (amount > 0) refunds.push({ kind, label: kind, amount });
+        }
+        let upgradeFamiliars = 0;
+        for (let i = 0; i < level; i++) upgradeFamiliars += costFor(key, i).familiars;
+        const freed = (building.workersRequired || 0) + upgradeFamiliars;
+        const room = (building.capacity || 0) + (key === "Hut" ? level * HUT_ROOM_PER_LEVEL : 0);
+        const roomAfter = familiar.getMaxLimit() - room;
+        const info = {
+            tileId, key, name: building.name, level, refunds, freed, room, roomAfter,
+            leaves: { Mine: 3, LumberMill: 6 }[key] ?? 0,
+            blocked: null,
+        };
+        if (roomAfter < familiar.ammount){
+            info.blocked = "You have " + familiar.ammount + " familiars, but without this building there would be room for only "
+                + roomAfter + ". Free up room first.";
+        }
+        return info;
+    }
+
+    // Returns { ok, message }
+    demolishTile(tileId, inventory, familiar, updatebox, document){
+        const info = this.demolishInfo(tileId, familiar);
+        if (!info) return { ok: false, message: "There is nothing to demolish here." };
+        if (info.blocked) return { ok: false, message: info.blocked };
+        for (const refund of info.refunds) inventory.items[refund.kind] += refund.amount;
+        familiar.notWorking += info.freed;
+        familiar.addMaxLimit(-info.room);
+        this.Buildings[info.key].ammount = Math.max(0, this.Buildings[info.key].ammount - 1);
+        delete this.tileLevels[tileId];
+        this.tiles[tileId] = info.leaves;
+        this.updateTileImages(document);
+        const back = info.refunds.map((refund) => refund.amount + " " + refund.label).join(", ");
+        const message = "You demolished your " + info.name.toLowerCase() + (back ? " and recovered " + back + "." : ".");
+        if (updatebox) updatebox.townUpdatesAdd(message, document);
+        return { ok: true, message };
     }
 
     // Puts saved levels onto the map (same row/column handling as loadTiles)

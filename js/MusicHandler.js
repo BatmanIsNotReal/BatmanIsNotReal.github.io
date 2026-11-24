@@ -16,6 +16,8 @@ export default class MusicHandler {
 		this.button = button;
 		this.buyVampire = new Audio("music/sounds/strigoiBought.mp3");
 		this.toolUpgrade = new Audio("music/sounds/toolUpgrade.wav");
+		this.spell = new Audio("music/sounds/spell.wav");
+		this.spell.volume = 0.6;
 		this.muted = this.loadMuted();
 		this.waitingForGesture = false;
 		this.onGesture = () => this.startAfterGesture();
@@ -90,5 +92,12 @@ export default class MusicHandler {
 		if (this.muted) return;
 		this.toolUpgrade.currentTime = 0;
 		this.toolUpgrade.play().catch(() => {});
+	}
+
+	// A spell being cast: tells the player that something happened (a random event)
+	playSpell() {
+		if (this.muted) return;
+		this.spell.currentTime = 0;
+		this.spell.play().catch(() => {});
 	}
 }
