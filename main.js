@@ -410,7 +410,6 @@ function displayUpdate(){
 	showRate("newHumanFoodPerRound", Inv.getNewHumanFoodPerRound(Familiars));
 	showRate("newHumanFoodPerRoundStat", Inv.getNewHumanFoodPerRound());
 	
-	document.getElementById("bloodVictimGather").innerHTML = Familiars.getBloodGather();
 	showRate("newBloodPerRound", Inv.getBloodPerRound(Familiars, Account));
 	showRate("newBloodPerRoundStat", Inv.getNewBloodPerRound());
 	
@@ -808,6 +807,11 @@ function load(){
 		signedUp = savegame.signedUp === true;
 		// Fire guards no longer exist: their familiars are free to work elsewhere again
 		if (savegame.fireGuard > 0) Familiars.notWorking += savegame.fireGuard;
+		// Blood victim gatherers no longer exist either: those familiars are free again
+		if (Familiars.bloodGather > 0){
+			Familiars.notWorking += Familiars.bloodGather;
+			Familiars.bloodGather = 0;
+		}
 
 		if (typeof savegame.level === "undefined"){
 			// Saved before levels existed: the old house size becomes the level, and the

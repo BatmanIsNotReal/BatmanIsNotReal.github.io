@@ -10,15 +10,21 @@ export default class Hut{
         this.imgsrc = imgsrc; 
     }
 
+    // One line for all children born this round
     checkNewChild(familiar, updatebox){
+        let born = 0;
         for (let i = 0; i < this.ammount; i++){
             let n = this.getRandomInt(0, 100);
             if (n < 2){
                 if (familiar.ammount < familiar.maxLimit){
                     familiar.addFamiliar();
-                    updatebox.townUpdatesAdd("A human child has been born. It will be in your service.", document);
+                    born++;
                 }
             }
+        }
+        if (born > 0){
+            updatebox.townUpdatesAdd(born === 1 ? "A human child has been born. It will be in your service."
+                : born + " human children have been born. They will be in your service.", document);
         }
     }
 

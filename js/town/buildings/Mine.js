@@ -1,6 +1,7 @@
 import { outputMultiplier } from "../BuildingUpgrades.js";
 import Building from "../Building.js";
 import updateBox from "../updateBox/updatesBox.js";
+import formatNumber from "../../formatNumber.js";
 
 export default class Mine{
     constructor(name, description, capacity, imgsrc, cost, workersRequired){
@@ -20,28 +21,32 @@ export default class Mine{
     }
 
     // levels: the upgrade level of each building of this kind (see BuildingUpgrades.js)
+    // One line for all mines together: "Your 12 mines found 340 iron, 45 bronze and 6 gold."
     checkForLoot(inv, document, updatebox, levels = []){
+        let iron = 0, bronze = 0, gold = 0;
         for (let i = 0; i < this.ammount; i++){
             const gain = this.gain * outputMultiplier(levels[i] || 0);
             var chance = this.getRandomInt(0, 1000);
             if (chance <= 300){
                 //your miners discovered an ore of iron
-                var ammount = this.getRandomInt(10*gain, 30*gain);
-                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of iron.", document);
-                inv.addIron(ammount);
+                iron += this.getRandomInt(10*gain, 30*gain);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
-                var ammount = this.getRandomInt(5*gain, 20*gain);
-                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of bronze.", document);
-                inv.addBronze(ammount);
+                bronze += this.getRandomInt(5*gain, 20*gain);
             }
             if (chance <=25){
                 //your miners discovered a branch of gold
-                var ammount = this.getRandomInt(2*gain, 12*gain);
-                updatebox.townUpdatesAdd("Your miners have found " + ammount + " nodes of gold.", document);
-                inv.addGold(ammount);
+                gold += this.getRandomInt(2*gain, 12*gain);
             }
+        }
+        const found = [];
+        if (iron > 0){ inv.addIron(iron); found.push(formatNumber(iron) + " iron"); }
+        if (bronze > 0){ inv.addBronze(bronze); found.push(formatNumber(bronze) + " bronze"); }
+        if (gold > 0){ inv.addGold(gold); found.push(formatNumber(gold) + " gold"); }
+        if (found.length){
+            const list = found.length > 1 ? found.slice(0, -1).join(", ") + " and " + found[found.length - 1] : found[0];
+            updatebox.townUpdatesAdd((this.ammount === 1 ? "Your mine" : "Your " + this.ammount + " mines") + " yielded " + list + ".", document);
         }
     }
 
