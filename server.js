@@ -1078,7 +1078,8 @@ function ugReceive(conn, text) {
 	if (message.t === "in" && conn.room) {
 		conn.lastInput = Date.now();
 		conn.room.world.input(conn.pid, message);
-	} else if (message.t === "leave") wsClose(conn);
+	} else if (message.t === "ping") wsSend(conn, { t: "pong", c: message.c });
+	else if (message.t === "leave") wsClose(conn);
 }
 
 // Parses what the browser sends: masked text frames, pings and closes
@@ -1139,9 +1140,22 @@ function onUpgrade(req, socket) {
 	setTimeout(() => { if (!conn.room) wsClose(conn, 1008); }, 10000).unref();
 }
 
-// 20 steps a second for every level that has players in it
+// 20 steps a second for every level that has players in it. The clock is checked every 10 ms and a step is
+// taken whenever 50 ms have really passed, so a busy server catches up instead of running in slow motion
+// and the pictures leave at an even rhythm.
+const UG_STEP_MS = 50; // = 1000 / TICK_RATE in js/underground/world.mjs (WORLD is only loaded after start-up)
+let ugLastClock = Date.now(), ugOwed = 0;
 setInterval(() => {
 	const now = Date.now();
+	ugOwed = Math.min(ugOwed + (now - ugLastClock), UG_STEP_MS * 4);
+	ugLastClock = now;
+	while (ugOwed >= UG_STEP_MS) {
+		ugOwed -= UG_STEP_MS;
+		ugStep(now);
+	}
+}, 10);
+
+function ugStep(now) {
 	for (const room of ugWorlds.values()) {
 		for (const conn of [...room.conns.values()]) {
 			if (now - conn.lastInput > UG_IDLE_MS) { wsSend(conn, { t: "error", error: "You were away for too long." }); wsClose(conn, 4001); continue; }
@@ -1153,7 +1167,7 @@ setInterval(() => {
 		const text = Buffer.from(JSON.stringify(snapshot));
 		for (const conn of room.conns.values()) wsWrite(conn, 1, text);
 	}
-}, 50);
+}
 
 function handleUndergroundList(req, res) {
 	if (req.method === "OPTIONS") return sendPreflight(res);

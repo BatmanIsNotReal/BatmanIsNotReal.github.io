@@ -119,6 +119,7 @@ export class World {
 		this.fx = [];
 		this.nextId = 1;
 		this.time = 0;
+		this.tick = 0; // counts the steps, so the browser knows when each picture was made
 		this.spawnTimer = 0;
 	}
 
@@ -177,6 +178,7 @@ export class World {
 	// ---- one step of the simulation ----
 	step(dt) {
 		this.time += dt;
+		this.tick++;
 		for (const p of this.players.values()) this.stepPlayer(p, dt);
 		if (!this.pvp) {
 			this.spawnMonsters(dt);
@@ -395,6 +397,7 @@ export class World {
 		const r = (v) => Math.round(v);
 		const snap = {
 			t: "s",
+			n: this.tick,
 			p: [...this.players.values()].map((p) => [p.id, r(p.x), r(p.y), r(p.hp), p.maxHp, p.face, Math.round(p.aim * 100) / 100, (p.dead ? 1 : 0) | (p.shield > 0 ? 2 : 0), p.kills, p.seq]),
 			m: this.monsters.map((m) => [m.id, m.type, r(m.x), r(m.y), r(m.hp), m.maxHp, m.state, m.face, m.hurt > 0 ? 1 : 0]),
 			b: this.shots.map((s) => [s.id, r(s.x), r(s.y)]),

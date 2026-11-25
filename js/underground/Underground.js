@@ -92,7 +92,7 @@ export default class Underground {
 		overlay.className = "ug-overlay";
 		overlay.innerHTML = `
 			<canvas class="ug-canvas"></canvas>
-			<div class="ug-top"><span class="ug-title"></span><span class="ug-count"></span></div>
+			<div class="ug-top"><span class="ug-title"></span><span class="ug-count"></span><span class="ug-net"></span></div>
 			<button type="button" class="button ug-leave">Leave (Esc)</button>
 			<div class="ug-feed" aria-live="polite"></div>
 			<div class="ug-bottom">
@@ -105,7 +105,7 @@ export default class Underground {
 		this.canvas = overlay.querySelector(".ug-canvas");
 		this.ctx = this.canvas.getContext("2d");
 		this.ui = {
-			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"),
+			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"), net: overlay.querySelector(".ug-net"),
 			feed: overlay.querySelector(".ug-feed"), hpFill: overlay.querySelector(".ug-hp-fill"),
 			hpText: overlay.querySelector(".ug-hp-text"), message: overlay.querySelector(".ug-message"),
 		};
@@ -153,7 +153,7 @@ export default class Underground {
 		this.dungeonId = dungeonId;
 		this.resetInput();
 		this.mouse = { x: 0, y: 0 };
-		this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
+		this.clock = null; this.rtt = null; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
@@ -187,6 +187,8 @@ export default class Underground {
 			return;
 		}
 		this.sender = setInterval(() => this.sendInput(), 50);
+		this.ui.net.textContent = "";
+		this.pinger = this.options.solo ? null : setInterval(() => this.conn?.send({ t: "ping", c: Math.round(performance.now()) }), 2000);
 		this.frame = requestAnimationFrame((t) => this.draw(t));
 	}
 
@@ -194,6 +196,7 @@ export default class Underground {
 		if (!this.active) return;
 		this.active = false;
 		clearInterval(this.sender);
+		clearInterval(this.pinger);
 		cancelAnimationFrame(this.frame);
 		window.removeEventListener("resize", this.onResize);
 		try { this.conn?.close(); } catch { /* already gone */ }
@@ -232,6 +235,7 @@ export default class Underground {
 		if (m.t === "hello") { this.me = m.you; this.pvp = !!m.pvp; this.say(""); }
 		else if (m.t === "roster") { this.roster = m.players || {}; this.ui.count.textContent = Object.keys(this.roster).length + " here"; }
 		else if (m.t === "s") this.snapshot(m);
+		else if (m.t === "pong") this.showPing(performance.now() - m.c);
 		else if (m.t === "reward") {
 			const text = this.options.onReward?.(m);
 			if (text) this.addFeed(text);
@@ -247,8 +251,36 @@ export default class Underground {
 		}
 	}
 
+	// When was this picture made? Snapshots are numbered (m.n), and the server makes one every 50 ms, so the
+	// browser can lay them out evenly on a timeline instead of using the moment each one happened to arrive
+	// (which wobbles with the network). The timeline sits at the fastest arrival seen lately.
+	snapshotTime(m) {
+		const arrived = performance.now();
+		if (typeof m.n !== "number") return arrived;
+		const c = this.clock;
+		if (!c || m.n <= c.last || m.n - c.last > 400) {          // first picture, or the server restarted
+			this.clock = { last: m.n, samples: [{ n: m.n, off: arrived - m.n * (1000 / TICK_RATE) }], off: arrived - m.n * (1000 / TICK_RATE) };
+			this.buf = [];
+			return arrived;
+		}
+		c.last = m.n;
+		const sample = arrived - m.n * (1000 / TICK_RATE);
+		c.samples.push({ n: m.n, off: sample });
+		while (c.samples.length > 200) c.samples.shift();        // the last ~10 seconds
+		const fastest = Math.min(...c.samples.map((x) => x.off));
+		c.off = fastest < c.off ? fastest : c.off + (fastest - c.off) * 0.02; // follow a faster path at once, a slower one slowly
+		return m.n * (1000 / TICK_RATE) + c.off;
+	}
+
+	showPing(ms) {
+		this.rtt = this.rtt === null ? ms : this.rtt * 0.7 + ms * 0.3;
+		const v = Math.round(this.rtt);
+		this.ui.net.textContent = `ping ${v} ms`;
+		this.ui.net.className = "ug-net " + (v < 70 ? "good" : v < 140 ? "ok" : "bad");
+	}
+
 	snapshot(m) {
-		const now = performance.now();
+		const now = this.snapshotTime(m);
 		const players = new Map(m.p.map((a) => [a[0], { id: a[0], x: a[1], y: a[2], hp: a[3], maxHp: a[4], face: a[5], aim: a[6], dead: !!(a[7] & 1), shield: !!(a[7] & 2), kills: a[8], seq: a[9] }]));
 		const monsters = new Map(m.m.map((a) => [a[0], { id: a[0], type: a[1], x: a[2], y: a[3], hp: a[4], maxHp: a[5], state: a[6], face: a[7], hurt: a[8] }]));
 		this.snap = { time: now, players, monsters, shots: m.b.map((a) => ({ id: a[0], x: a[1], y: a[2] })) };
