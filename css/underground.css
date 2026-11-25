@@ -15,7 +15,7 @@
 .ug-overlay { display: none; position: fixed; inset: 0; z-index: 40; background: #050305; color: var(--bone); user-select: none; }
 .ug-overlay.open { display: block; }
 body.ug-active { overflow: hidden; }
-.ug-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+.ug-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; image-rendering: pixelated; }
 .ug-top { position: absolute; top: 0.6rem; left: 0.8rem; display: flex; gap: 1rem; align-items: baseline; text-shadow: 0 0 4px #000, 0 0 4px #000; pointer-events: none; }
 .ug-title { color: var(--gold); font-size: 1.3rem; }
 .ug-leave { position: absolute; top: 0.5rem; right: 0.8rem; }
@@ -33,3 +33,11 @@ body.ug-active { overflow: hidden; }
 
 /* While you are down there the game behind is not painted at all (smoother fights) */
 body.ug-active > *:not(.ug-overlay) { visibility: hidden; }
+
+/* The war (js/raids/) */
+.war-banner { margin: 0.4rem 0; padding: 0.4rem 0.6rem; background: #3a0d14; border: 2px solid var(--blood-bright); color: #ffd9d9; animation: war-pulse 1.6s ease-in-out infinite alternate; }
+@keyframes war-pulse { from { background: #3a0d14; } to { background: #5a1420; } }
+@media (prefers-reduced-motion: reduce) { .war-banner { animation: none; } }
+.war-body p { margin: 0.4rem 0; text-align: left; }
+.war-actions { margin-top: 0.8rem; }
+.build-heading { margin: 0.8rem 0 0.3rem; color: var(--gold); }

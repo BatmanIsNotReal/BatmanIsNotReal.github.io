@@ -8,7 +8,11 @@ import Water from './terrain/Water.js';
 import Forest from './terrain/Forest.js';
 import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
+import Defence from './buildings/Defence.js';
 import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
+
+// Tile types of the defences, and what they are called in this.Buildings
+const DEFENCE_KEYS = { 10: "WatchTower", 11: "GuardOutpost", 12: "Fort" };
 
 const DEMOLISH_REFUND = 0.7; // share of the building price you get back
 
@@ -27,6 +31,11 @@ export default class Town{
             Water: new Water("water", "a patch of water", 0, '../../../src/water.png'),
             Rock: new Rock("Rock", "a patch of rock", 0, '../../../src/rock.png'),
             Cave: new Rock("Cave", "an entrance to the underground", 0, '../../../src/cave.png'),
+            WatchTower: new Defence("Watch tower", "warns you before a raid arrives", '../../../src/watchtower.png', { wood: 300, iron: 100, bronze: 0, gold: 0 }, 3, 10),
+            GuardOutpost: new Defence("Guard outpost", "turns raids back and weakens raiders", '../../../src/guardoutpost.png', { wood: 1000, iron: 400, bronze: 100, gold: 0 }, 10, 11),
+            Fort: new Defence("Fort", "a garrison that protects the buildings around it", '../../../src/fort.png', { wood: 5000, iron: 3000, bronze: 1000, gold: 150 }, 40, 12),
+            EnemyOutpost: new Rock("Enemy outpost", "a raiding outpost", 0, '../../../src/enemyoutpost.png'),
+            Held: new Rock("Held by the enemy", "a building taken by raiders", 0, '../../../src/heldtile.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
@@ -363,6 +372,11 @@ export default class Town{
             7: B.LumberMill,
             8: B.BloodTemple,
             9: B.Cave,
+            10: B.WatchTower,
+            11: B.GuardOutpost,
+            12: B.Fort,
+            13: B.EnemyOutpost,
+            14: B.Held,
         }[type]?.imgsrc;
     }
 
@@ -389,7 +403,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 9) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 14) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -425,6 +439,35 @@ export default class Town{
         }
         if (document) this.updateTileImages(document);
         return spot;
+    }
+
+    // The key in this.Buildings of what stands on a tile: upgradable buildings and defences
+    buildingKey(tileId){
+        return UPGRADABLE[this.tiles[tileId]] || DEFENCE_KEYS[this.tiles[tileId]] || null;
+    }
+
+    // Builds a defence (key: WatchTower, GuardOutpost or Fort) on a patch of grass
+    buyDefence(key, inventory, familiar, document, id){
+        const building = this.Buildings[key];
+        if (this.tiles[id] !== 0){
+            alert("A " + building.name.toLowerCase() + " has to be built on open grass.");
+            return false;
+        }
+        const missing = Object.keys(building.cost).filter((item) => building.cost[item] > 0 && inventory.items[item] < building.cost[item]);
+        if (missing.length){
+            alert("You dont have enough " + missing.join(", ") + "!");
+            return false;
+        }
+        if (familiar.getNotWorking() < building.workersRequired){
+            alert("you dont have enough familiars.");
+            return false;
+        }
+        for (const item of Object.keys(building.cost)) inventory.items[item] -= building.cost[item];
+        familiar.notWorking -= building.workersRequired;
+        building.ammount++;
+        this.tiles[id] = building.tileType;
+        document.getElementById(id).src = String(building.imgsrc);
+        return true;
     }
 
     upgradeKey(tileId){
@@ -501,7 +544,7 @@ export default class Town{
     // familiars that were busy upgrading become free again, and the room the building gave is gone.
     // A mine leaves bare rock and a lumber mill leaves forest, as that is what they were built on.
     demolishInfo(tileId, familiar){
-        const key = this.upgradeKey(tileId);
+        const key = this.buildingKey(tileId);
         if (!key) return null;
         const building = this.Buildings[key];
         const level = this.levelOf(tileId);

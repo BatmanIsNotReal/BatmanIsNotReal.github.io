@@ -13,8 +13,10 @@ const name = new URLSearchParams(location.search).get("name") || "";
 const TILE_IMAGES = {
 	0: "src/grass.png", 1: "src/smallHut.png", 2: "src/water.png", 3: "src/rock.png", 4: "src/mine.png",
 	5: "src/farm.png", 6: "src/forest.png", 7: "src/lumbermill.png", 8: "src/bloodtemple.png", 9: "src/cave.png",
+	// the war tiles are written as letters in the map: a b c d e = 10 to 14
+	a: "src/watchtower.png", b: "src/guardoutpost.png", c: "src/fort.png", d: "src/enemyoutpost.png", e: "src/heldtile.png",
 };
-const BUILDINGS = [["Huts", 1], ["Farms", 5], ["Mines", 4], ["Lumber mills", 7], ["Blood temples", 8]];
+const BUILDINGS = [["Huts", 1], ["Farms", 5], ["Mines", 4], ["Lumber mills", 7], ["Blood temples", 8], ["Watch towers", "a"], ["Guard outposts", "b"], ["Forts", "c"]];
 const STATS = [
 	["Blood", "blood"], ["Human food", "humanFood"], ["Wood", "wood"], ["Iron", "iron"],
 	["Bronze", "bronze"], ["Gold", "gold"], ["Familiars", "familiars"], ["Influence", "influence"],

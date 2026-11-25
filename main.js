@@ -26,6 +26,8 @@ import { defaultAttributes, cleanAttributes, pointsAvailable } from './js/rules.
 import AvatarBuilder from './js/profile/AvatarBuilder.js';
 import CaveMenu from './js/underground/CaveMenu.js';
 import Underground from './js/underground/Underground.js';
+import War from './js/raids/War.js';
+import WarMenu from './js/raids/WarMenu.js';
 import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
 import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
@@ -147,6 +149,7 @@ for (let i = 0; i < tiles.length; i++){
 	tiles[i].addEventListener("click", () => {
 		currentTile = tiles[i].id;
 		if (myTown.tiles[currentTile] === 9) caveMenu.open();
+		else if (myTown.tiles[currentTile] >= 10) warMenu.open(currentTile);
 		else if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 		else modal.style.display = "block";
 	});
@@ -207,6 +210,9 @@ const buildingActions = {
 	buyFarm: (id) => myTown.buyFarm(Inv, Familiars, document, currentTile, id),
 	buyLumberMill: (id) => myTown.buyLumberMill(Inv, Familiars, document, currentTile, id),
 	buyBloodTemple: (id) => myTown.buyBloodTemple(Inv, Familiars, document, currentTile, id),
+	buyWatchTower: () => myTown.buyDefence("WatchTower", Inv, Familiars, document, currentTile),
+	buyGuardOutpost: () => myTown.buyDefence("GuardOutpost", Inv, Familiars, document, currentTile),
+	buyFort: () => myTown.buyDefence("Fort", Inv, Familiars, document, currentTile),
 };
 
 // What the separate map window (map.html) uses: it shows this window's map and builds through it,
@@ -252,6 +258,7 @@ window.vampireMap = {
 	},
 	imageFor: (type) => myTown.tileImage(type),
 	openCave: () => caveMenu.open(),
+	openWar: (id) => warMenu.open(id),
 	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
 	// are shown in the map window, where the player is looking.
 	build(buttonId, tileId, mapWindow){
@@ -457,6 +464,15 @@ function displayUpdate(){
 	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
 	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
 
+	for (const key of ["WatchTower", "GuardOutpost", "Fort"]){
+		const building = myTown.Buildings[key];
+		for (const kind of ["Wood", "Iron", "Bronze", "Gold"]){
+			const element = document.getElementById("building" + key + kind);
+			if (element) element.textContent = building.cost[kind.toLowerCase()].toLocaleString("en-US");
+		}
+		document.getElementById("building" + key + "FamiliarsRequired").textContent = building.workersRequired;
+	}
+
 	document.getElementById("buildingFarmFamiliarsRequired").innerHTML = myTown.Buildings.Farm.workersRequired;
 	document.getElementById("buildingMineFamiliarsRequired").innerHTML = myTown.Buildings.Mine.workersRequired;
 	document.getElementById("buildingLumberMillFamiliarsRequired").innerHTML = myTown.Buildings.LumberMill.workersRequired;
@@ -485,6 +501,7 @@ window.setInterval(function(){
 	Timer.countDownTenSec();
 	
 	displayUpdate();
+	showWarBanner();
 	
 	//Familiars
 
@@ -543,6 +560,7 @@ window.setInterval(function(){
 
 	//Town
 	myTown.updateTen(Inv, document, updateBox, Familiars);
+	war.updateTen();
 
 	for (const kind of STORAGE_KINDS) lastRoundChange[kind] = Inv.items[kind] - before[kind];
 	showTrends();
@@ -760,6 +778,10 @@ const saveFields = {
 	mineAmmount: field(myTown.Buildings.Mine, "ammount"),
 	farmAmmount: field(myTown.Buildings.Farm, "ammount"),
 	lumberMillAmmount: field(myTown.Buildings.LumberMill, "ammount"),
+	watchTowerAmmount: field(myTown.Buildings.WatchTower, "ammount"),
+	guardOutpostAmmount: field(myTown.Buildings.GuardOutpost, "ammount"),
+	fortAmmount: field(myTown.Buildings.Fort, "ammount"),
+	war: [() => war.toJSON(), (value) => war.load(value)],
 	mineGain: field(myTown.Buildings.Mine, "gain"),
 	farmGain: field(myTown.Buildings.Farm, "gain"),
 	lumberMillGain: field(myTown.Buildings.LumberMill, "gain"),
@@ -895,7 +917,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 9 ? type : 0;
+		tiles += Number.isInteger(type) && type > 0 && type <= 14 ? type.toString(36) : 0; // 10 to 14 are written as a to e
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
@@ -1026,6 +1048,7 @@ const underground = new Underground(document, {
 		displayUpdate();
 		save();
 		if (pendingLevel){ const level = pendingLevel; pendingLevel = 0; announceLevelUp(level); }
+		for (const [title, lines] of pendingReports.splice(0)) warMenu.showReport(title, lines);
 	},
 });
 window.vampireUnderground = underground; // for testing
@@ -1050,6 +1073,39 @@ function gainInfluence(amount){
 function levelUp(level){
 	if (underground.active) pendingLevel = level;
 	else announceLevelUp(level);
+}
+
+//THE WAR: raiding outposts, raids, defences (js/raids/)
+const pendingReports = [];
+const war = new War({
+	town: myTown,
+	inventory: Inv,
+	familiars: Familiars,
+	army: [
+		{ key: "mosquito", vampire: Mosquito }, { key: "vampireRat", vampire: VampireRat }, { key: "vampireBat", vampire: VampireBat },
+		{ key: "bloodHound", vampire: BloodHound }, { key: "vampireSlave", vampire: VampireSlave }, { key: "nightWalker", vampire: NightWalker },
+		{ key: "badabook", vampire: Badabook }, { key: "draugr", vampire: Draugr }, { key: "strigoi", vampire: Strigoi },
+		{ key: "vampireMaster", vampire: VampireMaster }, { key: "vampireElder", vampire: VampireElder },
+		{ key: "bloodDemon", vampire: BloodDemon }, { key: "bloodLeviathan", vampire: BloodLeviathan },
+	],
+	getLevel: () => House.level,
+	document,
+	say: (text) => updateBox.townUpdatesAdd(text, document),
+	report: (title, lines) => { if (underground.active) pendingReports.push([title, lines]); else warMenu.showReport(title, lines); },
+	alarm: () => musicHandler.playSpell(),
+	reward: (loot) => {
+		for (const kind of LOSS_KINDS) Inv.items[kind] += loot[kind];
+		gainInfluence(loot.xp);
+		displayUpdate();
+	},
+});
+const warMenu = new WarMenu(document, { war, town: myTown, inventory: Inv, familiars: Familiars, updateBox, onChange: () => { displayUpdate(); save(); } });
+window.vampireWar = war; // for testing
+const warBanner = document.getElementById("warBanner");
+function showWarBanner(){
+	const text = war.banner();
+	warBanner.hidden = !text;
+	if (text) warBanner.textContent = text;
 }
 
 //LEVELS

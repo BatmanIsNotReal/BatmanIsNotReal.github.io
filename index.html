@@ -159,6 +159,7 @@
 				</div>
 
 				<div class="flex-column house-art-container">
+					<p class="war-banner" id="warBanner" hidden role="status"></p>
 					<div class="map-scroll">
 						<div class="map-stage" id="mapStage"><table id="map"></table></div>
 					</div>
@@ -484,6 +485,34 @@
 				</div>
 			</div>
 
+			<h4 class="build-heading">Defences</h4>
+			<div class="button buy-building-button" id="buyWatchTower">Buy watch tower
+				<div class="hover">
+					<p>Warns you before a raid arrives, and shows the raiders' exact strength</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingWatchTowerWood"></span> wood, <span id="buildingWatchTowerIron"></span> iron</p>
+					<p>familiars required: <span id="buildingWatchTowerFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyGuardOutpost">Buy guard outpost
+				<div class="hover">
+					<p>Turns some raids back before they start and weakens raiders a little</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingGuardOutpostWood"></span> wood, <span id="buildingGuardOutpostIron"></span> iron, <span id="buildingGuardOutpostBronze"></span> bronze</p>
+					<p>familiars required: <span id="buildingGuardOutpostFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyFort">Buy fort
+				<div class="hover">
+					<p>A big garrison that also protects every building within 8 tiles</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingFortWood"></span> wood, <span id="buildingFortIron"></span> iron, <span id="buildingFortBronze"></span> bronze, <span id="buildingFortGold"></span> gold</p>
+					<p>familiars required: <span id="buildingFortFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
 			<div class="button buy-building-button" id="buyBloodTemple">Buy blood temple
 				<div class="hover">
 					<p>A place of worship to thy master</p>
@@ -586,6 +615,16 @@
 
 			<h4>Recent games</h4>
 			<ul class="dice-list dice-recent" id="diceRecent"></ul>
+		</div>
+	</div>
+
+	<!-- The war: defences, enemy outposts, buildings held by raiders, battle reports (js/raids/WarMenu.js) -->
+	<div id="warModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="warTitle">
+		<div class="modal-content cave-content">
+			<div id="warClose" class="close">&times;</div>
+			<h3 id="warTitle">War</h3>
+			<div id="warBody" class="war-body"></div>
+			<div id="warActions" class="cave-actions war-actions"></div>
 		</div>
 	</div>
 

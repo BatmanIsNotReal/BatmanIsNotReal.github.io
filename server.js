@@ -378,14 +378,14 @@ function cleanAvatar(value) {
 	return avatar;
 }
 
-// The map as two strings: one digit per tile for what is there (0-9) and one character
+// The map as two strings: one digit per tile for what is there (0-9 and a-e) and one character
 // for the building level (0-9, "a" = 10), row by row.
 function cleanMap(value) {
 	if (!value || typeof value !== "object") return null;
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-e]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }
