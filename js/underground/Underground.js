@@ -104,7 +104,7 @@ export default class Underground {
 		d.body.appendChild(overlay);
 		this.overlay = overlay;
 		this.canvas = overlay.querySelector(".ug-canvas");
-		this.ctx = this.canvas.getContext("2d");
+		this.ctx = this.canvas.getContext("2d", { alpha: false }); // opaque: cheaper to put on the screen
 		this.ui = {
 			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"), net: overlay.querySelector(".ug-net"), netDetail: overlay.querySelector(".ug-netdetail"),
 			feed: overlay.querySelector(".ug-feed"), hpFill: overlay.querySelector(".ug-hp-fill"),
@@ -154,7 +154,7 @@ export default class Underground {
 		this.dungeonId = dungeonId;
 		this.resetInput();
 		this.mouse = { x: 0, y: 0 };
-		this.clock = null; this.rtt = null; this.net = { shown: 0, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0 }; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
+		this.slow = false; this.calm = 0; this.clock = null; this.rtt = null; this.net = { shown: 0, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0 }; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
@@ -198,6 +198,8 @@ export default class Underground {
 		this.active = false;
 		clearInterval(this.sender);
 		clearInterval(this.pinger);
+		for (const t of [...(this.bgTiles || []), ...(this.glowTiles || [])]) t.img.close();
+		this.bgTiles = this.glowTiles = null;
 		cancelAnimationFrame(this.frame);
 		window.removeEventListener("resize", this.onResize);
 		try { this.conn?.close(); } catch { /* already gone */ }
@@ -283,10 +285,18 @@ export default class Underground {
 		this.net.last = Math.round(ms);
 	}
 
+	// Once a second: show the numbers (with ?net) and, if drawing is too slow, draw fewer pictures a second
+	// (a steady 30 looks better than a stuttering 20, and leaves the page time for the network).
 	showNetDetails(now) {
-		if (!this.options.netDetails || now - this.net.shown < 1000) return;
-		const n = this.net, secs = (now - n.shown) / 1000;
-		this.ui.netDetail.textContent = `snapshots ${Math.round(n.snaps / secs)}/s \u00b7 latest ping ${n.last ?? "-"} ms \u00b7 page stalls up to ${Math.round(n.wait)} ms \u00b7 draw ${(n.drawSum / Math.max(1, n.frames)).toFixed(1)} ms (max ${Math.round(n.drawMax)}) \u00b7 ${Math.round(n.frames / secs)} fps`;
+		if (now - this.net.shown < 1000) return;
+		const n = this.net, secs = (now - n.shown) / 1000, avg = n.drawSum / Math.max(1, n.frames);
+		if (n.shown) {
+			if (!this.slow && avg > 9) this.slow = true;
+			else if (this.slow && avg < 3.5) this.calm = (this.calm || 0) + 1;
+			if (this.slow && avg >= 3.5) this.calm = 0;
+			if (this.slow && this.calm >= 5) { this.slow = false; this.calm = 0; }
+		}
+		if (this.options.netDetails) this.ui.netDetail.textContent = `snapshots ${Math.round(n.snaps / secs)}/s \u00b7 latest ping ${n.last ?? "-"} ms \u00b7 page stalls up to ${Math.round(n.wait)} ms \u00b7 draw ${avg.toFixed(1)} ms (max ${Math.round(n.drawMax)}) \u00b7 ${Math.round(n.frames / secs)} fps${this.slow ? " \u00b7 30 fps mode" : ""}`;
 		this.net = { shown: now, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0, last: n.last };
 	}
 
@@ -407,7 +417,7 @@ export default class Underground {
 	draw(now) {
 		if (!this.active) return;
 		this.frame = requestAnimationFrame((t) => this.draw(t));
-		if (now - this.lastDraw < 14) return; // no more than about 60 pictures a second, even on a 144 Hz screen
+		if (now - this.lastDraw < (this.slow ? 30 : 14)) return; // about 60 pictures a second at most (30 when this computer struggles)
 		this.lastDraw = now;
 		const started = performance.now();
 		const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
@@ -430,11 +440,13 @@ export default class Underground {
 		const sx = Math.max(0, Math.floor(this.cam.x)), sy = Math.max(0, Math.floor(this.cam.y));
 		const sw = Math.min(ARENA.width - sx, Math.ceil(W + 1)), sh = Math.min(ARENA.height - sy, Math.ceil(H + 1));
 		if (sw > 0 && sh > 0) {
-			ctx.drawImage(this.bg, sx, sy, sw, sh, sx, sy, sw, sh);
+			if (this.bgTiles) this.drawTiles(ctx, this.bgTiles, sx, sy, sw, sh);
+			else ctx.drawImage(this.bg, sx, sy, sw, sh, sx, sy, sw, sh);
 			// the lava glows and fades (only drawn when some lava is on screen)
 			if (this.obstacles.some((o) => o.kind === "lava" && o.x + o.r > sx && o.x - o.r < sx + sw && o.y + o.r > sy && o.y - o.r < sy + sh)) {
 				ctx.globalAlpha = 0.22 + 0.2 * Math.sin(now / 520);
-				ctx.drawImage(this.glow, sx, sy, sw, sh, sx, sy, sw, sh);
+				if (this.glowTiles) this.drawTiles(ctx, this.glowTiles, sx, sy, sw, sh);
+				else if (!this.bgTiles) ctx.drawImage(this.glow, sx, sy, sw, sh, sx, sy, sw, sh);
 				ctx.globalAlpha = 1;
 			}
 		}
@@ -460,6 +472,32 @@ export default class Underground {
 		this.glow.width = ARENA.width;
 		this.glow.height = ARENA.height;
 		this.paintLandscape(this.bg.getContext("2d"), this.glow.getContext("2d"));
+		// Some browsers (Firefox especially) copy a big canvas to the screen slowly, over and over. Cut the
+		// pictures into tiles and turn them into bitmaps, which the browser keeps ready on the graphics card.
+		this.bgTiles = null; this.glowTiles = null;
+		const bg = this.bg;
+		if (typeof createImageBitmap === "function") {
+			this.makeTiles(this.bg, () => true).then((tiles) => { if (this.bg === bg && this.active) this.bgTiles = tiles; else tiles.forEach((t) => t.img.close()); }).catch(() => {});
+			const lava = this.obstacles.filter((o) => o.kind === "lava");
+			this.makeTiles(this.glow, (x, y, w, h) => lava.some((o) => o.x + o.r > x && o.x - o.r < x + w && o.y + o.r > y && o.y - o.r < y + h)).then((tiles) => { if (this.bg === bg && this.active) this.glowTiles = tiles; else tiles.forEach((t) => t.img.close()); }).catch(() => {});
+		}
+	}
+
+	makeTiles(canvas, wanted) {
+		const size = 512, jobs = [];
+		for (let y = 0; y < ARENA.height; y += size) {
+			for (let x = 0; x < ARENA.width; x += size) {
+				const w = Math.min(size, ARENA.width - x), h = Math.min(size, ARENA.height - y);
+				if (wanted(x, y, w, h)) jobs.push(createImageBitmap(canvas, x, y, w, h).then((img) => ({ x, y, w, h, img })));
+			}
+		}
+		return Promise.all(jobs);
+	}
+
+	drawTiles(ctx, tiles, sx, sy, sw, sh) {
+		for (const t of tiles) {
+			if (t.x + t.w > sx && t.x < sx + sw && t.y + t.h > sy && t.y < sy + sh) ctx.drawImage(t.img, t.x, t.y);
+		}
 	}
 
 	// Draws the whole landscape once: dark sand, lava lakes, burned trees and black boulders. `glow` gets
