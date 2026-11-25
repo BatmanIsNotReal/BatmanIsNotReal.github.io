@@ -45,3 +45,4 @@ body.ug-active > *:not(.ug-overlay) { visibility: hidden; }
 .war-body p { margin: 0.4rem 0; text-align: left; }
 .war-actions { margin-top: 0.8rem; }
 .build-heading { margin: 0.8rem 0 0.3rem; color: var(--gold); }
+.ug-netdetail { position: absolute; top: 2.4rem; left: 0.8rem; font-size: 0.95rem; color: var(--bone-dim); text-shadow: 0 0 4px #000, 0 0 4px #000; pointer-events: none; }

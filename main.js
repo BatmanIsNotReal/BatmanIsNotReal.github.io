@@ -1014,6 +1014,7 @@ const LOSS_KINDS = ["wood", "iron", "bronze", "gold"];
 const underground = new Underground(document, {
 	url: UNDERGROUND_WS_URL,
 	solo: soloUnderground,
+	netDetails: new URLSearchParams(location.search).has("net"), // ?net: shows what is slow, under the ping
 	helmetChance: new URLSearchParams(location.search).has("helmets") ? 1 : undefined,
 	getPlayer: () => ({ id: playerSync.id, name: Account.vampireName, level: House.level, avatar: Profile.avatar || defaultAvatar(Account.vampireName), helmet: Profile.helmet, attributes: cleanAttributes({ ...Attributes }) }),
 	// The server decides who may enter from what it knows: make sure that is up to date

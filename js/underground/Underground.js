@@ -93,6 +93,7 @@ export default class Underground {
 		overlay.innerHTML = `
 			<canvas class="ug-canvas"></canvas>
 			<div class="ug-top"><span class="ug-title"></span><span class="ug-count"></span><span class="ug-net"></span></div>
+			<div class="ug-netdetail"></div>
 			<button type="button" class="button ug-leave">Leave (Esc)</button>
 			<div class="ug-feed" aria-live="polite"></div>
 			<div class="ug-bottom">
@@ -105,7 +106,7 @@ export default class Underground {
 		this.canvas = overlay.querySelector(".ug-canvas");
 		this.ctx = this.canvas.getContext("2d");
 		this.ui = {
-			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"), net: overlay.querySelector(".ug-net"),
+			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"), net: overlay.querySelector(".ug-net"), netDetail: overlay.querySelector(".ug-netdetail"),
 			feed: overlay.querySelector(".ug-feed"), hpFill: overlay.querySelector(".ug-hp-fill"),
 			hpText: overlay.querySelector(".ug-hp-text"), message: overlay.querySelector(".ug-message"),
 		};
@@ -153,7 +154,7 @@ export default class Underground {
 		this.dungeonId = dungeonId;
 		this.resetInput();
 		this.mouse = { x: 0, y: 0 };
-		this.clock = null; this.rtt = null; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
+		this.clock = null; this.rtt = null; this.net = { shown: 0, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0 }; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
@@ -234,7 +235,7 @@ export default class Underground {
 		if (!this.active || !m) return;
 		if (m.t === "hello") { this.me = m.you; this.pvp = !!m.pvp; this.say(""); }
 		else if (m.t === "roster") { this.roster = m.players || {}; this.ui.count.textContent = Object.keys(this.roster).length + " here"; }
-		else if (m.t === "s") this.snapshot(m);
+		else if (m.t === "s") { this.net.snaps++; this.snapshot(m); }
 		else if (m.t === "pong") this.showPing(performance.now() - m.c);
 		else if (m.t === "reward") {
 			const text = this.options.onReward?.(m);
@@ -254,8 +255,7 @@ export default class Underground {
 	// When was this picture made? Snapshots are numbered (m.n), and the server makes one every 50 ms, so the
 	// browser can lay them out evenly on a timeline instead of using the moment each one happened to arrive
 	// (which wobbles with the network). The timeline sits at the fastest arrival seen lately.
-	snapshotTime(m) {
-		const arrived = performance.now();
+	snapshotTime(m, arrived = performance.now()) {
 		if (typeof m.n !== "number") return arrived;
 		const c = this.clock;
 		if (!c || m.n <= c.last || m.n - c.last > 400) {          // first picture, or the server restarted
@@ -272,11 +272,22 @@ export default class Underground {
 		return m.n * (1000 / TICK_RATE) + c.off;
 	}
 
+	// The ping shown is the best of the last few round trips: a busy page makes single ones look slower than
+	// the network really is. With ?net in the address a second line shows what else is slow.
 	showPing(ms) {
-		this.rtt = this.rtt === null ? ms : this.rtt * 0.7 + ms * 0.3;
+		this.rtts = [...(this.rtts || []), ms].slice(-6);
+		this.rtt = Math.min(...this.rtts);
 		const v = Math.round(this.rtt);
 		this.ui.net.textContent = `ping ${v} ms`;
 		this.ui.net.className = "ug-net " + (v < 70 ? "good" : v < 140 ? "ok" : "bad");
+		this.net.last = Math.round(ms);
+	}
+
+	showNetDetails(now) {
+		if (!this.options.netDetails || now - this.net.shown < 1000) return;
+		const n = this.net, secs = (now - n.shown) / 1000;
+		this.ui.netDetail.textContent = `snapshots ${Math.round(n.snaps / secs)}/s \u00b7 latest ping ${n.last ?? "-"} ms \u00b7 page stalls up to ${Math.round(n.wait)} ms \u00b7 draw ${(n.drawSum / Math.max(1, n.frames)).toFixed(1)} ms (max ${Math.round(n.drawMax)}) \u00b7 ${Math.round(n.frames / secs)} fps`;
+		this.net = { shown: now, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0, last: n.last };
 	}
 
 	snapshot(m) {
@@ -322,6 +333,9 @@ export default class Underground {
 
 	// ---- what the player does ----
 	sendInput() {
+		const t = performance.now();
+		if (this.lastSend) this.net.wait = Math.max(this.net.wait, t - this.lastSend - 50); // a timer that comes late means the page was busy
+		this.lastSend = t;
 		if (!this.conn || !this.snap) return;
 		const k = this.keys;
 		const mx = (k.right ? 1 : 0) - (k.left ? 1 : 0);
@@ -395,6 +409,7 @@ export default class Underground {
 		this.frame = requestAnimationFrame((t) => this.draw(t));
 		if (now - this.lastDraw < 14) return; // no more than about 60 pictures a second, even on a 144 Hz screen
 		this.lastDraw = now;
+		const started = performance.now();
 		const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
 		ctx.imageSmoothingEnabled = false;
 		ctx.fillStyle = "#050305";
@@ -416,9 +431,12 @@ export default class Underground {
 		const sw = Math.min(ARENA.width - sx, Math.ceil(W + 1)), sh = Math.min(ARENA.height - sy, Math.ceil(H + 1));
 		if (sw > 0 && sh > 0) {
 			ctx.drawImage(this.bg, sx, sy, sw, sh, sx, sy, sw, sh);
-			ctx.globalAlpha = 0.22 + 0.2 * Math.sin(now / 520); // the lava glows and fades
-			ctx.drawImage(this.glow, sx, sy, sw, sh, sx, sy, sw, sh);
-			ctx.globalAlpha = 1;
+			// the lava glows and fades (only drawn when some lava is on screen)
+			if (this.obstacles.some((o) => o.kind === "lava" && o.x + o.r > sx && o.x - o.r < sx + sw && o.y + o.r > sy && o.y - o.r < sy + sh)) {
+				ctx.globalAlpha = 0.22 + 0.2 * Math.sin(now / 520);
+				ctx.drawImage(this.glow, sx, sy, sw, sh, sx, sy, sw, sh);
+				ctx.globalAlpha = 1;
+			}
 		}
 
 		const things = [];
@@ -429,6 +447,9 @@ export default class Underground {
 		this.drawShots(ctx, now);
 		this.drawFx(ctx, now);
 		ctx.restore();
+		const took = performance.now() - started;
+		this.net.frames++; this.net.drawSum += took; this.net.drawMax = Math.max(this.net.drawMax, took);
+		this.showNetDetails(now);
 	}
 
 	buildBackground() {
