@@ -11,14 +11,16 @@ import { monsterSprite } from "./sprites.js";
 // even when the network delivers them unevenly. Your own character is not delayed (see predicted movement).
 const INTERP_MS = 100;
 
+// One look per dungeon: dark sand, lava, burned wood and black stone, in different colours.
 const THEMES = {
-	1: { floor: "#1a1510", tile: "#211b14", wall: "#4a4036", glow: "#6a5a44" },
-	2: { floor: "#15151a", tile: "#1c1c23", wall: "#53535f", glow: "#8c8ca0" },
-	3: { floor: "#1d0e12", tile: "#26121a", wall: "#5c2a34", glow: "#8f3a4a" },
-	4: { floor: "#1f1008", tile: "#2a160a", wall: "#6a3216", glow: "#d8641c" },
-	5: { floor: "#0e0a14", tile: "#150f1f", wall: "#3a2a58", glow: "#7a4ad0" },
-	6: { floor: "#160b0b", tile: "#1f0f0f", wall: "#5a1a1a", glow: "#c41e35" },
+	1: { sand: ["#3a2f27", "#41352b", "#483a2f"], dark: "#1a120d", lava: ["#d9481a", "#f07a22", "#ffc24a"], crust: "#3a1409", wood: ["#17110e", "#2a1f19"], rock: ["#2b2624", "#3d3633"], ember: "#ff7a2a", glow: "#c4561c" },
+	2: { sand: ["#34322d", "#3b3933", "#423f38"], dark: "#15130f", lava: ["#c9421a", "#e87020", "#ffb844"], crust: "#2e1409", wood: ["#14110f", "#26211d"], rock: ["#2a2827", "#3c3a38"], ember: "#ff7a2a", glow: "#a8501c" },
+	3: { sand: ["#3c2c29", "#43312d", "#4b3732"], dark: "#1c110f", lava: ["#c2281c", "#e8501e", "#ff9a40"], crust: "#3a0e0a", wood: ["#190f0d", "#2d1b17"], rock: ["#2d2222", "#3f302e"], ember: "#ff5a2a", glow: "#b8321c" },
+	4: { sand: ["#382a22", "#3f2f28", "#46352e"], dark: "#170f0a", lava: ["#e84a12", "#ff8a1c", "#ffe066"], crust: "#3c1306", wood: ["#150e0b", "#281b15"], rock: ["#251f1c", "#38302c"], ember: "#ffa030", glow: "#e0661c" },
+	5: { sand: ["#302a32", "#372f3a", "#3e3542"], dark: "#120e15", lava: ["#8a2ad0", "#b04af0", "#e49cff"], crust: "#220f33", wood: ["#120e14", "#241c28"], rock: ["#221e28", "#342d3b"], ember: "#c870ff", glow: "#8a3ad0" },
+	6: { sand: ["#382525", "#3f2929", "#462e2e"], dark: "#170c0c", lava: ["#b01026", "#dc2038", "#ff6a6a"], crust: "#340a10", wood: ["#150b0b", "#281515"], rock: ["#2a1d1d", "#3c2a2a"], ember: "#ff4a4a", glow: "#c41e35" },
 };
+
 
 // ---------- Connections: the same small interface for the server and for solo play ----------
 class RemoteConnection {
@@ -132,7 +134,7 @@ export default class Underground {
 
 	moveMouse(e) {
 		const rect = this.canvas.getBoundingClientRect();
-		this.mouse = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+		this.mouse = { x: (e.clientX - rect.left) * (this.canvas.width / rect.width), y: (e.clientY - rect.top) * (this.canvas.height / rect.height) };
 	}
 
 	key(e, down) {
@@ -156,6 +158,8 @@ export default class Underground {
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
 		this.theme = THEMES[dungeonId] || THEMES[1];
+		this.lastDraw = 0;
+		this.buildBackground();
 		const dungeon = dungeonById(dungeonId);
 		this.kinds = monstersOf(dungeonId);
 		this.ui.title.textContent = dungeon.name;
@@ -212,9 +216,13 @@ export default class Underground {
 		clearInterval(this.sender);
 	}
 
+	// Big screens are drawn smaller and stretched (pixel art does not mind): far fewer pixels to paint
 	resize() {
-		this.canvas.width = this.overlay.clientWidth || window.innerWidth;
-		this.canvas.height = this.overlay.clientHeight || window.innerHeight;
+		const width = this.overlay.clientWidth || window.innerWidth;
+		const height = this.overlay.clientHeight || window.innerHeight;
+		const k = Math.max(1, width / 1280, height / 720);
+		this.canvas.width = Math.round(width / k);
+		this.canvas.height = Math.round(height / k);
 		this.ctx.imageSmoothingEnabled = false;
 	}
 
@@ -353,6 +361,8 @@ export default class Underground {
 	draw(now) {
 		if (!this.active) return;
 		this.frame = requestAnimationFrame((t) => this.draw(t));
+		if (now - this.lastDraw < 14) return; // no more than about 60 pictures a second, even on a 144 Hz screen
+		this.lastDraw = now;
 		const ctx = this.ctx, W = this.canvas.width, H = this.canvas.height;
 		ctx.imageSmoothingEnabled = false;
 		ctx.fillStyle = "#050305";
@@ -369,8 +379,15 @@ export default class Underground {
 		this.v = view;
 		ctx.save();
 		ctx.translate(-Math.round(this.cam.x), -Math.round(this.cam.y));
-		this.drawFloor(ctx, W, H);
-		this.drawObstacles(ctx);
+		// The floor and walls never change: they are drawn once (buildBackground) and copied
+		const sx = Math.max(0, Math.floor(this.cam.x)), sy = Math.max(0, Math.floor(this.cam.y));
+		const sw = Math.min(ARENA.width - sx, Math.ceil(W + 1)), sh = Math.min(ARENA.height - sy, Math.ceil(H + 1));
+		if (sw > 0 && sh > 0) {
+			ctx.drawImage(this.bg, sx, sy, sw, sh, sx, sy, sw, sh);
+			ctx.globalAlpha = 0.22 + 0.2 * Math.sin(now / 520); // the lava glows and fades
+			ctx.drawImage(this.glow, sx, sy, sw, sh, sx, sy, sw, sh);
+			ctx.globalAlpha = 1;
+		}
 
 		const things = [];
 		for (const p of view.players.values()) things.push({ y: p.y, kind: "p", e: p });
@@ -382,43 +399,135 @@ export default class Underground {
 		ctx.restore();
 	}
 
-	drawFloor(ctx, W, H) {
-		const T = 80;
-		const x0 = Math.max(0, Math.floor(this.cam.x / T)), x1 = Math.min(Math.ceil(ARENA.width / T), Math.ceil((this.cam.x + W) / T));
-		const y0 = Math.max(0, Math.floor(this.cam.y / T)), y1 = Math.min(Math.ceil(ARENA.height / T), Math.ceil((this.cam.y + H) / T));
-		ctx.fillStyle = this.theme.floor;
-		ctx.fillRect(0, 0, ARENA.width, ARENA.height);
-		ctx.fillStyle = this.theme.tile;
-		for (let y = y0; y < y1; y++) {
-			for (let x = x0; x < x1; x++) {
-				const h = Math.sin(x * 12.9898 + y * 78.233 + this.dungeonId) * 43758.5453;
-				const v = h - Math.floor(h);
-				if (v < 0.35) ctx.fillRect(x * T + 4, y * T + 4, T - 8, T - 8);
-				else if (v > 0.93) { ctx.fillStyle = this.theme.wall; ctx.fillRect(x * T + 30, y * T + 30, 6, 4); ctx.fillStyle = this.theme.tile; }
+	buildBackground() {
+		this.bg = this.document.createElement("canvas");
+		this.bg.width = ARENA.width;
+		this.bg.height = ARENA.height;
+		this.glow = this.document.createElement("canvas");
+		this.glow.width = ARENA.width;
+		this.glow.height = ARENA.height;
+		this.paintLandscape(this.bg.getContext("2d"), this.glow.getContext("2d"));
+	}
+
+	// Draws the whole landscape once: dark sand, lava lakes, burned trees and black boulders. `glow` gets
+	// the bright parts of the lava on their own, so they can pulse without drawing everything again.
+	paintLandscape(ctx, glow) {
+		const th = this.theme, C = 16; // size of one ground block in pixels
+		const cols = Math.ceil(ARENA.width / C), rows = Math.ceil(ARENA.height / C);
+		const hash = (x, y, k = 0) => { const h = Math.sin(x * 12.9898 + y * 78.233 + k * 37.719 + this.dungeonId * 5.1) * 43758.5453; return h - Math.floor(h); };
+
+		// which blocks are lava (rough edges: the edge of each lake wobbles a little)
+		const lava = new Uint8Array(cols * rows);
+		for (const o of this.obstacles) {
+			if (o.kind !== "lava") continue;
+			for (let y = Math.max(0, Math.floor((o.y - o.r - 8) / C)); y <= Math.min(rows - 1, Math.floor((o.y + o.r + 8) / C)); y++) {
+				for (let x = Math.max(0, Math.floor((o.x - o.r - 8) / C)); x <= Math.min(cols - 1, Math.floor((o.x + o.r + 8) / C)); x++) {
+					const d = Math.hypot(x * C + C / 2 - o.x, y * C + C / 2 - o.y);
+					if (d < o.r + (hash(x, y, 1) - 0.4) * 9) lava[y * cols + x] = 1;
+				}
 			}
 		}
-		ctx.strokeStyle = this.theme.glow;
+		const isLava = (x, y) => x >= 0 && y >= 0 && x < cols && y < rows && lava[y * cols + x] === 1;
+		const nearLava = (x, y) => { for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (isLava(x + i, y + j)) return Math.max(Math.abs(i), Math.abs(j)); return 0; };
+
+		// ground
+		ctx.fillStyle = th.dark;
+		ctx.fillRect(0, 0, ARENA.width, ARENA.height);
+		for (let y = 0; y < rows; y++) {
+			for (let x = 0; x < cols; x++) {
+				if (isLava(x, y)) continue;
+				const v = hash(x, y);
+				ctx.fillStyle = th.sand[v < 0.62 ? 0 : v < 0.92 ? 1 : 2];
+				ctx.fillRect(x * C, y * C, C, C);
+				const near = nearLava(x, y);
+				if (near === 1) { ctx.fillStyle = "rgba(0,0,0,0.38)"; ctx.fillRect(x * C, y * C, C, C); }
+				else if (near === 2) { ctx.fillStyle = "rgba(0,0,0,0.18)"; ctx.fillRect(x * C, y * C, C, C); }
+				const w = hash(x, y, 2);
+				if (w > 0.985) { ctx.fillStyle = th.dark; ctx.fillRect(x * C + 3, y * C + 6, 9, 3); ctx.fillRect(x * C + 9, y * C + 9, 3, 5); } // a crack
+				else if (w < 0.014) { ctx.fillStyle = th.sand[2]; ctx.fillRect(x * C + 4, y * C + 5, 5, 4); ctx.fillStyle = th.dark; ctx.fillRect(x * C + 4, y * C + 9, 5, 2); } // a pebble
+				else if (w > 0.93 && w < 0.94) { ctx.fillStyle = th.ember; ctx.globalAlpha = 0.55; ctx.fillRect(x * C + 6, y * C + 6, 3, 3); ctx.globalAlpha = 1; } // an ember
+			}
+		}
+
+		// warm light on the sand around the lava
+		for (const o of this.obstacles) {
+			if (o.kind !== "lava") continue;
+			const g = ctx.createRadialGradient(o.x, o.y, o.r * 0.7, o.x, o.y, o.r + 70);
+			g.addColorStop(0, th.glow + "55"); g.addColorStop(1, th.glow + "00");
+			ctx.fillStyle = g;
+			ctx.fillRect(o.x - o.r - 70, o.y - o.r - 70, (o.r + 70) * 2, (o.r + 70) * 2);
+		}
+
+		// lava
+		for (let y = 0; y < rows; y++) {
+			for (let x = 0; x < cols; x++) {
+				if (!isLava(x, y)) continue;
+				const edge = !isLava(x - 1, y) || !isLava(x + 1, y) || !isLava(x, y - 1) || !isLava(x, y + 1);
+				const v = hash(x, y, 3);
+				ctx.fillStyle = th.lava[v < 0.55 ? 0 : 1]; ctx.fillRect(x * C, y * C, C, C);
+				if (!edge) {
+					if (v > 0.8) { ctx.fillStyle = th.lava[2]; ctx.fillRect(x * C + 3, y * C + 5, 8, 4); }
+					else if (v < 0.12) { ctx.fillStyle = th.crust; ctx.fillRect(x * C + 4, y * C + 4, 8, 6); }
+				} else {                                  // a dark crust along the open sides only
+					ctx.fillStyle = th.crust;
+					if (!isLava(x, y - 1)) ctx.fillRect(x * C, y * C, C, 5);
+					if (!isLava(x, y + 1)) ctx.fillRect(x * C, y * C + C - 5, C, 5);
+					if (!isLava(x - 1, y)) ctx.fillRect(x * C, y * C, 5, C);
+					if (!isLava(x + 1, y)) ctx.fillRect(x * C + C - 5, y * C, 5, C);
+				}
+				if (!edge && v > 0.45 && v < 0.75) { glow.fillStyle = th.lava[2]; glow.fillRect(x * C + 2, y * C + 2, C - 4, C - 4); }
+			}
+		}
+
+		// black boulders
+		for (const o of this.obstacles) {
+			if (o.kind !== "rock") continue;
+			ctx.fillStyle = "rgba(0,0,0,0.4)";
+			ctx.beginPath(); ctx.ellipse(o.x + 6, o.y + o.r * 0.7, o.r, o.r * 0.5, 0, 0, 6.3); ctx.fill();
+			ctx.fillStyle = th.rock[0];
+			ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.3); ctx.fill();
+			ctx.fillStyle = th.rock[1];
+			ctx.beginPath(); ctx.arc(o.x - o.r * 0.22, o.y - o.r * 0.25, o.r * 0.62, 0, 6.3); ctx.fill();
+			ctx.fillStyle = th.dark;
+			for (let i = 0; i < 3; i++) { const a = hash(o.x, o.y, 10 + i) * 6.3, d = o.r * (0.2 + hash(o.x, o.y, 20 + i) * 0.5); ctx.fillRect(Math.round(o.x + Math.cos(a) * d), Math.round(o.y + Math.sin(a) * d), 10, 4); }
+			ctx.fillStyle = th.ember; ctx.globalAlpha = 0.6;
+			ctx.fillRect(Math.round(o.x + o.r * 0.2), Math.round(o.y + o.r * 0.1), 4, 3);
+			ctx.globalAlpha = 1;
+			ctx.strokeStyle = "#0a0606"; ctx.lineWidth = 3;
+			ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.3); ctx.stroke();
+		}
+
+		// burned trees, from the back of the map to the front
+		for (const o of this.obstacles.filter((e) => e.kind === "tree").sort((a, b) => a.y - b.y)) this.paintTree(ctx, o, hash);
+
+		// the edge of the cave and the way you came in (not in the Abyss)
+		ctx.strokeStyle = th.glow;
 		ctx.lineWidth = 6;
 		ctx.strokeRect(0, 0, ARENA.width, ARENA.height);
-		// the way you came in (not in the Abyss)
 		if (!this.pvp) {
 			ctx.fillStyle = "rgba(255,255,255,0.06)";
 			ctx.beginPath(); ctx.arc(160, ARENA.height / 2, 90, 0, 6.3); ctx.fill();
 		}
 	}
 
-	drawObstacles(ctx) {
-		for (const o of this.obstacles) {
-			if (o.x + o.r < this.cam.x || o.x - o.r > this.cam.x + this.canvas.width || o.y + o.r < this.cam.y || o.y - o.r > this.cam.y + this.canvas.height) continue;
-			ctx.fillStyle = "rgba(0,0,0,0.35)";
-			ctx.beginPath(); ctx.ellipse(o.x + 6, o.y + o.r * 0.7, o.r, o.r * 0.55, 0, 0, 6.3); ctx.fill();
-			ctx.fillStyle = this.theme.wall;
-			ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.3); ctx.fill();
-			ctx.fillStyle = "rgba(255,255,255,0.09)";
-			ctx.beginPath(); ctx.arc(o.x - o.r * 0.25, o.y - o.r * 0.25, o.r * 0.6, 0, 6.3); ctx.fill();
-			ctx.strokeStyle = "#0a0608"; ctx.lineWidth = 3;
-			ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, 6.3); ctx.stroke();
+	paintTree(ctx, o, hash) {
+		const th = this.theme, u = 5;                       // one "pixel" of the tree is 5x5
+		const h = 11 + Math.floor(hash(o.x, o.y, 5) * 6);    // trunk height in pixels
+		const base = o.y + o.r * 0.6, x = Math.round(o.x / u) * u, top = Math.round((base - h * u) / u) * u;
+		const rect = (px, py, w, hh, color) => { ctx.fillStyle = color; ctx.fillRect(x + px * u, top + py * u, w * u, hh * u); };
+		ctx.fillStyle = "rgba(0,0,0,0.4)";
+		ctx.beginPath(); ctx.ellipse(o.x + 4, base, 16, 6, 0, 0, 6.3); ctx.fill();
+		rect(-1, 0, 4, h, th.wood[0]);                       // trunk
+		rect(0, 0, 1, h, th.wood[1]);                        // lighter strip on the trunk
+		rect(-2, h - 2, 6, 2, th.wood[0]);                   // roots
+		const lean = hash(o.x, o.y, 6) > 0.5 ? 1 : -1;
+		const branches = 4 + Math.floor(hash(o.x, o.y, 7) * 3);
+		for (let i = 0; i < branches; i++) {                 // bare, broken branches
+			const by = 1 + Math.floor(hash(o.x, o.y, 30 + i) * (h - 4)), side = i % 2 ? lean : -lean, len = 3 + Math.floor(hash(o.x, o.y, 40 + i) * 4);
+			for (let k = 1; k <= len; k++) rect(side > 0 ? 2 + k : -k, by - Math.floor(k / 2), 1, 2 - (k > 3 ? 1 : 0), th.wood[k % 2]);
 		}
+		rect(-1, -1, 4, 1, th.wood[0]);                      // snapped top
+		if (hash(o.x, o.y, 8) > 0.45) { ctx.globalAlpha = 0.8; rect(0, 1 + Math.floor(hash(o.x, o.y, 9) * (h - 3)), 1, 1, th.ember); ctx.globalAlpha = 1; } // an ember still burning
 	}
 
 	drawBar(ctx, x, y, w, pct, color) {

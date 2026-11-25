@@ -43,20 +43,62 @@ export function walk(obstacles, e, mx, my, dt) {
 	slide(obstacles, e, mx * PLAYER_SPEED * dt, my * PLAYER_SPEED * dt, PLAYER_RADIUS);
 }
 
-// The walls of a level are the same every time (seeded by the level number), so the browser can draw
-// them without the server sending them.
+// The landscape of a level is the same every time (seeded by the level number), so the browser can draw
+// it without the server sending it. Three kinds of obstacle, all circles:
+//   "lava"  - lakes of lava, made of a few overlapping circles. Nobody can cross them, but fire flies over.
+//   "tree"  - burned trees in groves, a small circle around the trunk.
+//   "rock"  - boulders of black stone (currently not placed).
 export function obstaclesFor(dungeonId) {
 	const rng = seeded(1000 + dungeonId * 77);
+	const pvp = dungeonId === 6;
 	const out = [];
-	const keepClear = [[220, ARENA.height / 2, 260], [ARENA.width / 2, ARENA.height / 2, dungeonId === 6 ? 180 : 0]];
-	let guard = 0;
-	while (out.length < (dungeonId === 6 ? 26 : 34) && guard++ < 1000) {
-		const r = 28 + rng() * 46;
-		const x = 90 + rng() * (ARENA.width - 180);
-		const y = 90 + rng() * (ARENA.height - 180);
-		if (keepClear.some(([cx, cy, cr]) => cr && dist(x, y, cx, cy) < cr + r)) continue;
-		if (out.some((o) => dist(x, y, o.x, o.y) < o.r + r + 70)) continue;
-		out.push({ x: Math.round(x), y: Math.round(y), r: Math.round(r) });
+	const keepClear = [[220, ARENA.height / 2, 260], [ARENA.width / 2, ARENA.height / 2, pvp ? 180 : 0]];
+	const inside = (x, y, r, margin) => x > margin + r && y > margin + r && x < ARENA.width - margin - r && y < ARENA.height - margin - r;
+	const clear = (x, y, r) => !keepClear.some(([cx, cy, cr]) => cr && dist(x, y, cx, cy) < cr + r);
+	const free = (x, y, r, gap, kinds) => !out.some((o) => (!kinds || kinds.includes(o.kind)) && dist(x, y, o.x, o.y) < o.r + r + gap);
+	const round = (o) => ({ x: Math.round(o.x), y: Math.round(o.y), r: Math.round(o.r), kind: o.kind });
+
+	// lava lakes
+	const lakes = dungeonId === 4 ? 6 : pvp ? 3 : 4;
+	for (let n = 0, guard = 0; n < lakes && guard++ < 200;) {
+		const cx = 150 + rng() * (ARENA.width - 300), cy = 150 + rng() * (ARENA.height - 300);
+		const spread = 90 + rng() * 80, pieces = [];
+		const count = 7 + Math.floor(rng() * 4);
+		for (let i = 0; i < count; i++) {
+			const angle = rng() * Math.PI * 2, d = i === 0 ? 0 : rng() * spread;
+			pieces.push({ x: cx + Math.cos(angle) * d, y: cy + Math.sin(angle) * d, r: 44 + rng() * 30, kind: "lava" });
+		}
+		if (pieces.every((p) => inside(p.x, p.y, p.r, 60) && clear(p.x, p.y, p.r + 30) && free(p.x, p.y, p.r, 90))) {
+			for (const p of pieces) out.push(round(p));
+			n++;
+		}
+	}
+
+	// groves of burned trees
+	const groves = pvp ? 5 : 8;
+	for (let n = 0, guard = 0; n < groves && guard++ < 200;) {
+		const cx = 120 + rng() * (ARENA.width - 240), cy = 120 + rng() * (ARENA.height - 240);
+		if (!clear(cx, cy, 150) || !free(cx, cy, 60, 60)) continue;
+		const want = 5 + Math.floor(rng() * 5);
+		for (let i = 0, tries = 0; i < want && tries++ < 60;) {
+			const angle = rng() * Math.PI * 2, d = rng() * 190;
+			const t = { x: cx + Math.cos(angle) * d, y: cy + Math.sin(angle) * d, r: 17 + rng() * 7, kind: "tree" };
+			if (!inside(t.x, t.y, t.r, 60) || !clear(t.x, t.y, t.r + 20)) continue;
+			if (!free(t.x, t.y, t.r, 48, ["tree"]) || !free(t.x, t.y, t.r, 80, ["lava", "rock"])) continue;
+			out.push(round(t));
+			i++;
+		}
+		n++;
+	}
+
+	// boulders (none for now; the drawing code still knows them)
+	const rocks = 0;
+	for (let n = 0, guard = 0; n < rocks && guard++ < 300;) {
+		const r = 28 + rng() * 28;
+		const x = 90 + rng() * (ARENA.width - 180), y = 90 + rng() * (ARENA.height - 180);
+		if (!clear(x, y, r + 20) || !free(x, y, r, 80)) continue;
+		out.push(round({ x, y, r, kind: "rock" }));
+		n++;
 	}
 	return out;
 }
@@ -96,8 +138,9 @@ export class World {
 		return { x: 130 + this.rng() * 70, y: ARENA.height / 2 + (this.rng() - 0.5) * 160 };
 	}
 
-	blocked(x, y, r) {
-		return this.obstacles.some((o) => dist(x, y, o.x, o.y) < o.r + r);
+	// forShot: fire flies over lava
+	blocked(x, y, r, forShot = false) {
+		return this.obstacles.some((o) => !(forShot && o.kind === "lava") && dist(x, y, o.x, o.y) < o.r + r);
 	}
 
 	addPlayer(id, info) {
@@ -205,7 +248,7 @@ export class World {
 			s.life -= dt;
 			s.x += s.vx * dt;
 			s.y += s.vy * dt;
-			if (s.x < 0 || s.y < 0 || s.x > ARENA.width || s.y > ARENA.height || this.blocked(s.x, s.y, FIRE.radius * 0.5)) {
+			if (s.x < 0 || s.y < 0 || s.x > ARENA.width || s.y > ARENA.height || this.blocked(s.x, s.y, FIRE.radius * 0.5, true)) {
 				s.life = 0;
 				this.fx.push({ k: "puff", x: s.x, y: s.y });
 				continue;
