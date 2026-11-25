@@ -1015,6 +1015,7 @@ const underground = new Underground(document, {
 	url: UNDERGROUND_WS_URL,
 	solo: soloUnderground,
 	netDetails: new URLSearchParams(location.search).has("net"), // ?net: shows what is slow, under the ping
+	chat: { subscribe: (fn) => chat ? chat.subscribe(fn) : () => {}, recent: () => (chat ? chat.recentMessages.slice(-6) : []), send: (text) => (chat ? chat.post(text) : Promise.resolve({ ok: false, error: "The chat is not available." })) },
 	helmetChance: new URLSearchParams(location.search).has("helmets") ? 1 : undefined,
 	getPlayer: () => ({ id: playerSync.id, name: Account.vampireName, level: House.level, avatar: Profile.avatar || defaultAvatar(Account.vampireName), helmet: Profile.helmet, attributes: cleanAttributes({ ...Attributes }) }),
 	// The server decides who may enter from what it knows: make sure that is up to date

@@ -46,3 +46,14 @@ body.ug-active > *:not(.ug-overlay) { visibility: hidden; }
 .war-actions { margin-top: 0.8rem; }
 .build-heading { margin: 0.8rem 0 0.3rem; color: var(--gold); }
 .ug-netdetail { position: absolute; top: 2.4rem; left: 0.8rem; font-size: 0.95rem; color: var(--bone-dim); text-shadow: 0 0 4px #000, 0 0 4px #000; pointer-events: none; }
+
+/* Chat in the underground: the same chat as on the map */
+.ug-chat { position: absolute; right: 0.8rem; bottom: 0.8rem; width: clamp(12rem, calc(50vw - 13rem), 22rem); display: flex; flex-direction: column; gap: 0.25rem; }
+.ug-chat-log { display: flex; flex-direction: column; gap: 0.1rem; max-height: 11rem; overflow: hidden; pointer-events: none; text-shadow: 0 0 3px #000, 0 0 3px #000; font-size: 1.1rem; }
+.ug-chat-line { background: rgba(10, 6, 8, 0.6); padding: 0.1rem 0.4rem; word-break: break-word; transition: opacity 1.5s; }
+.ug-chat-line b { color: var(--gold); font-weight: normal; }
+.ug-chat-line.bad { color: #ff8a8a; }
+.ug-chat-line.old { opacity: 0.35; }
+.ug-chat-log.open .ug-chat-line.old { opacity: 1; }
+.ug-chat-input { width: 100%; padding: 0.35rem 0.5rem; font: inherit; font-size: 1.15rem; color: var(--bone); background: rgba(10, 6, 8, 0.92); border: 2px solid var(--gold); outline: none; user-select: text; -webkit-user-select: text; }
+.ug-chat-input[hidden] { display: none; }

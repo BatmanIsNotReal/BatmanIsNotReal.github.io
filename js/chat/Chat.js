@@ -45,6 +45,8 @@ export default class Chat {
 		this.statusTimer = null;
 		this.seenIds = new Set();
 		this.emptyNote = null;
+		this.recentMessages = [];   // the last few, for the underground's chat box
+		this.listeners = new Set(); // functions called with every batch of new messages
 
 		this.nameInput.value = this.loadName();
 	}
@@ -165,6 +167,10 @@ export default class Chat {
 			this.log.appendChild(this.buildMessage(message, message.name === myName, nearBottom));
 		}
 
+		this.recentMessages.push(...fresh);
+		if (this.recentMessages.length > 30) this.recentMessages.splice(0, this.recentMessages.length - 30);
+		for (const listener of this.listeners) { try { listener(fresh); } catch { /* a broken listener must not stop the chat */ } }
+
 		while (this.log.children.length > MAX_MESSAGES_ON_SCREEN) {
 			this.log.removeChild(this.log.firstChild);
 		}
@@ -269,6 +275,33 @@ export default class Chat {
 			this.sending = false;
 			this.sendButton.disabled = this.online === false;
 			this.messageInput.focus();
+		}
+	}
+
+	// For other parts of the game (the underground) that show the same chat: subscribe(fn) calls fn(messages)
+	// for every new batch and returns a function that stops it.
+	subscribe(listener) {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+
+	// Sends a message typed somewhere else. Resolves to { ok: true } or { ok: false, error }.
+	async post(text) {
+		text = String(text).trim();
+		if (!text) return { ok: false, error: "" };
+		this.saveName();
+		try {
+			const response = await fetch(this.apiUrl, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ name: this.nameInput.value, text }),
+			});
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) return { ok: false, error: data.error || "Could not send your message." };
+			this.addMessages([data.message]);
+			return { ok: true };
+		} catch {
+			return { ok: false, error: "Could not reach the chat server." };
 		}
 	}
 

@@ -98,7 +98,11 @@ export default class Underground {
 			<div class="ug-feed" aria-live="polite"></div>
 			<div class="ug-bottom">
 				<div class="ug-hp"><div class="ug-hp-fill"></div><span class="ug-hp-text"></span></div>
-				<div class="ug-help">WASD move &middot; left click: claw &middot; right click: fire</div>
+				<div class="ug-help">WASD move &middot; left click: claw &middot; right click: fire &middot; Enter: chat</div>
+			</div>
+			<div class="ug-chat">
+				<div class="ug-chat-log" aria-live="polite"></div>
+				<input class="ug-chat-input" type="text" maxlength="200" placeholder="Say something... (Enter to send, Esc to close)" autocomplete="off" hidden>
 			</div>
 			<div class="ug-message" hidden></div>`;
 		d.body.appendChild(overlay);
@@ -109,6 +113,7 @@ export default class Underground {
 			title: overlay.querySelector(".ug-title"), count: overlay.querySelector(".ug-count"), net: overlay.querySelector(".ug-net"), netDetail: overlay.querySelector(".ug-netdetail"),
 			feed: overlay.querySelector(".ug-feed"), hpFill: overlay.querySelector(".ug-hp-fill"),
 			hpText: overlay.querySelector(".ug-hp-text"), message: overlay.querySelector(".ug-message"),
+			chatLog: overlay.querySelector(".ug-chat-log"), chatInput: overlay.querySelector(".ug-chat-input"),
 		};
 		overlay.querySelector(".ug-leave").addEventListener("click", () => this.close());
 		this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -123,6 +128,12 @@ export default class Underground {
 			if (e.button === 2) this.input.fire = false;
 		});
 		this.canvas.addEventListener("mousemove", (e) => this.moveMouse(e));
+		this.ui.chatInput.addEventListener("keydown", (e) => {
+			e.stopPropagation();                       // typing must not walk the character
+			if (e.key === "Enter") { e.preventDefault(); this.sendChat(); }
+			else if (e.key === "Escape") { e.preventDefault(); this.closeChat(); }
+		});
+		this.ui.chatInput.addEventListener("keyup", (e) => e.stopPropagation());
 		window.addEventListener("keydown", (e) => this.key(e, true));
 		window.addEventListener("keyup", (e) => this.key(e, false));
 		window.addEventListener("blur", () => this.resetInput());
@@ -140,10 +151,65 @@ export default class Underground {
 
 	key(e, down) {
 		if (!this.active) return;
+		if (down && e.key === "Enter" && !this.chatOpen && this.options.chat) { e.preventDefault(); this.openChat(); return; }
+		if (this.chatOpen) return;                     // the chat box has the keyboard
 		const map = { w: "up", arrowup: "up", s: "down", arrowdown: "down", a: "left", arrowleft: "left", d: "right", arrowright: "right" };
 		const name = map[e.key.toLowerCase()];
 		if (name) { this.keys[name] = down; e.preventDefault(); }
 		if (down && e.key === "Escape") this.close();
+	}
+
+	// ---- chat (the same chat as on the map; Enter opens the box) ----
+	openChat() {
+		this.chatOpen = true;
+		this.resetInput();                             // let go of keys and mouse buttons that were held
+		this.ui.chatInput.hidden = false;
+		this.ui.chatInput.value = "";
+		this.ui.chatInput.focus();
+		this.ui.chatLog.classList.add("open");
+	}
+
+	closeChat() {
+		this.chatOpen = false;
+		this.ui.chatInput.hidden = true;
+		this.ui.chatInput.blur();
+		this.ui.chatLog.classList.remove("open");
+	}
+
+	async sendChat() {
+		const text = this.ui.chatInput.value.trim();
+		if (!text) return this.closeChat();
+		this.ui.chatInput.value = "";
+		this.closeChat();
+		const result = await this.options.chat.send(text);
+		if (!result.ok && result.error) this.addChatLine("", result.error, true);
+	}
+
+	// A line in the chat box; it fades after a while. Also puts a speech bubble over the speaker.
+	addChatLine(name, text, bad = false) {
+		const line = this.document.createElement("div");
+		line.className = "ug-chat-line" + (bad ? " bad" : "");
+		const who = this.document.createElement("b");
+		who.textContent = name ? name + " " : "";
+		const said = this.document.createElement("span");
+		said.textContent = text;
+		line.append(who, said);
+		this.ui.chatLog.appendChild(line);
+		while (this.ui.chatLog.children.length > 7) this.ui.chatLog.firstChild.remove();
+		setTimeout(() => line.classList.add("old"), 14000);
+		setTimeout(() => line.remove(), 20000);
+	}
+
+	onChatMessages(messages) {
+		if (!this.active) return;
+		for (const m of messages) {
+			if (!m || m.name === "Dice Master" || m.name === "Town Crier") continue;
+			let text = String(m.text).replace(/https:\/\/\S+\.(gif|webp)\S*/gi, "[gif]").trim();
+			if (!text) continue;
+			this.addChatLine(String(m.name), text, false);
+			const speaker = Object.entries(this.roster).find(([, info]) => info && info.name === m.name);
+			if (speaker) this.bubbles.set(speaker[0], { text: text.length > 60 ? text.slice(0, 57) + "..." : text, until: performance.now() + 6000 });
+		}
 	}
 
 	// ---- open / close ----
@@ -156,6 +222,13 @@ export default class Underground {
 		this.mouse = { x: 0, y: 0 };
 		this.slow = false; this.calm = 0; this.clock = null; this.rtt = null; this.net = { shown: 0, snaps: 0, wait: 0, drawSum: 0, drawMax: 0, frames: 0 }; this.snap = null; this.buf = []; this.pending = []; this.seq = 0; this.pred = null; this.fix = null; this.lastFrame = 0; this.myFace = 1; this.cam = { x: 0, y: 0 };
 		this.roster = {}; this.avatars = new Map(); this.fx = []; this.feed = [];
+		this.bubbles = new Map(); this.chatOpen = false;
+		this.ui.chatLog.innerHTML = ""; this.ui.chatInput.hidden = true;
+		this.unsubscribeChat?.();
+		this.unsubscribeChat = this.options.chat ? this.options.chat.subscribe((messages) => this.onChatMessages(messages)) : null;
+		for (const m of this.options.chat?.recent() || []) { // what was said in the last two minutes
+			if (Date.now() - m.time < 120000 && m.name !== "Dice Master" && m.name !== "Town Crier") this.addChatLine(String(m.name), String(m.text).replace(/https:\/\/\S+\.(gif|webp)\S*/gi, "[gif]"));
+		}
 		this.me = null; this.dead = false;
 		this.obstacles = obstaclesFor(dungeonId);
 		this.theme = THEMES[dungeonId] || THEMES[1];
@@ -198,6 +271,8 @@ export default class Underground {
 		this.active = false;
 		clearInterval(this.sender);
 		clearInterval(this.pinger);
+		this.unsubscribeChat?.(); this.unsubscribeChat = null;
+		this.closeChat();
 		for (const t of [...(this.bgTiles || []), ...(this.glowTiles || [])]) t.img.close();
 		this.bgTiles = this.glowTiles = null;
 		cancelAnimationFrame(this.frame);
@@ -653,6 +728,19 @@ export default class Underground {
 		ctx.strokeText(name, p.x, p.y - 62);
 		ctx.fillStyle = mine ? "#ffd979" : this.pvp ? "#ff8a8a" : "#eadfce";
 		ctx.fillText(name, p.x, p.y - 62);
+		const bubble = this.bubbles.get(p.id);
+		if (bubble && bubble.until > now) this.drawBubble(ctx, p.x, p.y - 74, bubble.text);
+	}
+
+	drawBubble(ctx, x, y, text) {
+		ctx.font = "16px VT323, monospace";
+		ctx.textAlign = "center";
+		const w = Math.min(280, ctx.measureText(text).width + 14), h = 22;
+		const left = Math.round(x - w / 2), top = Math.round(y - h - 6);
+		ctx.fillStyle = "rgba(14, 8, 10, 0.88)"; ctx.fillRect(left, top, w, h);
+		ctx.strokeStyle = "#c9a45f"; ctx.lineWidth = 2; ctx.strokeRect(left, top, w, h);
+		ctx.fillStyle = "#c9a45f"; ctx.fillRect(Math.round(x) - 3, top + h, 6, 4);
+		ctx.fillStyle = "#eadfce"; ctx.fillText(text, x, top + 16, w - 10);
 	}
 
 	drawMonster(ctx, m, now) {
