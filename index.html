@@ -5,741 +5,210 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>BLOOD & EARTH</title>
+	<meta name="description" content="A free browser idle game. Feed on blood, raise a house of vampires, build your land, descend into the caves and hold off raiders. No download, no sign-up.">
+	<meta property="og:title" content="BLOOD & EARTH">
+	<meta property="og:description" content="A free browser idle game about hunger, land and war. Play instantly, no download.">
+	<meta property="og:image" content="src/landing/town.png">
+	<meta name="theme-color" content="#120d0f">
 
-	<link rel="stylesheet" type="text/css" href="css/style.css" />
+	<link rel="stylesheet" href="css/tokens.css">
+	<link rel="stylesheet" href="css/landing.css">
 
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-
-	<script src="https://kit.fontawesome.com/1a5da59cc5.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
 
-	<!-- Big "drink blood" button (fixed in the corner) -->
-	<div class="button drink-button" id="drinkBlood">
-		<i class="fas fa-tint"></i>
+	<!-- Floating drops of blood in the background (pure decoration) -->
+	<div class="drops" aria-hidden="true">
+		<i style="--x:8%;  --d:9s;  --s:0s;   --z:10px"></i>
+		<i style="--x:19%; --d:13s; --s:-4s;  --z:7px"></i>
+		<i style="--x:31%; --d:10s; --s:-7s;  --z:12px"></i>
+		<i style="--x:44%; --d:15s; --s:-2s;  --z:6px"></i>
+		<i style="--x:57%; --d:11s; --s:-9s;  --z:9px"></i>
+		<i style="--x:68%; --d:14s; --s:-5s;  --z:8px"></i>
+		<i style="--x:79%; --d:9s;  --s:-3s;  --z:11px"></i>
+		<i style="--x:91%; --d:12s; --s:-8s;  --z:7px"></i>
 	</div>
 
-	<!-- Orbs above the blood button: each opens its own pop-up (wired up in main.js) -->
-	<div class="orb-stack">
-		<button type="button" class="button orb" id="orbVampires" data-opens="vampiresModal" aria-label="Vampire animals and vampires" title="Vampire animals &amp; vampires"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M2 3h1v1h-1zM13 3h1v1h-1zM1 4h3v1h-3zM12 4h3v1h-3zM1 5h4v1h-4zM7 5h2v1h-2zM11 5h4v1h-4zM0 6h5v1h-5zM6 6h4v1h-4zM11 6h5v1h-5zM0 7h6v1h-6zM7 7h2v1h-2zM10 7h6v1h-6zM0 8h1v1h-1zM2 8h4v1h-4zM7 8h2v1h-2zM10 8h4v1h-4zM15 8h1v1h-1zM2 9h12v1h-12zM3 10h2v1h-2zM6 10h4v1h-4zM11 10h2v1h-2zM5 11h1v1h-1zM10 11h1v1h-1zM6 12h1v1h-1zM9 12h1v1h-1z"/><path class="accent" d="M7 11h2v1h-2z"/></svg></button>
-		<button type="button" class="button orb" id="orbUpgrades" data-opens="upgradesModal" aria-label="Upgrades" title="Upgrades"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M1 2h14v1h-14zM0 3h16v1h-16zM0 4h1v1h-1zM2 4h14v1h-14zM2 5h14v1h-14zM3 6h12v1h-12zM4 7h2v1h-2zM5 8h6v1h-6zM5 9h6v1h-6zM5 10h6v1h-6zM4 11h8v1h-8zM3 12h10v1h-10zM2 13h12v1h-12z"/><path class="accent" d="M6 7h6v1h-6z"/></svg></button>
-		<button type="button" class="button orb" id="orbUpdates" data-opens="updatesModal" aria-label="Updates" title="Updates"><svg class="orb-icon" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><path fill="currentColor" d="M1 3h14v1h-14zM0 4h1v1h-1zM2 4h13v1h-13zM0 5h1v1h-1zM2 5h1v1h-1zM13 5h1v1h-1zM15 5h1v1h-1zM0 6h1v1h-1zM2 6h13v1h-13zM0 7h1v1h-1zM2 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM0 8h1v1h-1zM2 8h13v1h-13zM0 9h1v1h-1zM2 9h1v1h-1zM9 9h5v1h-5zM15 9h1v1h-1zM0 10h1v1h-1zM2 10h13v1h-13zM1 11h14v1h-14z"/><path class="accent" d="M3 5h10v1h-10zM3 7h10v1h-10zM3 9h6v1h-6z"/></svg></button>
-	</div>
+	<header class="top">
+		<a class="brand" href="#top">B&amp;E</a>
+		<nav>
+			<a href="#world">The world</a>
+			<a href="#features">Features</a>
+			<a href="#begin">How to begin</a>
+			<a class="nav-play" href="play.html">Play</a>
+		</nav>
+	</header>
 
-	<!-- Sign-up pop-up for new players (shown by main.js) -->
-	<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="signUpTitle">
-		<form name="signUp" id="signUpForm" autocomplete="off">
-			<div class="grid-container-signup">
-				<div class="item10">
-					<h3 id="signUpTitle">Welcome to BLOOD & EARTH</h3>
-					<p>Name your vampire and your settlement to begin.</p>
-				</div>
-				<div class="item11">
-					<img src="sPlayerDown.png" width="25" height="100" alt="">
-				</div>
-				<div class="item12">
-					<label for="vName">Vampire name</label>
-					<input type="text" id="vName" name="vName" maxlength="20" required>
-				</div>
-				<div class="item13">
-					<label for="hName">Settlement name</label>
-					<input type="text" id="hName" name="hName" maxlength="20" required>
-				</div>
-				<div class="item15 signup-builder-box">
-					<h4>Build your vampire</h4>
-					<div id="signUpBuilder"></div>
-					<label class="profile-switch">
-						<input type="checkbox" id="signUpPublic" checked>
-						<span>Public character page<small>Other players can visit it. You can change this any time.</small></span>
-					</label>
-				</div>
-				<div class="item14">
-					<p class="signup-error" id="signUpError" role="alert"></p>
-					<button type="submit" class="button">Awaken</button>
-				</div>
+	<main id="top">
+
+		<!-- HERO -->
+		<section class="hero">
+			<p class="kicker">a browser idle game</p>
+			<h1>BLOOD <span class="amp">&amp;</span> EARTH</h1>
+			<p class="tagline">Feed on the living. Raise a house of vampires. Claim the land, dig into the dark &mdash; and hold it against those who come to take it.</p>
+			<div class="cta">
+				<a class="btn primary" href="play.html">Play now</a>
+				<a class="btn" href="#world">See the world</a>
 			</div>
-		</form>
-	</div>
+			<p class="fine">Free. Runs in your browser. No download, no sign-up.</p>
 
-	<!-- Background music (started, looped and muted by js/MusicHandler.js) -->
-	<audio id="backgroundMusic" src="music/medieval-ambient.mp3" loop preload="auto"></audio>
+			<!-- A strip of the game's own tiles, laid out like a little map -->
+			<div class="strip" aria-hidden="true">
+				<img src="src/forest.png" alt=""><img src="src/grass.png" alt=""><img src="src/smallHut.png" alt=""><img src="src/farm.png" alt=""><img src="src/mine.png" alt=""><img src="src/bloodtemple.png" alt=""><img src="src/lumbermill.png" alt=""><img src="src/watchtower.png" alt=""><img src="src/fort.png" alt=""><img src="src/guardoutpost.png" alt=""><img src="src/enemyoutpost.png" alt=""><img src="src/cave.png" alt=""><img src="src/rock.png" alt=""><img src="src/water.png" alt="">
+			</div>
+		</section>
 
-	<!-- Header -->
-	<div class="grid-item header">
-		<h1>
-			<img src="src/skullCandle.gif" width="50" height="100" alt="">
-			BLOOD & EARTH
-			<img src="src/skullCandle.gif" width="50" height="100" alt="">
-		</h1>
-		<p>Autosave in: <span id="tenSecTimer"></span></p>
-		<div class="header-buttons">
-			<button type="button" class="button" id="helpButton">How to play</button>
-			<button type="button" class="button" id="diceButton">Dice</button>
-			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
-			<button type="button" class="button" id="profileButton">My character</button>
-			<button type="button" class="button" id="optionsButton">Options</button>
-			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
-				<i class="fas fa-volume-up"></i> <span>Sound on</span>
-			</button>
-			<p class="button" id="restart">restart</p>
-		</div>
+		<!-- THE WORLD: three screenshots -->
+		<section id="world" class="world">
+			<h2>One house. Three ways to bleed.</h2>
 
-		<p class="version">version 0.0.5.2.9</p>
-		<p class="leader-line" id="leaderLine" hidden></p>
-		<p class="online-line" id="onlineLine" hidden></p>
-	</div>
+			<article class="showcase">
+				<figure class="shot">
+					<div class="shot-bar"><span>Your land</span><span>familiars at work</span></div>
+					<img src="src/landing/town.png" alt="A town of huts, farms and mines with small familiars walking between them" width="850" height="496" loading="lazy">
+				</figure>
+				<div class="copy">
+					<span class="num">I</span>
+					<h3>Build your hold</h3>
+					<p>Start with a hut and a thirst. Put up huts, farms, mines and lumber mills on a map you can zoom, scroll and pop out into its own window. Your familiars move in, go to work and wander the paths between your buildings.</p>
+					<p>Raise vampires to drink for you, spend your attribute points, and let the blood keep flowing while you are away.</p>
+				</div>
+			</article>
 
-	<div class="flex-row">
+			<article class="showcase flip">
+				<figure class="shot">
+					<div class="shot-bar"><span>The Bone Halls</span><span>1 here</span></div>
+					<img src="src/landing/underground.png" alt="A vampire in the Bone Halls surrounded by zombies and crypt spiders among round stone pillars" width="1280" height="622" loading="lazy">
+				</figure>
+				<div class="copy">
+					<span class="num">II</span>
+					<h3>Descend underground</h3>
+					<p>Find the cave on your land and step inside. Six dungeons, from the Dripping Tunnels to the Black Throne, each with monsters that hit harder than the last. Claw them, burn them, and take their wood, iron and influence.</p>
+					<p>You share every dungeon with other players in real time. The deepest one, <em>the Abyss</em>, has no rules but your own. Rare helmets drop from the dead &mdash; wear them on your character.</p>
+				</div>
+			</article>
 
-		<!-- Left column: storage, stats, upgrades -->
-		<div class="flex-column right">
-
-			<div class="grid-item">
-				<h3 class="grid-item-title">Storage</h3>
-
-				<div class="blood hover-parent">
-					<p>Blood: <span id="bloodCount"></span><span class="trend" id="bloodTrend"></span></p>
-					<div class="hover">
-						<p>blood/10 sec: <span id="newBloodPerRound"></span></p>
+			<article class="showcase">
+				<figure class="shot">
+					<div class="shot-bar"><span>Defences</span><span>and the enemy</span></div>
+					<div class="sprites">
+						<div><img src="src/watchtower.png" alt=""><span>Watch tower<br><small>early warning</small></span></div>
+						<div><img src="src/guardoutpost.png" alt=""><span>Guard outpost<br><small>turns raids back</small></span></div>
+						<div><img src="src/fort.png" alt=""><span>Fort<br><small>big garrison</small></span></div>
+						<div class="foe"><img src="src/enemyoutpost.png" alt=""><span>Enemy outpost<br><small>destroy it to end raids</small></span></div>
 					</div>
+				</figure>
+				<div class="copy">
+					<span class="num">III</span>
+					<h3>Hold the line</h3>
+					<p>Once you are strong enough, others take notice. Bandits, nests and clans plant an outpost on your map and begin to raid. Their army marches in slowly, and you can see it coming.</p>
+					<p>Build watch towers, guard outposts and forts. Send your vampires to destroy the outpost, or lose buildings to the enemy until you take them back.</p>
 				</div>
+			</article>
+		</section>
 
-				<div class="humanFood hover-parent">
-					<p>Human food: <span id="humanFoodCount"></span><span class="trend" id="humanFoodTrend"></span></p>
-					<div class="hover">
-						<p>Food/10 sec: <span id="newHumanFoodPerRound"></span></p>
-					</div>
+		<!-- A CLOSER LOOK: screenshots of the real game -->
+		<section class="gallery">
+			<h2>A closer look</h2>
+			<div class="masonry">
+				<figure class="shot">
+					<div class="shot-bar"><span>The realm</span><span>zoomed out</span></div>
+					<img src="src/landing/realm.png" alt="A wide map of forests, lakes and rocky hills with a small settlement in the middle" width="788" height="446" loading="lazy">
+					<figcaption>Every game starts on its own map of forest, lake and stone. Zoom out and see how far you have spread.</figcaption>
+				</figure>
+				<figure class="shot">
+					<div class="shot-bar"><span>My character</span><span>face &amp; helmet</span></div>
+					<img src="src/landing/character.png" alt="The character editor with skin, hair, eyes, cloak and helmet options" width="517" height="777" loading="lazy">
+					<figcaption>Design your vampire, wear the helmets you find underground and choose what your public page shows.</figcaption>
+				</figure>
+				<figure class="shot">
+					<div class="shot-bar"><span>Vampire animals &amp; vampires</span><span>your army</span></div>
+					<img src="src/landing/vampires.png" alt="The shop of vampire animals and vampires, from mosquitos to blood leviathans" width="883" height="600" loading="lazy">
+					<figcaption>From mosquitos to blood leviathans. Your vampires gather blood and fight your battles.</figcaption>
+				</figure>
+				<figure class="shot">
+					<div class="shot-bar"><span>Dice</span><span>player vs player</span></div>
+					<img src="src/landing/dice.png" alt="The dice game where two players bet the same resources" width="572" height="836" loading="lazy">
+					<figcaption>Bet resources against other players. Higher total takes both bets.</figcaption>
+				</figure>
+			</div>
+		</section>
+
+		<!-- FEATURES -->
+		<section id="features" class="features">
+			<h2>What's in the crypt</h2>
+			<div class="grid">
+				<div class="card">
+					<img src="src/smallHut.png" alt="">
+					<h3>Idle at heart</h3>
+					<p>Everything keeps producing while the tab is open, and a slow, ten-second rhythm means no frantic clicking.</p>
 				</div>
-
-				<div class="wood hover-parent">
-					<p>Wood: <span id="woodCount"></span><span class="trend" id="woodTrend"></span></p>
-					<div class="hover">
-						<p>Wood/10 sec: <span id="newWoodPerRound"></span></p>
-					</div>
+				<div class="card">
+					<img src="src/mine.png" alt="">
+					<h3>A living map</h3>
+					<p>Forest, water, rock and grass. Zoom with the wheel and watch familiars walk between buildings.</p>
 				</div>
-
-				<div class="iron hover-parent">
-					<p>Iron: <span id="ironCount"></span><span class="trend" id="ironTrend"></span></p>
+				<div class="card">
+					<img src="src/cave.png" alt="">
+					<h3>Multiplayer caves</h3>
+					<p>Real-time dungeons, shared with other players. Fight side by side, or against each other in the Abyss.</p>
 				</div>
-
-				<div class="bronze hover-parent">
-					<p>Bronze: <span id="bronzeCount"></span><span class="trend" id="bronzeTrend"></span></p>
+				<div class="card">
+					<img src="src/fort.png" alt="">
+					<h3>Raids &amp; war</h3>
+					<p>Three factions, early warnings, garrisons and forts. Win a battle and the enemy loses units too.</p>
 				</div>
-
-				<div class="gold hover-parent">
-					<p>Gold: <span id="goldCount"></span><span class="trend" id="goldTrend"></span></p>
+				<div class="card">
+					<img src="src/bloodtemple.png" alt="">
+					<h3>Blood temple</h3>
+					<p>Offer some of your blood for a chance at a surge of influence.</p>
+				</div>
+				<div class="card">
+					<img src="src/watchtower.png" alt="">
+					<h3>Your character</h3>
+					<p>Design a face, wear the helmets you find and share a page for your house.</p>
+				</div>
+				<div class="card">
+					<img src="src/lumbermill.png" alt="">
+					<h3>Leaderboard &amp; chat</h3>
+					<p>See who rules the night, talk to other players and gamble a little at the dice table.</p>
+				</div>
+				<div class="card">
+					<img src="src/farm.png" alt="">
+					<h3>Yours to keep</h3>
+					<p>Your game saves in your browser. Nothing to install, no account to make.</p>
 				</div>
 			</div>
+		</section>
 
-			<div class="grid-item">
-				<h3 class="grid-item-title">Stats</h3>
-				<p>Level: <span id="levelStat"></span></p>
-				<p>Influence: <span id="xpReturnDisplayStat"></span></p>
-				<p id="attributePointsLine" class="attribute-points-line">Attribute points: <span id="attributePointsStat">0</span>
-					<button type="button" class="button" id="attributesButton">Spend</button></p>
-				<p>blood/10 sec: <span id="newBloodPerRoundStat"></span></p>
-				<p>human food/10 sec: <span id="newHumanFoodPerRoundStat"></span></p>
-				<p>wood/10 sec: <span id="newWoodPerRoundStat"></span></p>
-			</div>
-
-			
-
-		</div>
-
-		<!-- Middle column: map, updates, shops, chat -->
-		<div class="flex-column main">
-
-			<div class="grid-item map">
-				<div class="currentHouse chat-head">
-					<h3 class="grid-item-title"><span id="mapTitle">World map</span> - Familiars: <span id="familiarAmmount"></span></h3>
-					<button type="button" class="chat-popout" id="mapPopout" title="Open the map in a separate window">Pop out &#8599;</button>
-				</div>
-
-				<div class="flex-column house-art-container">
-					<p class="war-banner" id="warBanner" hidden role="status"></p>
-					<div class="map-scroll">
-						<div class="map-stage" id="mapStage"><table id="map"></table></div>
-					</div>
-					<p class="map-hint">Scroll the mouse wheel over the map to zoom in and out</p>
-					<p>Room for familiars: <span id="familiarLimit"></span></p>
-				</div>
-			</div>
-
-
-
-
-			<div class="grid-item chat">
-				<div class="chat-head">
-					<h3 class="grid-item-title">Chat</h3>
-					<button type="button" class="chat-popout chat-dice-button" id="chatDice" title="Challenge someone to a game of dice">Dice</button>
-					<button type="button" class="chat-popout" id="chatPopout" title="Open the chat in a separate window">Pop out &#8599;</button>
-				</div>
-				<div class="chat-body">
-				<div class="chat-log" id="chatLog" role="log" aria-live="polite"></div>
-				<aside class="chat-online" aria-label="Players online">
-					<h4 id="chatOnlineTitle">Online</h4>
-					<ul id="chatOnlineList"></ul>
-				</aside>
-				</div>
-				<form class="chat-form" id="chatForm" autocomplete="off">
-					<input type="text" id="chatName" maxlength="20" aria-label="Your name" placeholder="Your name">
-					<input type="text" id="chatInput" maxlength="300" aria-label="Message" placeholder="Say something…">
-					<button type="submit" class="button" id="chatSend">Send</button>
-				</form>
-				<p class="chat-status" id="chatStatus" role="status"></p>
-			</div>
-
-		</div>
-
-		<!-- Right column: command familiars -->
-		<div class="flex-column right">
-			<div class="grid-item">
-				<h3 class="grid-item-title">Command familiars</h3>
-				<p>familiars not working: <span id="familiarNotWorking"></span></p>
-
-				<div class="adoptFamiliar">
-					<div class="button" id="adoptFamiliar">Adopt a familiar
-						<div class="hover">
-							<p>consumes: 1 food/10 sec</p>
-							<p>price influence: <span id="familiarCost"></span></p>
-						</div>
-					</div>
-				</div>
-
-				<!-- Gathering human food -->
-				<div class="humanFoodGather">
-					<p>human food gatherers: <span id="humanFoodGather"></span></p>
-					<div class="flex-row">
-						<div class="button remove-gather-button" data-gather="humanFoodGather">-
-							<div class="hover">-Food/10 sec: 2</div>
-						</div>
-						<div class="button add-gather-button" data-gather="humanFoodGather">+
-							<div class="hover">+Food/10 sec: 2</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Gathering wood -->
-				<div class="woodGather">
-					<p>wood gatherers: <span id="woodGather"></span></p>
-					<div class="flex-row">
-						<div class="button remove-gather-button" data-gather="woodGather">-
-							<div class="hover">-Wood/10 sec: 2</div>
-						</div>
-						<div class="button add-gather-button" data-gather="woodGather">+
-							<div class="hover">+Wood/10 sec: 2</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			
-		</div>
-
-	</div>
-
-	<!-- Pop-ups opened by the orbs in the corner (moved here from the page; the ids are unchanged) -->
-	<div id="upgradesModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Upgrades">
-		<div class="modal-content popup-content">
-			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
-				<div class="grid-item">
-					<h3 class="grid-item-title">Upgrades</h3>
-	
-					<div class="button buy-upgrade-button" id="ironHoe">Buy iron hoe
-						<p>Iron hoes: <span id="ironHoeAmmount"></span></p>
-						<div class="hover">
-							<p>+human food/10 sec: +3%</p>
-							<p>price iron: <span id="ironHoeCost"></span></p>
-						</div>
-					</div>
-	
-					<div class="button buy-upgrade-button" id="ironAxe">Buy iron axe
-						<p>Iron axes: <span id="ironAxeAmmount"></span></p>
-						<div class="hover">
-							<p>+wood/10 sec: +3%</p>
-							<p>price iron: <span id="ironAxeCost"></span></p>
-						</div>
-					</div>
-	
-					<div class="button buy-upgrade-button" id="ironPick">Buy iron pick
-						<p>Iron picks: <span id="ironPickAmmount"></span></p>
-						<div class="hover">
-							<p>+mining/10 sec: +3%</p>
-							<p>price iron: <span id="ironPickCost"></span></p>
-						</div>
-					</div>
-				</div>
-		</div>
-	</div>
-
-	<div id="updatesModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Updates">
-		<div class="modal-content popup-content">
-			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
-				<fieldset class="updateBox" id="townUpdates">
-					<legend>Updates</legend>
-				</fieldset>
-		</div>
-	</div>
-
-	<div id="vampiresModal" class="modal popup-modal" role="dialog" aria-modal="true" aria-label="Vampire animals and vampires">
-		<div class="modal-content popup-content popup-wide">
-			<div class="close popup-close" role="button" tabindex="0" aria-label="Close">&times;</div>
-				<div class="grid-item">
-					<h3 class="grid-item-title">Vampire animals</h3>
-					<div class="item2">
-	
-						<div class="mosquito">
-							<p>mosquito: <span id="mosquitoCount"></span></p>
-							<div class="button buy-vamp-button" id="mosquito">Buy mosquito
-								<div class="hover">
-									<p>+blood/10 sec: 0.1</p>
-									<p>price blood: <span id="mosquitoCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="vampireRat">
-							<p>vampire rats: <span id="vampireRatCount"></span></p>
-							<div class="button buy-vamp-button" id="vampireRat">Buy vampire rat
-								<div class="hover">
-									<p>+blood/10 sec: 0.3</p>
-									<p>price blood: <span id="vampireRatCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="vampireBat">
-							<p>vampire bats: <span id="vampireBatCount"></span></p>
-							<div class="button buy-vamp-button" id="vampireBat">Buy vampire bat
-								<div class="hover">
-									<p>+blood/10 sec: 0.6</p>
-									<p>price blood: <span id="vampireBatCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="bloodHound">
-							<p>bloodhounds: <span id="bloodHoundCount"></span></p>
-							<div class="button buy-vamp-button" id="bloodHound">Buy bloodhound
-								<div class="hover">
-									<p>+blood/10 sec: 2</p>
-									<p>price blood: <span id="bloodHoundCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-					</div>
-				</div>
-	
-				<div class="grid-item">
-					<h3 class="grid-item-title">Vampires</h3>
-					<div class="item2">
-	
-						<div class="vampireSlave">
-							<p>vampire slaves: <span id="vampireSlaveCount"></span></p>
-							<div class="button buy-vamp-button" id="vampireSlave">Buy vampire slave
-								<div class="hover">
-									<p>+blood/10 sec: 10</p>
-									<p>price blood: <span id="vampireSlaveCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="nightWalker">
-							<p>nightwalkers: <span id="nightWalkerCount"></span></p>
-							<div class="button buy-vamp-button" id="nightWalker">Buy nightwalker
-								<div class="hover">
-									<p>+blood/10 sec: 30</p>
-									<p>price blood: <span id="nightWalkerCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="badabook">
-							<p>badabooks: <span id="badabookCount"></span></p>
-							<div class="button buy-vamp-button" id="badabook">Buy badabook
-								<div class="hover">
-									<p>+blood/10 sec: 100</p>
-									<p>price blood: <span id="badabookCost"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="draugr">
-							<p>draugr: <span id="draugrCount"></span></p>
-							<div class="button buy-vamp-button" id="draugr">Buy draugr
-								<div class="hover">
-									<p>+blood/10 sec: 350</p>
-									<p>price blood: <span id="draugrCost"></span></p>
-									<p>price iron: <span id="draugrCostIron"></span></p>
-									<p>price bronze: <span id="draugrCostBronze"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="strigoi">
-							<p>strigoi: <span id="strigoiCount"></span></p>
-							<div class="button buy-vamp-button" id="strigoi">Buy strigoi
-								<div class="hover">
-									<p>+blood/10 sec: 700</p>
-									<p>price blood: <span id="strigoiCost"></span></p>
-									<p>price iron: <span id="strigoiCostIron"></span></p>
-									<p>price bronze: <span id="strigoiCostBronze"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="vampireMaster">
-							<p>vampire masters: <span id="vampireMasterCount"></span></p>
-							<div class="button buy-vamp-button" id="vampireMaster">Buy vampire master
-								<div class="hover">
-									<p>+blood/10 sec: 3000</p>
-									<p>price blood: <span id="vampireMasterCost"></span></p>
-									<p>price iron: <span id="vampireMasterCostIron"></span></p>
-									<p>price bronze: <span id="vampireMasterCostBronze"></span></p>
-									<p>price gold: <span id="vampireMasterCostGold"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="vampireElder">
-							<p>vampire elders: <span id="vampireElderCount"></span></p>
-							<div class="button buy-vamp-button" id="vampireElder">Buy vampire elder
-								<div class="hover">
-									<p>+blood/10 sec: 20000</p>
-									<p>price blood: <span id="vampireElderCost"></span></p>
-									<p>price iron: <span id="vampireElderCostIron"></span></p>
-									<p>price bronze: <span id="vampireElderCostBronze"></span></p>
-									<p>price gold: <span id="vampireElderCostGold"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="bloodDemon">
-							<p>blood demons: <span id="bloodDemonCount"></span></p>
-							<div class="button buy-vamp-button" id="bloodDemon">Buy blood demon
-								<div class="hover">
-									<p>+blood/10 sec: 130000</p>
-									<p>price blood: <span id="bloodDemonCost"></span></p>
-									<p>price iron: <span id="bloodDemonCostIron"></span></p>
-									<p>price bronze: <span id="bloodDemonCostBronze"></span></p>
-									<p>price gold: <span id="bloodDemonCostGold"></span></p>
-								</div>
-							</div>
-						</div>
-	
-						<div class="bloodLeviathan">
-							<p>blood leviathans: <span id="bloodLeviathanCount"></span></p>
-							<div class="button buy-vamp-button" id="bloodLeviathan">Buy blood leviathan
-								<div class="hover">
-									<p>+blood/10 sec: 850000</p>
-									<p>price blood: <span id="bloodLeviathanCost"></span></p>
-									<p>price iron: <span id="bloodLeviathanCostIron"></span></p>
-									<p>price bronze: <span id="bloodLeviathanCostBronze"></span></p>
-									<p>price gold: <span id="bloodLeviathanCostGold"></span></p>
-								</div>
-							</div>
-						</div>
-	
-					</div>
-				</div>
-		</div>
-	</div>
-
-	<!-- Build menu -->
-	<div id="myModal" class="modal">
-		<div class="modal-content">
-			<div id="close" class="close">&times;</div>
-			<h3>Build</h3>
-
-			<div class="button buy-building-button" id="buyHut">Buy hut
-				<div class="hover">
-					<p>Has place for 4 familiars</p>
-					<p>price wood: <span id="buildingHutCost"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyFarm">Buy farm
-				<div class="hover">
-					<p>Has place for 5 familiars</p>
-					<p>price wood: <span id="buildingFarmCost"></span></p>
-					<p>familiars required: <span id="buildingFarmFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyMine">Buy mine
-				<div class="hover">
-					<p>Has place for 10 familiars</p>
-					<p>price wood: <span id="buildingMineCost"></span></p>
-					<p>familiars required: <span id="buildingMineFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyLumberMill">Buy lumber mill
-				<div class="hover">
-					<p>Has place for 5 familiars</p>
-					<p>price wood: <span id="buildingLumberMillCost"></span></p>
-					<p>familiars required: <span id="buildingLumberMillFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<h4 class="build-heading">Defences</h4>
-			<div class="button buy-building-button" id="buyWatchTower">Buy watch tower
-				<div class="hover">
-					<p>Warns you before a raid arrives, and shows the raiders' exact strength</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingWatchTowerWood"></span> wood, <span id="buildingWatchTowerIron"></span> iron</p>
-					<p>familiars required: <span id="buildingWatchTowerFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyGuardOutpost">Buy guard outpost
-				<div class="hover">
-					<p>Turns some raids back before they start and weakens raiders a little</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingGuardOutpostWood"></span> wood, <span id="buildingGuardOutpostIron"></span> iron, <span id="buildingGuardOutpostBronze"></span> bronze</p>
-					<p>familiars required: <span id="buildingGuardOutpostFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyFort">Buy fort
-				<div class="hover">
-					<p>A big garrison that also protects every building within 8 tiles</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingFortWood"></span> wood, <span id="buildingFortIron"></span> iron, <span id="buildingFortBronze"></span> bronze, <span id="buildingFortGold"></span> gold</p>
-					<p>familiars required: <span id="buildingFortFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyBloodTemple">Buy blood temple
-				<div class="hover">
-					<p>A place of worship to thy master</p>
-					<p>Each round: 10% chance of +25% influence for 3 rounds</p>
-						<p>A blessing consumes 10% of your blood</p>
-					<p>Build on grassland. Has no place for familiars</p>
-					<p>price: <span id="buildingBloodTempleWood"></span> wood,
-						<span id="buildingBloodTempleIron"></span> iron,
-						<span id="buildingBloodTempleBronze"></span> bronze,
-						<span id="buildingBloodTempleGold"></span> gold</p>
-					<p>familiars required: <span id="buildingBloodTempleFamiliarsRequired"></span></p>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Upgrade a building (opens when you click a building on the map; js/town/UpgradeMenu.js) -->
-	<div id="upgradeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
-		<div class="modal-content upgrade-content">
-			<div id="upgradeClose" class="close">&times;</div>
-			<h3 id="upgradeTitle">Upgrade</h3>
-			<p id="upgradeNow"></p>
-			<p id="upgradeNext"></p>
-			<ul id="upgradeCosts"></ul>
-			<button type="button" class="button" id="upgradeButton">Upgrade</button>
-			<p id="upgradeMessage" role="status"></p>
-			<hr class="upgrade-divider">
-			<button type="button" class="button demolish-button" id="demolishButton">Demolish</button>
-			<p id="demolishNote" class="demolish-note"></p>
-		</div>
-	</div>
-
-	<!-- How to play (opened by js/HowToPlay.js: once after sign-up, and by the header button) -->
-	<div id="helpModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-		<div class="modal-content help-content">
-			<div id="helpClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
-			<h3 id="helpTitle">How to play</h3>
-			<p class="help-intro">Build a vampire house that grows stronger over time.</p>
-
-			<ol class="help-steps">
-				<li>
-					<strong>Drink blood.</strong> Click the big blood drop in the corner. Spend blood on vampire animals and
-					vampires: they give you blood and influence every 10 seconds, even while you are away.
-				</li>
-				<li>
-					<strong>Get familiars.</strong> Adopting one costs influence. Give each familiar a job with the
-					<em>+</em> and <em>&minus;</em> buttons: human food or wood. They eat 1 food per 10 seconds,
-					so keep some on food. Familiars without a job are the ones who can work in new buildings.
-				</li>
-				<li>
-					<strong>Build on the map.</strong> Click a tile to open the build menu. Huts make room for more familiars,
-					farms give food, lumber mills (on forest) give wood, and mines (on rock) give iron, bronze and gold.
-					Click one of your buildings to upgrade it (up to level 10) for more output, more room or stronger blessings.
-					Upgrades cost resources, blood and free familiars.
-					Scroll the mouse wheel over the map to zoom.
-				</li>
-				<li>
-					<strong>Level up.</strong> Influence fills your level bar, and resets to 0 each time you level up.
-					Level 2 takes 1,000 influence and every level after that needs more. Iron tools (hoe, axe, pick) make
-					your buildings more productive, and each one you buy makes the next one a little dearer.
-				</li>
-				<li>
-					<strong>Aim high.</strong> The Blood Temple is the late-game goal: each round it may bless you with
-					extra influence, but a blessing eats 10% of your blood. Check the leaderboard, chat with other players,
-					and expect a random event now and then.
-				</li>
+		<!-- HOW TO BEGIN -->
+		<section id="begin" class="begin">
+			<h2>How to begin</h2>
+			<ol class="steps">
+				<li><strong>Name yourself.</strong> Pick a vampire name and a house name.</li>
+				<li><strong>Drink.</strong> Press the blood button. Spend it on vampires and familiars.</li>
+				<li><strong>Build.</strong> Raise huts for room, farms for food, mines and mills for materials.</li>
+				<li><strong>Grow.</strong> Gain levels, enter the cave and prepare for the first raiders.</li>
 			</ol>
+		</section>
 
-			<p class="help-note">The game saves by itself every 10 seconds, so you can close it and come back later.</p>
-			<button type="button" class="button" id="helpOk">Got it</button>
-		</div>
-	</div>
+		<!-- FINAL CALL -->
+		<section class="final">
+			<h2>The night is long.<br>Your house is small.</h2>
+			<a class="btn primary big" href="play.html">Enter BLOOD &amp; EARTH</a>
+		</section>
+	</main>
 
-	<!-- Dice game (js/dice/DiceGame.js) -->
-	<div id="diceModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="diceTitle">
-		<div class="modal-content dice-content">
-			<div id="diceClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
-			<h3 id="diceTitle">Dice</h3>
-			<p class="dice-intro">Bet the same resources as another player. Two dice each: the higher total wins both bets, a tie returns everything.
-				<span id="diceWins" class="dice-wins"></span></p>
-			<p class="dice-status" id="diceStatus" role="status"></p>
-			<div class="dice-result" id="diceResult" hidden></div>
+	<footer>
+		<span>BLOOD &amp; EARTH</span>
+		<a href="play.html">Play</a>
+		<a href="#top">Back to top</a>
+	</footer>
 
-			<h4>Challenges for you</h4>
-			<ul class="dice-list" id="diceIncoming"></ul>
-
-			<h4>Open lobby</h4>
-			<ul class="dice-list" id="diceLobby"></ul>
-
-			<h4>Make a challenge</h4>
-			<p class="dice-help">Bet any mix of resources, up to what you have. The other player must be able to cover the same bet.</p>
-			<div class="dice-inputs" id="diceStakeInputs"></div>
-			<label class="dice-target">Challenge a specific player (leave empty for the open lobby)
-				<input type="text" id="diceTarget" maxlength="20" placeholder="Vampire name">
-			</label>
-			<button type="button" class="button" id="diceCreate">Challenge</button>
-
-			<h4>Your open challenges</h4>
-			<ul class="dice-list" id="diceMine"></ul>
-
-			<h4>Recent games</h4>
-			<ul class="dice-list dice-recent" id="diceRecent"></ul>
-		</div>
-	</div>
-
-	<!-- The war: defences, enemy outposts, buildings held by raiders, battle reports (js/raids/WarMenu.js) -->
-	<div id="warModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="warTitle">
-		<div class="modal-content cave-content">
-			<div id="warClose" class="close">&times;</div>
-			<h3 id="warTitle">War</h3>
-			<div id="warBody" class="war-body"></div>
-			<div id="warActions" class="cave-actions war-actions"></div>
-		</div>
-	</div>
-
-	<!-- Options (this browser only) -->
-	<div id="optionsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="optionsTitle">
-		<div class="modal-content cave-content">
-			<h3 id="optionsTitle">Options</h3>
-			<label class="field" for="densitySlider">Walking familiars on the map: <span id="densityValue"></span></label>
-			<input type="range" id="densitySlider" min="0" max="100" step="10">
-			<p class="cave-hint">Fewer figures make the game lighter on your computer. 0% hides them all.</p>
-			<div class="cave-actions"><button type="button" class="button" id="optionsClose">Close</button></div>
-		</div>
-	</div>
-
-	<!-- The cave: the way into the underground (js/underground/CaveMenu.js, wired up in main.js) -->
-	<div id="caveModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="caveTitle">
-		<div class="modal-content cave-content">
-			<h3 id="caveTitle">The Cave</h3>
-			<p id="caveText">You have found an entrance to the underground. Here you may find many foul creatures, including other vampires</p>
-			<div id="caveChoice" class="cave-actions">
-				<button type="button" class="button" id="caveEnter">Enter the underground</button>
-				<button type="button" class="button" id="caveNo">No thanks</button>
-			</div>
-			<div id="caveLevels" hidden>
-				<p id="caveNote" class="cave-note"></p>
-				<div id="caveLevelRows" class="cave-levels"></div>
-				<button type="button" class="button" id="caveBack">Back</button>
-			</div>
-			<h4>In the underground now</h4>
-			<ul id="caveWho" class="cave-who"></ul>
-			<p class="cave-hint">Played with keyboard and mouse. Dying costs 2% of your wood, iron, bronze and gold.</p>
-		</div>
-	</div>
-
-	<!-- Level points: Health, Defence, Strength, Magic (opens on every level-up; wired up in main.js) -->
-	<div id="attributesModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="attributesTitle">
-		<div class="modal-content attributes-content">
-			<h3 id="attributesTitle">Attributes</h3>
-			<p id="attributesIntro"></p>
-			<div id="attributesRows"></div>
-			<div class="profile-actions">
-				<button type="button" class="button" id="attributesApply">Apply</button>
-				<button type="button" class="button" id="attributesLater">Later</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- My character: look, description and privacy of the character page (wired up in main.js) -->
-	<div id="profileModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
-		<div class="modal-content profile-content">
-			<div id="profileClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
-			<h3 id="profileTitle">My character</h3>
-			<div id="profileBuilder"></div>
-			<label class="field" id="helmetLabel">Helmet (found in the underground)</label>
-			<div class="helmet-picker" id="profileHelmets" role="group" aria-labelledby="helmetLabel"></div>
-			<label class="field" for="profileBio">About me (shown on your page)</label>
-			<textarea id="profileBio" maxlength="150" placeholder="Who are you? What does your settlement stand for?"></textarea>
-			<div class="profile-count"><span id="profileBioCount">0</span>/150</div>
-			<label class="field" id="accentLabel">Banner colour</label>
-			<div class="accent-picker" id="profileAccents" role="group" aria-labelledby="accentLabel"></div>
-			<h4>Privacy</h4>
-			<label class="profile-switch">
-				<input type="checkbox" id="profilePublic">
-				<span>Public page<small>Off: nobody can see your stats, map or description. Your name and look still show.</small></span>
-			</label>
-			<label class="profile-switch">
-				<input type="checkbox" id="profileShowResources">
-				<span>Show my resources and stats</span>
-			</label>
-			<label class="profile-switch">
-				<input type="checkbox" id="profileShowMap">
-				<span>Show my map</span>
-			</label>
-			<p class="profile-status" id="profileStatus" role="status"></p>
-			<div class="profile-actions">
-				<button type="button" class="button" id="profileSave">Save</button>
-				<a id="profileView" href="player.html" target="_blank" rel="noopener">View my page</a>
-			</div>
-		</div>
-	</div>
-
-	<!-- Leaderboard (filled in by js/leaderboard/Leaderboard.js) -->
-	<div id="leaderboardModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="leaderboardTitle">
-		<div class="modal-content leaderboard-content">
-			<div id="leaderboardClose" class="close" role="button" tabindex="0" aria-label="Close">&times;</div>
-			<h3 id="leaderboardTitle">Leaderboard</h3>
-			<p class="leaderboard-status" id="leaderboardStatus" role="status"></p>
-			<div class="leaderboard-scroll" id="leaderboardScroll" hidden>
-				<table class="leaderboard-table">
-					<thead>
-						<tr>
-							<th scope="col">#</th>
-							<th scope="col">Vampire</th>
-							<th scope="col">Settlement</th>
-							<th scope="col">Level</th>
-							<th scope="col">Influence</th>
-							<th scope="col">Blood</th>
-							<th scope="col">Familiars</th>
-							<th scope="col">Dice wins</th>
-						</tr>
-					</thead>
-					<tbody id="leaderboardBody"></tbody>
-				</table>
-			</div>
-			<button type="button" class="button" id="leaderboardRefresh">Refresh</button>
-		</div>
-	</div>
-
-	<!-- Event popup (filled in by main.js) -->
-	<div id="modal-event" class="modal">
-		<div id="inner-content-event" class="modal-content"></div>
-	</div>
-
-	<script src="main.js" type="module"></script>
-	<script src="cursortracker.js"></script>
 </body>
 
 </html>
