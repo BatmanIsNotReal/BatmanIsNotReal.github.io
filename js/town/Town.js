@@ -34,6 +34,7 @@ export default class Town{
             WatchTower: new Defence("Watch tower", "warns you before a raid arrives", '../../../src/watchtower.png', { wood: 300, iron: 100, bronze: 0, gold: 0 }, 3, 10),
             GuardOutpost: new Defence("Guard outpost", "turns raids back and weakens raiders", '../../../src/guardoutpost.png', { wood: 1000, iron: 400, bronze: 100, gold: 0 }, 10, 11),
             Fort: new Defence("Fort", "a garrison that protects the buildings around it", '../../../src/fort.png', { wood: 5000, iron: 3000, bronze: 1000, gold: 150 }, 40, 12),
+            Tavern: new Defence("Tavern", "a place where every player can meet", '../../../src/tavern.png', { wood: 3000, iron: 1500, bronze: 300, gold: 50 }, 0, 15),
             EnemyOutpost: new Rock("Enemy outpost", "a raiding outpost", 0, '../../../src/enemyoutpost.png'),
             Held: new Rock("Held by the enemy", "a building taken by raiders", 0, '../../../src/heldtile.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
@@ -377,6 +378,7 @@ export default class Town{
             12: B.Fort,
             13: B.EnemyOutpost,
             14: B.Held,
+            15: B.Tavern,
         }[type]?.imgsrc;
     }
 
@@ -403,7 +405,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 14) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 15) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -446,9 +448,13 @@ export default class Town{
         return UPGRADABLE[this.tiles[tileId]] || DEFENCE_KEYS[this.tiles[tileId]] || null;
     }
 
-    // Builds a defence (key: WatchTower, GuardOutpost or Fort) on a patch of grass
+    // Builds a defence (key: WatchTower, GuardOutpost, Fort) or the tavern on a patch of grass
     buyDefence(key, inventory, familiar, document, id){
         const building = this.Buildings[key];
+        if (key === "Tavern" && Object.values(this.tiles).includes(15)){
+            alert("You already have a tavern.");
+            return false;
+        }
         if (this.tiles[id] !== 0){
             alert("A " + building.name.toLowerCase() + " has to be built on open grass.");
             return false;

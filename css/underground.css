@@ -57,3 +57,52 @@ body.ug-active > *:not(.ug-overlay) { visibility: hidden; }
 .ug-chat-log.open .ug-chat-line.old { opacity: 1; }
 .ug-chat-input { width: 100%; padding: 0.35rem 0.5rem; font: inherit; font-size: 1.15rem; color: var(--bone); background: rgba(10, 6, 8, 0.92); border: 2px solid var(--gold); outline: none; user-select: text; -webkit-user-select: text; }
 .ug-chat-input[hidden] { display: none; }
+
+/* ---------- The tavern (js/tavern/) ---------- */
+.tv-overlay { background: #0e0806; }
+.tv-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.tv-canvas { display: block; cursor: pointer; image-rendering: pixelated; }
+.tv-help { transition: opacity 2s; position: absolute; left: 50%; bottom: 0.4rem; transform: translateX(-50%); font-size: 0.95rem; color: var(--bone-dim); text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; text-align: center; width: min(60rem, 96vw); }
+.tv-log { position: absolute; left: 0.8rem; bottom: 2.2rem; width: min(26rem, 55vw); display: flex; flex-direction: column; gap: 0.1rem; pointer-events: none; text-shadow: 0 0 3px #000, 0 0 3px #000; font-size: 1.1rem; }
+.tv-line { background: rgba(10, 6, 8, 0.62); padding: 0.1rem 0.4rem; word-break: break-word; transition: opacity 1.5s; }
+.tv-line b { color: var(--gold); font-weight: normal; }
+.tv-line.mine b { color: #ffd979; }
+.tv-line.note { color: #d8ccb6; font-style: italic; }
+.tv-line.bad { color: #ff8a8a; }
+.tv-line.old { opacity: 0.35; }
+.tv-menu { position: fixed; z-index: 70; min-width: 9.5rem; background: #1a0f0a; border: 3px solid var(--gold); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6); padding: 0.25rem; display: flex; flex-direction: column; gap: 0.2rem; }
+.tv-menu[hidden] { display: none; }
+.tv-menu-name { padding: 0.15rem 0.4rem 0.3rem; color: var(--gold); border-bottom: 2px solid var(--line); font-size: 0.95rem; }
+.tv-menu-item { font: inherit; font-size: 1.15rem; text-align: left; padding: 0.3rem 0.6rem; color: var(--bone); background: #2a1810; border: 2px solid transparent; cursor: pointer; }
+.tv-menu-item:hover { background: var(--blood-deep); border-color: var(--gold); }
+.tv-request { position: absolute; top: 3.2rem; left: 50%; transform: translateX(-50%); z-index: 50; padding: 0.6rem 0.9rem; background: rgba(10, 6, 8, 0.94); border: 3px solid var(--gold); display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 94vw; }
+.tv-request[hidden], .tv-trade[hidden] { display: none; }
+.tv-trade { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 55; width: min(34rem, 96vw); max-height: 94vh; overflow: auto; padding: 1rem; background: #1a0f0a; border: 3px solid var(--gold); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); }
+.tv-trade h3 { margin: 0 0 0.6rem; color: var(--gold); text-align: center; }
+.tv-trade h4 { margin: 0 0 0.4rem; color: var(--bone); }
+.tv-trade-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.tv-trade-row { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; margin: 0.2rem 0; font-size: 1.05rem; }
+.tv-trade-row input { width: 5.5rem; font: inherit; padding: 0.1rem 0.3rem; color: var(--bone); background: #0e0806; border: 2px solid var(--line); user-select: text; -webkit-user-select: text; }
+.tv-trade-status { margin: 0.7rem 0; text-align: center; color: var(--bone-dim); }
+.tv-trade-buttons { display: flex; gap: 0.6rem; justify-content: center; }
+.tv-trade-buttons .on { border-color: #7bd88f; color: #7bd88f; }
+@media (max-width: 34rem) { .tv-trade-cols { grid-template-columns: 1fr; } }
+
+/* The dice and friend windows stay visible and on top while the tavern is open */
+body.tv-active > #diceModal, body.tv-active > #friendsModal { visibility: visible; z-index: 80; }
+
+/* The friend list (js/friends/) */
+.friends-content { width: min(100%, 34rem); }
+.friends-list { list-style: none; margin: 0.3rem 0 0.8rem; padding: 0; text-align: left; }
+.friends-list li { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; flex-wrap: wrap; }
+.friends-name { flex: 1 1 8rem; }
+.friends-small { padding: 0.15rem 0.5rem; font-size: 0.8em; }
+.friends-dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #555; flex: none; }
+.friends-dot.on { background: #46c46a; box-shadow: 0 0 6px #46c46a; }
+.friends-empty { color: var(--bone-dim); margin: 0.2rem 0 0.6rem; text-align: left; }
+.friends-add { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.friends-add input { flex: 1; font: inherit; padding: 0.3rem 0.5rem; color: var(--bone); background: #0e0806; border: 2px solid var(--line); }
+.friends-status { min-height: 1.4em; color: #7bd88f; }
+.friends-status.bad { color: #ff8a8a; }
+.friends-badge { display: inline-block; min-width: 1.2em; margin-left: 0.3em; padding: 0 0.3em; background: var(--blood-bright); color: #fff; border-radius: 1em; font-size: 0.8em; }
+.friends-badge[hidden] { display: none; }

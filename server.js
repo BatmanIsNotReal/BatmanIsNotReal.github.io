@@ -28,6 +28,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "server-data");
 const CHAT_FILE = path.join(DATA_DIR, "chat.json");
 const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
 const DICE_FILE = path.join(DATA_DIR, "dice.json");
+const FRIENDS_FILE = path.join(DATA_DIR, "friends.json");
 
 // ---------- Chat limits ----------
 const MAX_STORED_MESSAGES = 200;   // older messages are dropped
@@ -385,7 +386,7 @@ function cleanMap(value) {
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-e]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-f]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }
@@ -1000,6 +1001,7 @@ function ugDrop(conn) {
 		else ugRoster(conn.room);
 	}
 	if (conn.playerId && ugByPlayer.get(conn.playerId) === conn) ugByPlayer.delete(conn.playerId);
+	if (conn.mode === "tavern") tavDrop(conn);
 }
 
 function ugRoster(room) {
@@ -1074,6 +1076,7 @@ function ugReceive(conn, text) {
 	let message;
 	try { message = JSON.parse(text); } catch { return; }
 	if (!message || typeof message !== "object") return;
+	if (conn.mode === "tavern") return tavReceive(conn, message);
 	if (message.t === "join") return ugJoin(conn, message);
 	if (message.t === "in" && conn.room) {
 		conn.lastInput = Date.now();
@@ -1116,7 +1119,7 @@ function ugParse(conn) {
 function onUpgrade(req, socket) {
 	const url = new URL(req.url, "http://localhost");
 	const key = req.headers["sec-websocket-key"];
-	if (url.pathname !== "/ws/underground" || !key || String(req.headers.upgrade).toLowerCase() !== "websocket" || !RULES) {
+	if (!["/ws/underground", "/ws/tavern"].includes(url.pathname) || !key || String(req.headers.upgrade).toLowerCase() !== "websocket" || !RULES) {
 		socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
 		return;
 	}
@@ -1129,7 +1132,7 @@ function onUpgrade(req, socket) {
 	const accept = crypto.createHash("sha1").update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").digest("base64");
 	socket.write("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + accept + "\r\n\r\n");
 	socket.setNoDelay(true);
-	const conn = { socket, ip, buffer: Buffer.alloc(0), closed: false, room: null, windowStart: Date.now(), windowCount: 0, lastInput: Date.now() };
+	const conn = { socket, ip, mode: url.pathname === "/ws/tavern" ? "tavern" : "underground", buffer: Buffer.alloc(0), closed: false, room: null, windowStart: Date.now(), windowCount: 0, lastInput: Date.now() };
 	socket.on("data", (chunk) => {
 		conn.buffer = Buffer.concat([conn.buffer, chunk]);
 		if (conn.buffer.length > UG_MAX_MESSAGE * 4) return wsClose(conn, 1009);
@@ -1137,7 +1140,7 @@ function onUpgrade(req, socket) {
 	});
 	socket.on("close", () => ugDrop(conn));
 	socket.on("error", () => ugDrop(conn));
-	setTimeout(() => { if (!conn.room) wsClose(conn, 1008); }, 10000).unref();
+	setTimeout(() => { if (!conn.room && !conn.pid) wsClose(conn, 1008); }, 10000).unref();
 }
 
 // 20 steps a second for every level that has players in it. The clock is checked every 10 ms and a step is
@@ -1169,6 +1172,368 @@ function ugStep(now) {
 	}
 }
 
+
+// ---------- Friends ----------
+// POST /api/friends { id, action, name? }
+//   action "list"                     -> { friends: [ { name, online, level } ], incoming: [ { name } ], outgoing: [ { name } ] }
+//   action "request", name            -> asks that player to be your friend (if they already asked you, you become friends)
+//   action "accept" / "decline", name -> answers a request you got
+//   action "cancel", name             -> takes back a request you sent
+//   action "remove", name             -> ends a friendship
+// Friends are kept by player id in friends.json, so a name change does not break a friendship.
+const friendLinks = new Map();    // player id -> Set of friend ids
+const friendRequests = new Map(); // player id (who was asked) -> Set of ids (who asked)
+const MAX_FRIENDS = 100;
+const MAX_OPEN_REQUESTS = 50;
+const isFriendsRateLimited = createRateLimiter(90, 60000);
+
+const saveFriends = makeSaver(FRIENDS_FILE, () => ({
+	friends: Object.fromEntries([...friendLinks].map(([id, set]) => [id, [...set]])),
+	requests: Object.fromEntries([...friendRequests].map(([id, set]) => [id, [...set]])),
+}), 1500, 2);
+
+function loadFriends() {
+	try {
+		const saved = JSON.parse(fs.readFileSync(FRIENDS_FILE, "utf8"));
+		for (const [id, list] of Object.entries(saved.friends || {})) if (Array.isArray(list)) friendLinks.set(id, new Set(list));
+		for (const [id, list] of Object.entries(saved.requests || {})) if (Array.isArray(list)) friendRequests.set(id, new Set(list));
+	} catch {
+		// No friends saved yet (or the file is damaged): start empty.
+	}
+}
+
+function friendsOf(id) {
+	let set = friendLinks.get(id);
+	if (!set) { set = new Set(); friendLinks.set(id, set); }
+	return set;
+}
+
+function requestsFor(id) {
+	let set = friendRequests.get(id);
+	if (!set) { set = new Set(); friendRequests.set(id, set); }
+	return set;
+}
+
+function friendsView(id) {
+	const named = (otherId) => players.get(otherId);
+	const friends = [...friendsOf(id)].map((fid) => ({ fid, p: named(fid) })).filter((x) => x.p)
+		.map(({ fid, p }) => ({ name: p.vampireName, online: lastSeen.has(fid), level: p.level || 1 }))
+		.sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
+	const incoming = [...requestsFor(id)].map(named).filter(Boolean).map((p) => ({ name: p.vampireName }));
+	const outgoing = [];
+	for (const [target, set] of friendRequests) if (set.has(id) && players.get(target)) outgoing.push({ name: players.get(target).vampireName });
+	return { friends, incoming, outgoing };
+}
+
+async function handleFriends(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "POST") {
+		res.writeHead(405, { Allow: "POST, OPTIONS" });
+		return res.end();
+	}
+	if (isFriendsRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	let body;
+	try { body = await readJsonBody(req); } catch (error) { return sendJson(res, error.status || 400, { error: error.message }); }
+	body = body && typeof body === "object" ? body : {};
+	const id = typeof body.id === "string" ? body.id : "";
+	if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+	const me = players.get(id);
+	if (!me) return sendJson(res, 403, { error: "The server does not know you yet. Wait a few seconds and try again." });
+	lastSeen.set(id, Date.now());
+
+	const action = body.action;
+	if (action === "list") return sendJson(res, 200, friendsView(id));
+
+	const wanted = clean(body.name, MAX_NAME_LENGTH);
+	const otherId = wanted ? nameOwners.get(nameKey(wanted)) : null;
+	const other = otherId ? players.get(otherId) : null;
+	if (!other) return sendJson(res, 404, { error: "There is no player called " + (wanted || "that") + "." });
+	if (otherId === id) return sendJson(res, 400, { error: "That is you." });
+	let message = "";
+
+	if (action === "request") {
+		if (friendsOf(id).has(otherId)) return sendJson(res, 400, { error: other.vampireName + " is already your friend." });
+		if (requestsFor(id).has(otherId)) {
+			// they had already asked: this makes you friends
+			requestsFor(id).delete(otherId);
+			friendsOf(id).add(otherId); friendsOf(otherId).add(id);
+			message = "You and " + other.vampireName + " are now friends.";
+		} else if (requestsFor(otherId).has(id)) {
+			return sendJson(res, 400, { error: "You already asked " + other.vampireName + "." });
+		} else {
+			if (friendsOf(id).size >= MAX_FRIENDS) return sendJson(res, 400, { error: "Your friend list is full." });
+			if (requestsFor(otherId).size >= MAX_OPEN_REQUESTS) return sendJson(res, 400, { error: other.vampireName + " has too many open requests." });
+			requestsFor(otherId).add(id);
+			message = "Friend request sent to " + other.vampireName + ".";
+			const live = tavByPlayer.get(otherId);
+			if (live) wsSend(live, { t: "notice", text: me.vampireName + " would like to be your friend. Open Friends to answer." });
+		}
+	} else if (action === "accept") {
+		if (!requestsFor(id).has(otherId)) return sendJson(res, 400, { error: other.vampireName + " has not asked you." });
+		if (friendsOf(id).size >= MAX_FRIENDS) return sendJson(res, 400, { error: "Your friend list is full." });
+		requestsFor(id).delete(otherId);
+		friendsOf(id).add(otherId); friendsOf(otherId).add(id);
+		message = "You and " + other.vampireName + " are now friends.";
+	} else if (action === "decline") {
+		requestsFor(id).delete(otherId);
+		message = "Request declined.";
+	} else if (action === "cancel") {
+		requestsFor(otherId).delete(id);
+		message = "Request taken back.";
+	} else if (action === "remove") {
+		friendsOf(id).delete(otherId); friendsOf(otherId).delete(id);
+		message = other.vampireName + " is no longer your friend.";
+	} else {
+		return sendJson(res, 400, { error: "Unknown action" });
+	}
+	saveFriends();
+	return sendJson(res, 200, { ok: true, message, ...friendsView(id) });
+}
+
+// ---------- The tavern ----------
+// WebSocket /ws/tavern: one big room where players meet. No fighting. The client sends
+//      { t: "join", id }                         once (id = the player's own id)
+//      { t: "move", x, y }                       click on the floor: you stand there at once if the spot is free
+//      { t: "say", text }                        Enter: the text shows above your head for a few seconds
+//      { t: "tradeRequest", to } { t: "tradeReply", accept } { t: "tradeOffer", offer, have }
+//      { t: "tradeAccept", ok, have } { t: "tradeCancel" }
+//   and receives hello / join / left / p (a new position) / you (your own position, if a move was refused)
+//   / say / notice / tradeRequest / trade / tradeEnd.
+// The layout of the room is in js/tavern/layout.mjs (shared with the browser).
+// A trade is settled like a dice game: both players' browsers get "settlements" (+/- resources) that they
+// apply to their own storage exactly once (see queueSettlement above).
+let TAVERN = null;
+const tavConns = new Map();    // pid -> conn
+const tavByPlayer = new Map(); // player id -> conn
+const TAV_MAX_PLAYERS = 150;
+const TAV_IDLE_MS = 15 * 60000;
+const TRADE_REQUEST_MS = 30000;
+const TRADE_IDLE_MS = 5 * 60000;
+const tradeOf = new Map();       // player id -> trade (both players point to the same one)
+const tradeRequests = new Map(); // player id (who was asked) -> { fromId, timer }
+
+function tavOthers(except) {
+	return [...tavConns.values()].filter((c) => c !== except).map((c) => ({ x: c.x, y: c.y }));
+}
+
+function tavBroadcast(object, except = null) {
+	for (const c of tavConns.values()) if (c !== except) wsSend(c, object);
+}
+
+function tavInfo(c) {
+	return { name: c.name, avatar: c.avatar, helmet: c.helmet, level: c.level, x: c.x, y: c.y, face: c.face };
+}
+
+function tavJoin(conn, message) {
+	if (conn.pid) return;
+	const id = typeof message.id === "string" ? message.id : "";
+	const player = /^[a-f0-9]{32}$/.test(id) ? players.get(id) : null;
+	if (!player) return wsSend(conn, { t: "error", error: "Create your vampire first (it has to be saved on the server)." });
+	if (tavConns.size >= TAV_MAX_PLAYERS) return wsSend(conn, { t: "error", error: "The tavern is full right now. Try again in a moment." });
+	const old = tavByPlayer.get(id);
+	if (old) wsClose(old, 4000);
+
+	const profile = player.profile || {};
+	conn.playerId = id;
+	conn.pid = String(ugNextPid++);
+	conn.name = player.vampireName;
+	conn.level = player.level || 1;
+	conn.avatar = profile.avatar || null;
+	conn.helmet = profile.helmet || 0;
+	conn.face = 1;
+	conn.lastInput = Date.now();
+	conn.lastMove = 0; conn.lastSay = 0; conn.lastTradeAsk = 0;
+	const spot = TAVERN.freeSpawn(tavOthers(null));
+	conn.x = spot.x; conn.y = spot.y;
+	tavConns.set(conn.pid, conn);
+	tavByPlayer.set(id, conn);
+	lastSeen.set(id, Date.now());
+
+	const roster = {};
+	for (const [pid, c] of tavConns) roster[pid] = tavInfo(c);
+	wsSend(conn, { t: "hello", you: conn.pid, players: roster });
+	tavBroadcast({ t: "join", pid: conn.pid, info: tavInfo(conn) }, conn);
+}
+
+function tavDrop(conn) {
+	if (!conn.pid || tavConns.get(conn.pid) !== conn) return;
+	tavConns.delete(conn.pid);
+	if (tavByPlayer.get(conn.playerId) === conn) tavByPlayer.delete(conn.playerId);
+	endTrade(conn.playerId, conn.name + " left the tavern.");
+	const asked = tradeRequests.get(conn.playerId);
+	if (asked) { clearTimeout(asked.timer); tradeRequests.delete(conn.playerId); }
+	for (const [target, r] of tradeRequests) if (r.fromId === conn.playerId) { clearTimeout(r.timer); tradeRequests.delete(target); }
+	tavBroadcast({ t: "left", pid: conn.pid });
+}
+
+function tavReceive(conn, message) {
+	if (message.t === "join") return tavJoin(conn, message);
+	if (!conn.pid) return;
+	const now = Date.now();
+	conn.lastInput = now;
+	lastSeen.set(conn.playerId, now);
+
+	if (message.t === "ping") return wsSend(conn, { t: "pong", c: message.c });
+	if (message.t === "leave") return wsClose(conn);
+
+	if (message.t === "move") {
+		const x = Math.round(Number(message.x)), y = Math.round(Number(message.y));
+		if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+		if (now - conn.lastMove < 120) return wsSend(conn, { t: "you", x: conn.x, y: conn.y });
+		const problem = TAVERN.spotProblem(x, y, tavOthers(conn));
+		if (problem) return wsSend(conn, { t: "you", x: conn.x, y: conn.y, error: problem });
+		conn.lastMove = now;
+		if (Math.abs(x - conn.x) > 3) conn.face = x > conn.x ? 1 : -1;
+		conn.x = x; conn.y = y;
+		return tavBroadcast({ t: "p", pid: conn.pid, x, y, face: conn.face }, conn);
+	}
+
+	if (message.t === "say") {
+		const text = clean(message.text, TAVERN.MAX_SAY);
+		if (!text) return;
+		if (now - conn.lastSay < 1000) return wsSend(conn, { t: "notice", text: "Not so fast!" });
+		if (hasSlur(text)) return wsSend(conn, { t: "notice", text: "That message is not allowed." });
+		conn.lastSay = now;
+		return tavBroadcast({ t: "say", pid: conn.pid, text });
+	}
+
+	if (message.t === "tradeRequest") return tradeAsk(conn, String(message.to));
+	if (message.t === "tradeReply") return tradeAnswer(conn, !!message.accept);
+	if (message.t === "tradeOffer") return tradeOffer(conn, message);
+	if (message.t === "tradeAccept") return tradeAccept(conn, message);
+	if (message.t === "tradeCancel") return endTrade(conn.playerId, conn.name + " cancelled the trade.");
+}
+
+setInterval(() => {
+	const now = Date.now();
+	for (const c of [...tavConns.values()]) {
+		if (now - c.lastInput > TAV_IDLE_MS) { wsSend(c, { t: "error", error: "You were away for too long." }); wsClose(c, 4001); }
+	}
+	for (const t of new Set(tradeOf.values())) if (now - t.touched > TRADE_IDLE_MS) endTrade(t.a.playerId, "The trade timed out.");
+}, 10000).unref();
+
+// ----- trading -----
+// A trade: { a: conn, b: conn, offer: { a: {}, b: {} }, ok: { a, b }, have: { a: {}, b: {} }, touched }
+// "have" is what each browser says its player owns (the browser also checks it itself); an offer can never be
+// more than that.
+function cleanOffer(input) {
+	const offer = {};
+	if (!input || typeof input !== "object") return offer;
+	for (const kind of DICE_RESOURCES) {
+		const value = Number(input[kind] || 0);
+		if (Number.isInteger(value) && value > 0 && value <= MAX_STAKE) offer[kind] = value;
+	}
+	return offer;
+}
+
+function tradeSide(trade, playerId) { return trade.a.playerId === playerId ? "a" : "b"; }
+
+function tradeView(trade, side) {
+	const other = side === "a" ? "b" : "a";
+	const partner = trade[other];
+	return { t: "trade", with: { pid: partner.pid, name: partner.name }, mine: trade.offer[side], theirs: trade.offer[other], myOk: trade.ok[side], theirOk: trade.ok[other] };
+}
+
+function tradeSend(trade) {
+	wsSend(trade.a, tradeView(trade, "a"));
+	wsSend(trade.b, tradeView(trade, "b"));
+}
+
+function endTrade(playerId, reason, done = false) {
+	const trade = tradeOf.get(playerId);
+	if (!trade) return;
+	tradeOf.delete(trade.a.playerId); tradeOf.delete(trade.b.playerId);
+	wsSend(trade.a, { t: "tradeEnd", done, reason });
+	wsSend(trade.b, { t: "tradeEnd", done, reason });
+}
+
+function tradeAsk(conn, toPid) {
+	const target = tavConns.get(toPid);
+	const now = Date.now();
+	if (!target || target === conn) return;
+	if (now - conn.lastTradeAsk < 4000) return wsSend(conn, { t: "notice", text: "Wait a moment before asking again." });
+	if (tradeOf.has(conn.playerId)) return wsSend(conn, { t: "notice", text: "You are already trading." });
+	if (tradeOf.has(target.playerId) || tradeRequests.has(target.playerId)) return wsSend(conn, { t: "notice", text: target.name + " is busy with another trade." });
+	conn.lastTradeAsk = now;
+	const timer = setTimeout(() => {
+		const r = tradeRequests.get(target.playerId);
+		if (r && r.fromId === conn.playerId) {
+			tradeRequests.delete(target.playerId);
+			wsSend(conn, { t: "notice", text: target.name + " did not answer your trade request." });
+			wsSend(target, { t: "tradeRequestEnd" });
+		}
+	}, TRADE_REQUEST_MS);
+	timer.unref();
+	tradeRequests.set(target.playerId, { fromId: conn.playerId, timer });
+	wsSend(target, { t: "tradeRequest", from: conn.pid, name: conn.name });
+	wsSend(conn, { t: "notice", text: "Trade request sent to " + target.name + "." });
+}
+
+function tradeAnswer(conn, accept) {
+	const request = tradeRequests.get(conn.playerId);
+	if (!request) return;
+	clearTimeout(request.timer);
+	tradeRequests.delete(conn.playerId);
+	const from = tavByPlayer.get(request.fromId);
+	if (!from) return;
+	if (!accept) return wsSend(from, { t: "notice", text: conn.name + " does not want to trade." });
+	if (tradeOf.has(from.playerId) || tradeOf.has(conn.playerId)) return;
+	const trade = { a: from, b: conn, offer: { a: {}, b: {} }, ok: { a: false, b: false }, have: { a: {}, b: {} }, touched: Date.now() };
+	tradeOf.set(from.playerId, trade);
+	tradeOf.set(conn.playerId, trade);
+	tradeSend(trade);
+}
+
+function tradeOffer(conn, message) {
+	const trade = tradeOf.get(conn.playerId);
+	if (!trade) return;
+	const side = tradeSide(trade, conn.playerId);
+	trade.have[side] = cleanOffer(message.have);
+	const offer = cleanOffer(message.offer);
+	for (const kind of Object.keys(offer)) if (offer[kind] > (trade.have[side][kind] || 0)) offer[kind] = trade.have[side][kind] || 0;
+	for (const kind of Object.keys(offer)) if (!offer[kind]) delete offer[kind];
+	trade.offer[side] = offer;
+	trade.ok.a = false; trade.ok.b = false;   // any change means both have to agree again
+	trade.touched = Date.now();
+	tradeSend(trade);
+}
+
+function tradeAccept(conn, message) {
+	const trade = tradeOf.get(conn.playerId);
+	if (!trade) return;
+	const side = tradeSide(trade, conn.playerId);
+	trade.have[side] = cleanOffer(message.have);
+	trade.touched = Date.now();
+	if (!message.ok) { trade.ok[side] = false; return tradeSend(trade); }
+	for (const kind of Object.keys(trade.offer[side])) {
+		if (trade.offer[side][kind] > (trade.have[side][kind] || 0)) {
+			trade.ok[side] = false; tradeSend(trade);
+			return wsSend(conn, { t: "notice", text: "You do not have that much " + DICE_RESOURCE_NAMES[kind] + "." });
+		}
+	}
+	trade.ok[side] = true;
+	if (!(trade.ok.a && trade.ok.b)) return tradeSend(trade);
+
+	// both agreed: settle it
+	const { a, b } = trade, offerA = trade.offer.a, offerB = trade.offer.b;
+	if (!Object.keys(offerA).length && !Object.keys(offerB).length) { trade.ok.a = trade.ok.b = false; tradeSend(trade); return wsSend(conn, { t: "notice", text: "Nothing is offered yet." }); }
+	if ((settlements.get(a.playerId) || []).length >= MAX_PENDING_SETTLEMENTS || (settlements.get(b.playerId) || []).length >= MAX_PENDING_SETTLEMENTS) {
+		trade.ok.a = trade.ok.b = false; tradeSend(trade);
+		return wsSend(conn, { t: "notice", text: "A game has not collected its earlier results yet. Try again in a moment." });
+	}
+	const delta = (give, get) => {
+		const d = {};
+		for (const [k, n] of Object.entries(give)) d[k] = (d[k] || 0) - n;
+		for (const [k, n] of Object.entries(get)) d[k] = (d[k] || 0) + n;
+		return d;
+	};
+	const said = (offer) => Object.keys(offer).length ? stakeText(offer) : "nothing";
+	queueSettlement(a.playerId, delta(offerA, offerB), "Trade with " + b.name + ": you gave " + said(offerA) + " and got " + said(offerB) + ".");
+	queueSettlement(b.playerId, delta(offerB, offerA), "Trade with " + a.name + ": you gave " + said(offerB) + " and got " + said(offerA) + ".");
+	saveDice();
+	endTrade(a.playerId, "Trade complete.", true);
+}
+
 function handleUndergroundList(req, res) {
 	if (req.method === "OPTIONS") return sendPreflight(res);
 	if (isUndergroundListRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
@@ -1189,6 +1554,7 @@ const server = http.createServer((req, res) => {
 		"/api/leaderboard": async () => handleLeaderboard(req, res, url),
 		"/api/online": () => handleOnline(req, res),
 		"/api/dice": () => handleDice(req, res),
+		"/api/friends": () => handleFriends(req, res),
 		"/api/underground": async () => handleUndergroundList(req, res),
 	}[url.pathname];
 	if (api) {
@@ -1205,11 +1571,13 @@ server.on("upgrade", onUpgrade);
 loadMessages();
 loadPlayers();
 loadDice();
+loadFriends();
 
 // The shared rules are ES modules; this file is not, so they are loaded with import() before starting.
-Promise.all([import("./js/rules.mjs"), import("./js/underground/world.mjs")]).then(([rules, world]) => {
+Promise.all([import("./js/rules.mjs"), import("./js/underground/world.mjs"), import("./js/tavern/layout.mjs")]).then(([rules, world, tavern]) => {
 RULES = rules;
 WORLD = world;
+TAVERN = tavern;
 server.listen(PORT, HOST, () => {
 	console.log("Vampire House is running.");
 	console.log(`  On this computer:  http://localhost:${PORT}`);
@@ -1220,4 +1588,4 @@ server.listen(PORT, HOST, () => {
 	}
 	console.log("Press Ctrl+C to stop.");
 });
-}).catch((error) => { console.error("Could not load js/rules.mjs and js/underground/world.mjs. Upload the whole game folder.", error); process.exit(1); });
+}).catch((error) => { console.error("Could not load js/rules.mjs, js/underground/world.mjs and js/tavern/layout.mjs. Upload the whole game folder.", error); process.exit(1); });

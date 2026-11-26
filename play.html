@@ -80,6 +80,7 @@
 			<button type="button" class="button" id="diceButton">Dice</button>
 			<button type="button" class="button" id="leaderboardButton">Leaderboard</button>
 			<button type="button" class="button" id="profileButton">My character</button>
+			<button type="button" class="button" id="friendsButton">Friends<span class="friends-badge" id="friendsBadge" hidden></span></button>
 			<button type="button" class="button" id="optionsButton">Options</button>
 			<button type="button" class="button" id="muteButton" aria-pressed="false" aria-label="Mute sound">
 				<i class="fas fa-volume-up"></i> <span>Sound on</span>
@@ -526,6 +527,15 @@
 					<p>familiars required: <span id="buildingFortFamiliarsRequired"></span></p>
 				</div>
 			</div>
+
+			<div class="button buy-building-button" id="buyTavern">Buy tavern
+				<div class="hover">
+					<p>A place where every player can meet: chat, trade, dice and friends. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingTavernWood"></span> wood, <span id="buildingTavernIron"></span> iron, <span id="buildingTavernBronze"></span> bronze, <span id="buildingTavernGold"></span> gold</p>
+					<p>familiars required: <span id="buildingTavernFamiliarsRequired"></span></p>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -625,6 +635,20 @@
 			<h3 id="warTitle">War</h3>
 			<div id="warBody" class="war-body"></div>
 			<div id="warActions" class="cave-actions war-actions"></div>
+		</div>
+	</div>
+
+	<!-- Friends (js/friends/FriendsMenu.js) -->
+	<div id="friendsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="friendsTitle">
+		<div class="modal-content friends-content">
+			<div id="friendsClose" class="close">&times;</div>
+			<h3 id="friendsTitle">Friends</h3>
+			<div id="friendsBody"></div>
+			<div class="friends-add">
+				<input type="text" id="friendsName" maxlength="24" placeholder="Name of a player" autocomplete="off">
+				<button type="button" class="button" id="friendsAdd">Ask</button>
+			</div>
+			<p class="friends-status" id="friendsStatus"></p>
 		</div>
 	</div>
 

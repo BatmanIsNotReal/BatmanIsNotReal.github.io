@@ -29,4 +29,7 @@ export const GIPHY_API_KEY = "o7xku0eaOLKGG9TQvfExci26j0HXVCHZ";
 
 // ...and the underground: a list of who is down there, and the live connection for the fights.
 export const UNDERGROUND_API_URL = CHAT_API_URL.replace(/\/chat$/, "/underground");
+// ...and the tavern and the friend list.
+export const TAVERN_WS_URL = CHAT_API_URL.replace(/^http/, "ws").replace(/\/api\/chat$/, "/ws/tavern");
+export const FRIENDS_API_URL = CHAT_API_URL.replace(/\/chat$/, "/friends");
 export const UNDERGROUND_WS_URL = CHAT_API_URL.replace(/^http/, "ws").replace(/\/api\/chat$/, "/ws/underground");

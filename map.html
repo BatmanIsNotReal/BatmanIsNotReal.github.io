@@ -113,6 +113,15 @@
 					<p>familiars required: <span id="buildingFortFamiliarsRequired"></span></p>
 				</div>
 			</div>
+
+			<div class="button buy-building-button" id="buyTavern">Buy tavern
+				<div class="hover">
+					<p>A place where every player can meet: chat, trade, dice and friends. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingTavernWood"></span> wood, <span id="buildingTavernIron"></span> iron, <span id="buildingTavernBronze"></span> bronze, <span id="buildingTavernGold"></span> gold</p>
+					<p>familiars required: <span id="buildingTavernFamiliarsRequired"></span></p>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -186,7 +195,8 @@
 				if (!event.target.classList.contains("tile")) return;
 				currentTile = event.target.id;
 				sync();
-				if (game.map.tiles()[currentTile] >= 10) { game.map.openWar(currentTile); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				if (game.map.tiles()[currentTile] === 15) { game.map.openTavern(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				else if (game.map.tiles()[currentTile] >= 10) { game.map.openWar(currentTile); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.tiles()[currentTile] === 9) { game.map.openCave(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 				else modal.style.display = "block";

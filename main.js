@@ -28,10 +28,13 @@ import CaveMenu from './js/underground/CaveMenu.js';
 import Underground from './js/underground/Underground.js';
 import War from './js/raids/War.js';
 import WarMenu from './js/raids/WarMenu.js';
+import Tavern from './js/tavern/Tavern.js';
+import FriendsMenu from './js/friends/FriendsMenu.js';
+import { profileUrl } from './js/profile/profileLink.js';
 import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
 import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
-import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL } from './js/chat/chatConfig.js';
+import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL, TAVERN_WS_URL, FRIENDS_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -149,7 +152,8 @@ for (let i = 0; i < tiles.length; i++){
 	tiles[i].addEventListener("click", () => {
 		currentTile = tiles[i].id;
 		if (myTown.tiles[currentTile] === 9) caveMenu.open();
-		else if (myTown.tiles[currentTile] >= 10) warMenu.open(currentTile);
+		else if (myTown.tiles[currentTile] === 15) openTavern();
+		else if (myTown.tiles[currentTile] >= 10 && myTown.tiles[currentTile] <= 14) warMenu.open(currentTile);
 		else if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 		else modal.style.display = "block";
 	});
@@ -213,6 +217,7 @@ const buildingActions = {
 	buyWatchTower: () => myTown.buyDefence("WatchTower", Inv, Familiars, document, currentTile),
 	buyGuardOutpost: () => myTown.buyDefence("GuardOutpost", Inv, Familiars, document, currentTile),
 	buyFort: () => myTown.buyDefence("Fort", Inv, Familiars, document, currentTile),
+	buyTavern: () => myTown.buyDefence("Tavern", Inv, Familiars, document, currentTile),
 };
 
 // What the separate map window (map.html) uses: it shows this window's map and builds through it,
@@ -258,6 +263,7 @@ window.vampireMap = {
 	},
 	imageFor: (type) => myTown.tileImage(type),
 	openCave: () => caveMenu.open(),
+	openTavern: () => openTavern(),
 	openWar: (id) => warMenu.open(id),
 	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
 	// are shown in the map window, where the player is looking.
@@ -369,7 +375,9 @@ try {
 		log: (text) => updateBox.townUpdatesAdd(text, document),
 		applied: diceApplied,
 	};
-	new DiceGame(diceOptions).start();
+	const dice = new DiceGame(diceOptions);
+	dice.start();
+	window.vampireDice = dice;
 	// The separate dice window (dice.html) runs on the same options, so it uses this window's storage and save.
 	window.vampireGameDice = diceOptions;
 } catch (error) {
@@ -464,7 +472,7 @@ function displayUpdate(){
 	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
 	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
 
-	for (const key of ["WatchTower", "GuardOutpost", "Fort"]){
+	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern"]){
 		const building = myTown.Buildings[key];
 		for (const kind of ["Wood", "Iron", "Bronze", "Gold"]){
 			const element = document.getElementById("building" + key + kind);
@@ -917,7 +925,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 14 ? type.toString(36) : 0; // 10 to 14 are written as a to e
+		tiles += Number.isInteger(type) && type > 0 && type <= 15 ? type.toString(36) : 0; // 10 to 15 are written as a to f
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
@@ -1054,6 +1062,43 @@ const underground = new Underground(document, {
 	},
 });
 window.vampireUnderground = underground; // for testing
+
+// The tavern (js/tavern/) and the friend list (js/friends/)
+function openDiceAgainst(name){
+	const dice = window.vampireDice;
+	if (!dice) return;
+	dice.open();
+	if (dice.targetInput){ dice.targetInput.value = name; dice.targetInput.dispatchEvent(new Event("input", { bubbles: true })); }
+}
+const friends = new FriendsMenu(document, {
+	apiUrl: FRIENDS_API_URL,
+	getPlayerId: () => signedUp ? playerSync.id : null,
+	openDice: openDiceAgainst,
+	openPage: (name) => window.open(profileUrl(name), "_blank", "noopener"),
+	onBadge: (count) => {
+		const badge = document.getElementById("friendsBadge");
+		if (!badge) return;
+		badge.textContent = count;
+		badge.hidden = !count;
+	},
+});
+friends.start();
+const tavern = new Tavern(document, {
+	url: TAVERN_WS_URL,
+	getPlayer: () => ({ id: playerSync.id }),
+	getItems: () => Inv.items,
+	prepare: async () => { await playerSync.save(playerProfile()); await sendProfile(Profile, true); },
+	openDice: (name) => openDiceAgainst(name),
+	openPage: (name) => window.open(profileUrl(name), "_blank", "noopener"),
+	addFriend: (name) => friends.request(name),
+	onTraded: () => { if (window.vampireDice) window.vampireDice.pollNow(); setTimeout(() => window.vampireDice && window.vampireDice.pollNow(), 2500); },
+	onClose: () => { displayUpdate(); save(); friends.refresh(); },
+});
+function openTavern(){
+	if (!signedUp){ alert("Name your vampire first, then you can enter the tavern."); return; }
+	tavern.open();
+}
+window.vampireTavern = tavern; // for testing
 const caveMenu = new CaveMenu(document, {
 	apiUrl: UNDERGROUND_API_URL,
 	getLevel: () => House.level,
