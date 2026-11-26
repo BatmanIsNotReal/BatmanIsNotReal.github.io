@@ -4,7 +4,7 @@
 //   - right-click another player: Dice / Page / Add friend / Trade
 // The server (server.js, /ws/tavern) decides where everybody stands; the shape of the room is shared
 // with it in layout.mjs.
-import { ROOM, FLOOR, FURNITURE, MAX_SAY, SAY_SHOW_MS, spotProblem } from "./layout.mjs";
+import { ROOM, FLOOR, FURNITURE, STOOLS, STOOL_OFFSETS, STOOL_LIFT, MAX_SAY, SAY_SHOW_MS, spotProblem, stoolAt, snapToStool } from "./layout.mjs";
 import { drawAvatar, defaultAvatar, normalizeAvatar } from "../profile/Avatar.js";
 
 const RESOURCES = [["blood", "Blood"], ["humanFood", "Human food"], ["wood", "Wood"], ["iron", "Iron"], ["bronze", "Bronze"], ["gold", "Gold"]];
@@ -212,7 +212,8 @@ export default class Tavern {
 		if (!me) return;
 		const now = performance.now();
 		if (now - this.lastMove < MOVE_COOLDOWN_MS) return;
-		const { x, y } = this.toRoom(e);
+		const clicked = this.toRoom(e);
+		const { x, y } = snapToStool(clicked.x, clicked.y);
 		const problem = spotProblem(x, y, this.others());
 		if (problem) { this.addLog("", problem, "bad"); return; }
 		this.lastMove = now;
@@ -441,19 +442,20 @@ export default class Tavern {
 		const sprite = this.avatarFor(pid);
 		const S = 3, w = sprite.width * S, h = sprite.height * S;
 		const mine = pid === this.me;
+		const lift = stoolAt(p.x, p.y) ? STOOL_LIFT : 0; // sitting on a stool
 		ctx.save();
 		ctx.fillStyle = "rgba(0,0,0,0.4)";
 		ctx.beginPath(); ctx.ellipse(p.x, p.y + 16, 18, 7, 0, 0, 6.3); ctx.fill();
 		ctx.translate(Math.round(p.x), 0);
 		ctx.scale(p.face < 0 ? -1 : 1, 1);
-		ctx.drawImage(sprite, -w / 2, Math.round(p.y + 18 - h), w, h);
+		ctx.drawImage(sprite, -w / 2, Math.round(p.y + 18 - h - lift), w, h);
 		ctx.restore();
 		ctx.font = "bold 20px VT323, monospace";
 		ctx.textAlign = "center";
 		ctx.lineWidth = 4; ctx.strokeStyle = "#000";
-		ctx.strokeText(p.name || "", p.x, p.y - 62);
+		ctx.strokeText(p.name || "", p.x, p.y - 62 - lift);
 		ctx.fillStyle = mine ? "#ffd979" : "#eadfce";
-		ctx.fillText(p.name || "", p.x, p.y - 62);
+		ctx.fillText(p.name || "", p.x, p.y - 62 - lift);
 	}
 
 	drawSpeech(ctx, pid, p, now) {
@@ -461,7 +463,7 @@ export default class Tavern {
 		if (pid === this.me && this.draft) { text = this.draft; draft = true; }
 		else { const b = this.bubbles.get(pid); if (b && b.until > now) text = b.text; }
 		if (!text) return;
-		this.drawBubble(ctx, p.x, p.y - 74, draft && Math.floor(now / 450) % 2 === 0 ? text + "|" : text, draft);
+		this.drawBubble(ctx, p.x, p.y - 74 - (stoolAt(p.x, p.y) ? STOOL_LIFT : 0), draft && Math.floor(now / 450) % 2 === 0 ? text + "|" : text, draft);
 	}
 
 	drawBubble(ctx, x, y, text, draft) {
@@ -516,7 +518,7 @@ export default class Tavern {
 		// candles on the tables
 		for (const f of FURNITURE) {
 			if (f.kind !== "table") continue;
-			const cx = f.x + f.w / 2 + 14, cy = f.y + f.h / 2 - 6;
+			const cx = f.cx + 14, cy = f.cy - 6;
 			const flick = Math.sin(t * 9 + f.x) * 1.5;
 			ctx.fillStyle = "#ffd36a";
 			ctx.beginPath(); ctx.ellipse(cx, cy - 12, 3, 6 + flick * 0.4, 0, 0, 6.3); ctx.fill();
@@ -619,7 +621,7 @@ export default class Tavern {
 			lc.fillStyle = g; lc.fillRect(x - r, y - r, r * 2, r * 2);
 		};
 		glow(1310, 260, 380, 0.34);
-		for (const f of FURNITURE) if (f.kind === "table") glow(f.x + f.w / 2 + 14, f.y + f.h / 2 - 10, 130, 0.16);
+		for (const f of FURNITURE) if (f.kind === "table") glow(f.cx + 14, f.cy - 10, 130, 0.16);
 		glow(350, 230, 260, 0.14);
 	}
 
@@ -637,11 +639,10 @@ export default class Tavern {
 	}
 
 	paintTable(ctx, f, rnd) {
-		const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+		const cx = f.cx, cy = f.cy;
 		ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.ellipse(cx + 5, cy + 12, 64, 56, 0, 0, 6.3); ctx.fill();
-		// stools around it
-		for (const [dx, dy] of [[-78, 4], [78, 4], [0, 76], [0, -70]]) {
-			if (f.y + f.h / 2 + dy < FLOOR.top + 4) continue;
+		for (const [dx, dy] of STOOL_OFFSETS) {
+			if (cy + dy < FLOOR.top + 4) continue;
 			ctx.fillStyle = "#3a2010"; ctx.beginPath(); ctx.ellipse(cx + dx, cy + dy, 15, 11, 0, 0, 6.3); ctx.fill();
 			ctx.fillStyle = "#6a4020"; ctx.beginPath(); ctx.ellipse(cx + dx, cy + dy - 3, 15, 10, 0, 0, 6.3); ctx.fill();
 		}

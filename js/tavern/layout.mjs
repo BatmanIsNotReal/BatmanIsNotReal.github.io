@@ -15,13 +15,17 @@ export const FLOOR = { left: 50, right: 1550, top: 205, bottom: 925 };
 
 // Furniture you cannot walk through (rectangles, in room coordinates).
 // kind tells the drawing code what to paint there.
+// A round table: you cannot walk through the top, but the stools around it are free to stand on.
+// (x, y) is the top-left of a 120 x 120 square around it; cx, cy is the middle.
+function table(x, y) { return { kind: "table", x: x + 10, y: y + 14, w: 100, h: 92, cx: x + 60, cy: y + 60 }; }
+
 export const FURNITURE = [
 	{ kind: "bar", x: 70, y: 190, w: 560, h: 74 },
-	{ kind: "table", x: 360, y: 470, w: 120, h: 120 },
-	{ kind: "table", x: 760, y: 400, w: 120, h: 120 },
-	{ kind: "table", x: 1160, y: 470, w: 120, h: 120 },
-	{ kind: "table", x: 520, y: 740, w: 120, h: 120 },
-	{ kind: "table", x: 1000, y: 740, w: 120, h: 120 },
+	table(360, 470),
+	table(760, 400),
+	table(1160, 470),
+	table(520, 740),
+	table(1000, 740),
 	{ kind: "barrel", x: 1490, y: 250, w: 64, h: 64 },
 	{ kind: "barrel", x: 1490, y: 330, w: 64, h: 64 },
 	{ kind: "hearth", x: 1180, y: 170, w: 260, h: 50 },
@@ -56,4 +60,29 @@ export function freeSpawn(others) {
 		}
 	}
 	return { x: SPAWN.x, y: SPAWN.y };
+}
+
+// The stools (chairs) around the tables. Standing on one lifts you a little.
+export const STOOL_OFFSETS = [[-78, 4], [78, 4], [0, 76], [0, -70]];
+export const STOOLS = [];
+for (const f of FURNITURE) {
+	if (f.kind !== "table") continue;
+	for (const [dx, dy] of STOOL_OFFSETS) {
+		if (f.cy + dy < FLOOR.top + 4) continue;
+		STOOLS.push({ x: f.cx + dx, y: f.cy + dy });
+	}
+}
+export const STOOL_SNAP = 28;   // a click this close to a stool puts you on it
+export const STOOL_LIFT = 14;   // how far above the floor you stand on a stool
+
+// The stool a character is standing on, if any
+export function stoolAt(x, y) {
+	for (const s of STOOLS) if (Math.hypot(x - s.x, y - s.y) < 12) return s;
+	return null;
+}
+
+// A click near a stool lands on the stool itself
+export function snapToStool(x, y) {
+	for (const s of STOOLS) if (Math.hypot(x - s.x, y - s.y) < STOOL_SNAP) return { x: s.x, y: s.y };
+	return { x, y };
 }
