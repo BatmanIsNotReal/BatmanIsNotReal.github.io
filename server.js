@@ -389,7 +389,7 @@ function cleanMap(value) {
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-m]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-n]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }

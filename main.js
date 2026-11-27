@@ -33,6 +33,7 @@ import BazaarMenu from './js/trade/BazaarMenu.js';
 import FriendsMenu from './js/friends/FriendsMenu.js';
 import { profileUrl } from './js/profile/profileLink.js';
 import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
+import { UNIT_POWER } from './js/raids/rules.mjs';
 import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
 import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL, TAVERN_WS_URL, FRIENDS_API_URL, HOUSE_API_URL } from './js/chat/chatConfig.js';
@@ -96,6 +97,21 @@ const vampireTypes = {
 	"vampireElder": VampireElder,
 	"bloodDemon": BloodDemon,
 	"bloodLeviathan": BloodLeviathan,
+}
+
+// How strong each vampire is in battle (the same numbers the war uses), shown before you buy one
+function showPower(id){
+	const button = document.getElementById(id);
+	const hover = button && button.querySelector(".hover");
+	if (!hover || !(id in UNIT_POWER)) return;
+	let line = hover.querySelector(".vamp-power");
+	if (!line){
+		line = document.createElement("p");
+		line.className = "vamp-power";
+		hover.append(line);
+	}
+	const text = "battle strength: " + UNIT_POWER[id].toLocaleString("en-US");
+	if (line.textContent !== text) line.textContent = text;
 }
 
 //Map
@@ -258,6 +274,7 @@ const buildingActions = {
 	buyTavern: () => myTown.buyDefence("Tavern", Inv, Familiars, document, currentTile),
 	buyRoad: () => { const ok = myTown.buyRoad(Inv, Familiars, document, currentTile); if (ok && !buildingFromMapWindow) setRoadMode(true); return ok; },
 	buyFishingPier: () => myTown.buyDefence("FishingPier", Inv, Familiars, document, currentTile),
+	buyTenement: () => myTown.buyDefence("Tenement", Inv, Familiars, document, currentTile),
 	buyBazaar: () => myTown.buyDefence("Bazaar", Inv, Familiars, document, currentTile),
 	buyMansion: () => { const ok = myTown.buyDefence("Mansion", Inv, Familiars, document, currentTile, House.level); if (ok) houseCall("claim"); return ok; },
 };
@@ -499,6 +516,7 @@ function displayUpdate(){
 
 	for (const [id, vampire] of Object.entries(vampireTypes)){
 		document.getElementById(id + "Count").innerHTML = vampire.getAmmount();
+		showPower(id);
 		const price = vampire.getPrices();
 		for (const [kind, suffix] of [["blood", ""], ["iron", "Iron"], ["bronze", "Bronze"], ["gold", "Gold"]]){
 			const element = document.getElementById(id + "Cost" + suffix);
@@ -524,7 +542,7 @@ function displayUpdate(){
 	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
 	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
 
-	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern", "Mansion", "Road", "Bridge", "MountainRoad", "ForestRoad", "Bazaar", "FishingPier"]){
+	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern", "Mansion", "Road", "Bridge", "MountainRoad", "ForestRoad", "Bazaar", "FishingPier", "Tenement"]){
 		const building = myTown.Buildings[key];
 		for (const kind of ["Wood", "Iron", "Bronze", "Gold", "Stone"]){
 			const element = document.getElementById("building" + key + kind);
@@ -866,6 +884,7 @@ const saveFields = {
 	mineAmmount: field(myTown.Buildings.Mine, "ammount"),
 	farmAmmount: field(myTown.Buildings.Farm, "ammount"),
 	fishingPierAmmount: field(myTown.Buildings.FishingPier, "ammount"),
+	tenementAmmount: field(myTown.Buildings.Tenement, "ammount"),
 	lumberMillAmmount: field(myTown.Buildings.LumberMill, "ammount"),
 	watchTowerAmmount: field(myTown.Buildings.WatchTower, "ammount"),
 	guardOutpostAmmount: field(myTown.Buildings.GuardOutpost, "ammount"),
@@ -1006,7 +1025,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 22 ? type.toString(36) : 0; // 10 to 22 are written as a to m
+		tiles += Number.isInteger(type) && type > 0 && type <= 23 ? type.toString(36) : 0; // 10 to 23 are written as a to n
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
@@ -1058,7 +1077,9 @@ async function syncPlayerFile(){
 	}
 }
 
+let importing = false; // while a character is being imported nothing may overwrite the new save
 function save(){
+	if (importing) return;
 	const data = { signedUp, tiles: myTown.tiles, tileLevels: myTown.tileLevels, mapWidth: myTown.mapWidth, mapHeight: myTown.mapHeight };
 	for (const [key, [get]] of Object.entries(saveFields)) data[key] = get();
 
@@ -1090,6 +1111,50 @@ document.getElementById("attributesButton").addEventListener("click", () => attr
 		show();
 		try { localStorage.setItem(DENSITY_KEY, slider.value); } catch { /* the choice just is not remembered */ }
 		familiarWalkers.sync();
+	});
+	// Export / import of the whole character: the save plus the player id, which the server knows you by
+	const message = document.getElementById("transferMessage");
+	const signUpMessage = document.getElementById("signUpImportMessage");
+	const say = (text) => { message.textContent = text; signUpMessage.textContent = text; };
+	document.getElementById("exportButton").addEventListener("click", () => {
+		save();
+		let raw = null;
+		try { raw = localStorage.getItem("save"); } catch { /* handled below */ }
+		if (!raw || !signedUp || !playerSync.id){ say("There is no character to export yet. Name your vampire first."); return; }
+		const file = { format: "blood-and-earth-character", version: 1, exported: new Date().toISOString(), playerId: playerSync.id, save: JSON.parse(raw) };
+		const url = URL.createObjectURL(new Blob([JSON.stringify(file)], { type: "application/json" }));
+		const link = document.createElement("a");
+		link.href = url;
+		link.download = "blood-and-earth-" + String(Account.vampireName || "character").replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".json";
+		document.body.append(link);
+		link.click();
+		link.remove();
+		setTimeout(() => URL.revokeObjectURL(url), 5000);
+		say("Exported. Keep the file safe and private.");
+	});
+	const fileInput = document.getElementById("importFile");
+	const pickFile = () => { fileInput.value = ""; fileInput.click(); };
+	document.getElementById("importButton").addEventListener("click", pickFile);
+	document.getElementById("signUpImportButton").addEventListener("click", pickFile); // on a new computer the sign-up form is all you see
+	fileInput.addEventListener("change", async () => {
+		const chosen = fileInput.files && fileInput.files[0];
+		if (!chosen) return;
+		try {
+			if (chosen.size > 5 * 1024 * 1024) throw new Error("That file is too big to be a character.");
+			const file = JSON.parse(await chosen.text());
+			if (!file || file.format !== "blood-and-earth-character" || file.version !== 1) throw new Error("That is not a Blood & Earth character file.");
+			if (typeof file.playerId !== "string" || !/^[a-f0-9]{32}$/.test(file.playerId)) throw new Error("The file has no valid character id.");
+			if (!file.save || typeof file.save !== "object" || Array.isArray(file.save) || file.save.signedUp !== true) throw new Error("The file has no saved game in it.");
+			const name = String(file.save.vampireName || "this vampire");
+			if (!confirm("Import " + name + "? This replaces the character in this browser (" + (signedUp ? Account.vampireName : "none") + "). Use this character in one browser at a time.")) return;
+			importing = true;
+			localStorage.setItem("save", JSON.stringify(file.save));
+			localStorage.setItem("vampirePlayerId", file.playerId);
+			location.reload();
+		} catch (error) {
+			importing = false;
+			say(error.message || "The file could not be read.");
+		}
 	});
 	const close = () => { modal.style.display = "none"; };
 	document.getElementById("optionsClose").addEventListener("click", close);
@@ -1212,7 +1277,11 @@ window.vampireTavern = tavern; // for testing
 		setTimeout(() => clearInterval(wait), 20000);
 	}
 }
-const bazaarMenu = new BazaarMenu(document, { getReport: () => myTown.tradeReport() });
+const bazaarMenu = new BazaarMenu(document, {
+	getReport: () => myTown.tradeReport(),
+	getUpkeep: () => { const id = Object.keys(myTown.tiles).find((k) => myTown.tiles[k] === 18); return id ? myTown.upkeepText(id) : ""; },
+	getRoadUpkeep: () => { const n = Object.values(myTown.tiles).filter((t) => [17, 19, 20, 21].includes(t)).length; return n + " road tiles cost you about " + n + " stone per minute"; },
+});
 const caveMenu = new CaveMenu(document, {
 	apiUrl: UNDERGROUND_API_URL,
 	getLevel: () => House.level,

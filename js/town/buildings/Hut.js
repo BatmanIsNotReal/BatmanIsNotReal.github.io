@@ -8,6 +8,7 @@ export default class Hut{
         this.ammount = 0;
         this.cost = cost;
         this.imgsrc = imgsrc; 
+        this.birthPercent = 2; // chance per round that a child is born
     }
 
     // One line for all children born this round
@@ -15,7 +16,7 @@ export default class Hut{
         let born = 0;
         for (let i = 0; i < this.ammount; i++){
             let n = this.getRandomInt(0, 100);
-            if (n < 2){
+            if (n < this.birthPercent){
                 if (familiar.ammount < familiar.maxLimit){
                     familiar.addFamiliar();
                     born++;

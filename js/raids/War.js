@@ -14,7 +14,7 @@ const cap1 = (t) => t[0].toUpperCase() + t.slice(1);
 const n0 = (v) => Math.round(v).toLocaleString("en-US");
 
 // What raiders go for: huts, mines, farms, lumber mills, blood temples and the defences
-const TARGET_TILES = [1, 4, 5, 7, 8, TILE.WATCH_TOWER, TILE.GUARD_OUTPOST, TILE.FORT];
+const TARGET_TILES = [1, 23, 4, 5, 7, 8, TILE.WATCH_TOWER, TILE.GUARD_OUTPOST, TILE.FORT];
 const OWN_TILES = TARGET_TILES;
 
 export default class War {
@@ -550,7 +550,7 @@ export default class War {
 	heldInfo(id) {
 		const h = this.held[id];
 		if (!h) return null;
-		return { id, name: this.town.Buildings[{ 1: "Hut", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple", 10: "WatchTower", 11: "GuardOutpost", 12: "Fort" }[h.type]]?.name || "building", garrison: h.garrison, text: describeStrength(h.garrison, this.towers() > 0) };
+		return { id, name: this.town.Buildings[{ 1: "Hut", 23: "Tenement", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple", 10: "WatchTower", 11: "GuardOutpost", 12: "Fort" }[h.type]]?.name || "building", garrison: h.garrison, text: describeStrength(h.garrison, this.towers() > 0) };
 	}
 
 	defenceInfo(id) {

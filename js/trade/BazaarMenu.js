@@ -42,7 +42,9 @@ export default class BazaarMenu {
 			list.append(li);
 		}
 		body.append(list);
-		add("p", "Total: " + report.income.toFixed(1) + " gold every 10 seconds.", "bazaar-total");
+		add("p", "Total: " + report.income.toFixed(1) + " gold every 10 seconds (" + (report.income * 6).toFixed(0) + " per minute).", "bazaar-total");
+		const upkeep = this.o.getUpkeep ? this.o.getUpkeep() : "";
+		add("p", "Bazaar upkeep: " + (upkeep || "none") + ". Road upkeep: " + (this.o.getRoadUpkeep ? this.o.getRoadUpkeep() : "") + ".");
 		add("p", "Build road tiles (they cost stone and gold) in an unbroken line from a tile next to the bazaar to the edge of the map. A watch tower, guard outpost or fort built on the road keeps it open and adds to the income. Raiding outposts within 5 tiles of a road block it. Roads cost 1 stone per tile every minute to keep up; a road tile that is not paid for cuts the route. Roads can cross grass, forest, rock (mountain road) and water (bridge).", "cave-hint");
 		this.modal.style.display = "block";
 	}

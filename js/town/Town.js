@@ -10,8 +10,9 @@ import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
 import Defence from './buildings/Defence.js';
 import FishingPier from './buildings/FishingPier.js';
+import Tenement from './buildings/Tenement.js';
 import { analyseTrade, ROAD_TYPES } from '../trade/routes.mjs';
-import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
+import { UPGRADABLE, MAX_LEVEL, ROOM_PER_LEVEL, outputMultiplier, costFor, effectText } from './BuildingUpgrades.js';
 
 // Tile types of the defences, and what they are called in this.Buildings
 const DEFENCE_KEYS = { 10: "WatchTower", 11: "GuardOutpost", 12: "Fort" };
@@ -28,10 +29,10 @@ export const UPKEEP_ROUNDS = 6;
 const UPKEEP = {
     1: { wood: 2 }, 4: { wood: 3 }, 5: { wood: 3 }, 7: { wood: 3 }, 8: { stone: 5 },
     10: { wood: 3 }, 11: { wood: 5 }, 12: { stone: 6 }, 15: { wood: 5 }, 16: { wood: 8 }, 18: { wood: 6 },
-    22: { wood: 4 },
+    22: { wood: 4 }, 23: { stone: 6 },
     17: { stone: 1 }, 19: { stone: 1, wood: 2 }, 20: { stone: 1 }, 21: { stone: 1 },
 };
-const UPKEEP_LEVEL_FACTOR = 0.1;
+const UPKEEP_LEVEL_FACTOR = 0.2;
 
 const DEMOLISH_REFUND = 0.7; // share of the building price you get back
 
@@ -66,6 +67,7 @@ export default class Town{
             EnemyOutpost: new Rock("Enemy outpost", "a raiding outpost", 0, '../../../src/enemyoutpost.png'),
             Held: new Rock("Held by the enemy", "a building taken by raiders", 0, '../../../src/heldtile.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
+            Tenement: new Tenement("Tenement", "a stone block of flats with room for many familiars", 24, '../../../src/tenement.png', { wood: 600, stone: 400, iron: 60, gold: 5 }),
             Hut: new Hut("Hut", "a small hut", 4, '../../../src/smallHut.png', 100),
             Mine: new Mine("Mine", "a mine", 10, '../../../src/mine.png', 1000, 10),
             Farm: new Farm("Farm", "a farm for human food", 5, '../../../src/farm.png', 500, 5),
@@ -414,6 +416,7 @@ export default class Town{
             20: B.MountainRoad,
             21: B.ForestRoad,
             22: B.FishingPier,
+            23: B.Tenement,
         }[type]?.imgsrc;
     }
 
@@ -428,6 +431,14 @@ export default class Town{
                 image.classList.toggle("neglected", broken);
                 if (broken){ const cost = this.upkeepOf(name); image.title = "In disrepair: needs " + (cost ? Object.keys(cost).map((k) => cost[k] + " " + k).join(" and ") : "upkeep"); }
                 else image.removeAttribute("title");
+            }
+            // hovering a working building shows what it costs to keep up
+            if (!broken){
+                const up = this.upkeepText(name);
+                const key = this.buildingKey(name) || ({ 15: "Tavern", 16: "Mansion", 17: "Road", 18: "Bazaar", 19: "Bridge", 20: "MountainRoad", 21: "ForestRoad" })[this.tiles[name]];
+                const text = up && key ? this.Buildings[key].name + " - upkeep: " + up : "";
+                if (text && image.title !== text) image.title = text;
+                else if (!text && image.title && !image.title.startsWith("In disrepair")) image.removeAttribute("title");
             }
             // the level badge on upgraded buildings (drawn by CSS from data-level)
             const cell = image.parentElement;
@@ -447,7 +458,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 22) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 23) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -526,6 +537,7 @@ export default class Town{
         }
         for (const item of Object.keys(building.cost)) inventory.items[item] -= building.cost[item];
         familiar.notWorking -= building.workersRequired;
+        if (building.capacity) familiar.addMaxLimit(building.capacity); // a tenement has room for familiars
         building.ammount++;
         this.tiles[id] = building.tileType;
         document.getElementById(id).src = String(building.imgsrc);
@@ -629,6 +641,42 @@ export default class Town{
         return levels;
     }
 
+    // "3 wood per minute" for what a building costs to keep up (empty text when it costs nothing)
+    upkeepText(id){
+        const cost = this.upkeepOf(id);
+        if (!cost) return "";
+        return Object.keys(cost).map((k) => cost[k].toLocaleString("en-US") + " " + k).join(" and ") + " per minute";
+    }
+
+    // What a building earns, as lines of text per minute (a round is 10 seconds, so 6 rounds), for the info
+    // in the building menus. Expected values: the real catch varies from round to round.
+    incomeLines(id){
+        const type = this.tiles[id];
+        const key = this.buildingKey(id);
+        if (!key) return [];
+        const b = this.Buildings[key];
+        const level = this.levelOf(id);
+        const gain = (b.gain || 1) * outputMultiplier(level);
+        const avg = (lo, hi) => (Math.ceil(lo) + Math.floor(hi) - 1) / 2; // the mean of getRandomInt(lo, hi)
+        const perMinute = (v) => (Math.round(v * 6 * 10) / 10).toLocaleString("en-US");
+        const lines = [];
+        if (type === 5) lines.push("about " + perMinute(0.5 * avg(10 * gain, 30 * gain)) + " human food");
+        else if (type === 7) lines.push("about " + perMinute(0.5 * avg(10 * gain, 30 * gain)) + " wood");
+        else if (type === 22) lines.push("about " + perMinute(0.55 * avg(12 * gain, 33 * gain)) + " human food");
+        else if (type === 4){
+            lines.push("about " + perMinute(0.301 * avg(10 * gain, 30 * gain)) + " iron");
+            lines.push("about " + perMinute(0.251 * avg(6 * gain, 20 * gain)) + " stone");
+            lines.push("about " + perMinute(0.101 * avg(5 * gain, 20 * gain)) + " bronze");
+            lines.push("about " + perMinute(0.026 * avg(2 * gain, 12 * gain)) + " gold");
+        } else if (type === 1 || type === 23){
+            const p = b.birthPercent / 100;
+            lines.push("a new familiar about every " + (Math.round(1 / p / 6 * 10) / 10) + " minutes (when there is room)");
+        } else if (type === 8){
+            lines.push(effectText("BloodTemple", level) + "; each blessing costs 10% of your blood");
+        }
+        return lines;
+    }
+
     isNeglected(id){
         return this.neglected.has(id);
     }
@@ -672,6 +720,9 @@ export default class Town{
             tileId, key, level, max: MAX_LEVEL, atMax,
             name: this.Buildings[key].name,
             now: effectText(key, level),
+            income: this.incomeLines(tileId),
+            upkeep: this.upkeepText(tileId),
+            neglected: this.neglected.has(tileId),
             next: atMax ? null : effectText(key, level + 1),
             costs: [], canAfford: false,
         };
@@ -709,7 +760,7 @@ export default class Town{
         familiar.notWorking -= price.familiars || 0; // these familiars now work on the upgrade
         const level = info.level + 1;
         this.tileLevels[tileId] = level;
-        if (info.key === "Hut") familiar.addMaxLimit(HUT_ROOM_PER_LEVEL);
+        if (ROOM_PER_LEVEL[info.key]) familiar.addMaxLimit(ROOM_PER_LEVEL[info.key]);
         if (updatebox) updatebox.townUpdatesAdd("Your " + info.name.toLowerCase() + " was upgraded to level " + level + ".", document);
         return { ok: true, message: info.name + " upgraded to level " + level + "." };
     }
@@ -732,7 +783,7 @@ export default class Town{
         let upgradeFamiliars = 0;
         for (let i = 0; i < level; i++) upgradeFamiliars += costFor(key, i).familiars;
         const freed = (building.workersRequired || 0) + upgradeFamiliars;
-        const room = (building.capacity || 0) + (key === "Hut" ? level * HUT_ROOM_PER_LEVEL : 0);
+        const room = (building.capacity || 0) + (ROOM_PER_LEVEL[key] ? level * ROOM_PER_LEVEL[key] : 0);
         const roomAfter = familiar.getMaxLimit() - room;
         const info = {
             tileId, key, name: building.name, level, refunds, freed, room, roomAfter,
@@ -768,9 +819,10 @@ export default class Town{
     loadTileLevels(saved, savedWidth = 40){
         this.tileLevels = {};
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
-        for (const [name, level] of Object.entries(saved)){
+        for (const [name, savedLevel] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(level) || level < 1 || level > MAX_LEVEL) continue;
+            if (!match || !Number.isInteger(savedLevel) || savedLevel < 1) continue;
+            const level = Math.min(savedLevel, MAX_LEVEL); // saves from the time of 10 levels keep the new top level
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -795,6 +847,7 @@ export default class Town{
             try { fn(levels); } finally { building.ammount = all; }
         };
         run(this.Buildings.Hut, 1, () => this.Buildings.Hut.updateTen(familiar, updatebox));
+        run(this.Buildings.Tenement, 23, () => this.Buildings.Tenement.updateTen(familiar, updatebox));
         run(this.Buildings.Mine, 4, (levels) => this.Buildings.Mine.updateTen(inv, document, updatebox, levels));
         run(this.Buildings.Farm, 5, (levels) => this.Buildings.Farm.updateTen(inv, document, updatebox, levels));
         run(this.Buildings.FishingPier, 22, (levels) => this.Buildings.FishingPier.updateTen(inv, document, updatebox, levels));

@@ -86,6 +86,8 @@ export default class WarMenu {
 			this.line(`It protects every building within ${FORT_RADIUS} tiles. A raid has to beat the army and the garrison; even then it only breaks the fort's walls first. A fort that is worn down completely falls.`);
 		}
 		this.line(`Garrison: power ${Math.round(info.garrison).toLocaleString("en-US")} of ${Math.round(info.full).toLocaleString("en-US")} (it grows as you level up).` + (info.damage > 0.01 ? ` Damaged: ${Math.round(info.damage * 100)}%, it heals slowly.` : ""));
+		const upkeep = town.upkeepText(id);
+		this.line("Income: none. Upkeep: " + (upkeep || "none") + ".");
 		const demolish = town.demolishInfo(id, familiars);
 		this.button("Demolish", () => {
 			this.line("Really demolish it? You get back " + demolish.refunds.map((r) => r.amount.toLocaleString("en-US") + " " + r.label).join(", ") + ". Press Demolish again to confirm.", "demolish-note");

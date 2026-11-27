@@ -27,6 +27,10 @@ export default class UpgradeMenu {
 		this.button = doc.getElementById("upgradeButton");
 		this.message = doc.getElementById("upgradeMessage");
 		this.next.hidden = false;
+		// what the building earns and costs (filled in by render)
+		this.economy = doc.createElement("div");
+		this.economy.className = "upgrade-economy";
+		this.now.insertAdjacentElement("afterend", this.economy);
 
 		doc.getElementById("upgradeClose").addEventListener("click", () => this.close());
 		this.modal.addEventListener("click", (event) => { if (event.target === this.modal) this.close(); });
@@ -78,6 +82,12 @@ export default class UpgradeMenu {
 
 		this.title.textContent = info.name + " - level " + info.level + " of " + info.max;
 		this.now.textContent = "Now: " + info.now;
+		this.economy.replaceChildren();
+		const line = (label, text, cls) => { const p = this.doc.createElement("p"); const b = this.doc.createElement("b"); b.textContent = label + " "; p.append(b, text); if (cls) p.className = cls; this.economy.append(p); };
+		if (info.income && info.income.length) line("Income (per minute):", info.income.join(", "));
+		else if (info.income) line("Income:", "none");
+		line("Upkeep:", info.upkeep || "none", info.neglected ? "price-short" : "");
+		if (info.neglected) line("In disrepair:", "not producing until the upkeep is paid.", "price-short");
 		this.costs.replaceChildren();
 		if (info.atMax) {
 			this.next.textContent = "Fully upgraded.";

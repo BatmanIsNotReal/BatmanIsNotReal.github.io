@@ -1,23 +1,24 @@
-// Upgrading buildings: every farm, lumber mill, mine, hut and blood temple on the map has its own level (0 to 10).
+// Upgrading buildings: every farm, lumber mill, mine, hut and blood temple on the map has its own level (0 to 5).
 // All the numbers of the system are here, so balancing it means changing this file only.
 
-export const MAX_LEVEL = 10;
+export const MAX_LEVEL = 5;
 
 // Tile type number -> building that can be upgraded
-export const UPGRADABLE = { 1: "Hut", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple", 22: "FishingPier" };
+export const UPGRADABLE = { 1: "Hut", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple", 22: "FishingPier", 23: "Tenement" };
 
 // Output of farms, lumber mills and mines grows by this much of the base for every level
-export const OUTPUT_PER_LEVEL = 0.15;   // level 10 = 2.5x (tuned with the economy simulation: 0.25 gave 3.5x)
+export const OUTPUT_PER_LEVEL = 0.30;   // level 5 = 2.5x (the same top as the old 10 levels, tuned with the economy simulation)
 // Huts give this much more room for familiars per level
 export const HUT_ROOM_PER_LEVEL = 2;
+export const ROOM_PER_LEVEL = { Hut: 2, Tenement: 5 }; // room per level for the buildings that house familiars
 // Blood temple: per level, the blessing chance (percentage points) and the influence boost (percentage points)
-export const TEMPLE_CHANCE_PER_LEVEL = 1.0;   // level 10: 20% chance per round
-export const TEMPLE_BOOST_PER_LEVEL = 2.0;    // level 10: influence +45%
+export const TEMPLE_CHANCE_PER_LEVEL = 2.0;   // level 5: 20% chance per round
+export const TEMPLE_BOOST_PER_LEVEL = 4.0;    // level 5: influence +45%
 
 // Price of the FIRST upgrade (level 0 -> 1). Later levels cost more, see costFor().
 //   wood, iron:   from the first level on
-//   bronze:       from level 4 on
-//   gold:         from level 7 on
+//   bronze:       from level 2 on
+//   gold:         from level 4 on
 //   blood:        every level
 //   workers + familiarFactor: free familiars that are put to work on the upgrade
 const BASE = {
@@ -25,6 +26,7 @@ const BASE = {
 	FishingPier: { wood: 350,   iron: 70,    bronze: 45,   gold: 7,   blood: 1100,   workers: 4,  familiarFactor: 0.2 },
 	LumberMill:  { wood: 400,   iron: 80,    bronze: 50,   gold: 8,   blood: 1200,   workers: 5,  familiarFactor: 0.2 },
 	Mine:        { wood: 1500,  iron: 500,   bronze: 300,  gold: 50,  blood: 20000,  workers: 10, familiarFactor: 0.2 },
+	Tenement:    { wood: 400,   iron: 100,   bronze: 60,   gold: 10,  blood: 1500,   workers: 0,  familiarFactor: 0 },
 	Hut:         { wood: 150,   iron: 30,    bronze: 20,   gold: 3,   blood: 500,    workers: 0,  familiarFactor: 0 }, // huts cost no familiars
 	BloodTemple: { wood: 4000,  iron: 6000,  bronze: 2000, gold: 400, blood: 500000, workers: 40, familiarFactor: 0.1 },
 };
@@ -40,8 +42,8 @@ export function costFor(key, level){
 	return {
 		wood: exact(base.wood * Math.pow(COST_GROWTH, level)),
 		iron: exact(base.iron * Math.pow(COST_GROWTH, level)),
-		bronze: next >= 4 ? exact(base.bronze * Math.pow(COST_GROWTH, next - 4)) : 0,
-		gold: next >= 7 ? exact(base.gold * Math.pow(COST_GROWTH, next - 7)) : 0,
+		bronze: next >= 2 ? exact(base.bronze * Math.pow(COST_GROWTH, next - 2)) : 0,
+		gold: next >= 4 ? exact(base.gold * Math.pow(COST_GROWTH, next - 4)) : 0,
 		blood: exact(base.blood * Math.pow(BLOOD_GROWTH, level)),
 		familiars: exact(base.workers * base.familiarFactor * (1 + level / 2)),
 	};
@@ -64,7 +66,7 @@ export function templeBoost(level){
 // Text describing what a level gives
 export function effectText(key, level){
 	const percent = (value) => String(Math.round(value * 10) / 10);
-	if (key === "Hut") return level > 0 ? "room for " + HUT_ROOM_PER_LEVEL * level + " more familiars" : "no extra room yet";
+	if (key === "Hut" || key === "Tenement") return level > 0 ? "room for " + ROOM_PER_LEVEL[key] * level + " more familiars" : "no extra room yet";
 	if (key === "BloodTemple") return percent(10 + TEMPLE_CHANCE_PER_LEVEL * level) + "% blessing chance per round, influence +" + percent(25 + TEMPLE_BOOST_PER_LEVEL * level) + "%";
 	return level > 0 ? "+" + percent(OUTPUT_PER_LEVEL * 100 * level) + "% output" : "no bonus yet";
 }

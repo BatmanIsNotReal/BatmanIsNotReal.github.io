@@ -24,7 +24,7 @@ export const BLOCK_RANGE = 5;
 export const MAX_SAFETY = 0.5;
 
 const PASSABLE = new Set([...ROAD_TYPES, 10, 11, 12]);      // roads, watch tower, guard outpost, fort
-const NEIGHBOUR_TILES = new Set([1, 4, 7, 15]);             // hut, mine, lumber mill, tavern
+const NEIGHBOUR_TILES = new Set([1, 4, 7, 15, 23]);             // hut, mine, lumber mill, tavern
 const SAFETY = { 10: 0.01, 11: 0.03, 12: 0.06 };            // what each kind of defence adds
 const OUTPOST = 13;
 export const DIRECTIONS = ["north", "east", "south", "west"];

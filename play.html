@@ -36,6 +36,7 @@
 				<div class="item10">
 					<h3 id="signUpTitle">Welcome to BLOOD & EARTH</h3>
 					<p>Name your vampire and your settlement to begin.</p>
+					<p class="signup-import">Already have a character? <button type="button" class="button" id="signUpImportButton">Import character</button> <span id="signUpImportMessage"></span></p>
 				</div>
 				<div class="item11">
 					<img src="sPlayerDown.png" width="25" height="100" alt="">
@@ -466,6 +467,15 @@
 				</div>
 			</div>
 
+			<div class="button buy-building-button" id="buyTenement">Buy tenement
+				<div class="hover">
+					<p>A stone block of flats: room for 24 familiars on one tile, and more children than a hut. Upgradable.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingTenementWood"></span> wood, <span id="buildingTenementStone"></span> stone, <span id="buildingTenementIron"></span> iron, <span id="buildingTenementGold"></span> gold</p>
+					<p>Upkeep: 6 stone every minute</p>
+				</div>
+			</div>
+
 			<div class="button buy-building-button" id="buyFarm">Buy farm
 				<div class="hover">
 					<p>Has place for 5 familiars</p>
@@ -709,6 +719,14 @@
 			<label class="field" for="densitySlider">Walking familiars on the map: <span id="densityValue"></span></label>
 			<input type="range" id="densitySlider" min="0" max="100" step="10">
 			<p class="cave-hint">Fewer figures make the game lighter on your computer. 0% hides them all.</p>
+			<h4 class="build-heading">Move your character</h4>
+			<p class="cave-hint">Export saves your whole character (town, army, inventory and your identity on the server: friends, mansion, furniture) to a file. Import it in another browser or on a new computer to carry on there. Keep the file private: whoever has it can play as you. Use one browser at a time.</p>
+			<div class="cave-actions">
+				<button type="button" class="button" id="exportButton">Export character</button>
+				<button type="button" class="button" id="importButton">Import character</button>
+				<input type="file" id="importFile" accept=".json,application/json" hidden>
+			</div>
+			<p class="cave-hint" id="transferMessage"></p>
 			<div class="cave-actions"><button type="button" class="button" id="optionsClose">Close</button></div>
 		</div>
 	</div>
