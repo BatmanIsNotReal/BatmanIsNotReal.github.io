@@ -9,11 +9,29 @@ import Forest from './terrain/Forest.js';
 import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
 import Defence from './buildings/Defence.js';
-import { analyseTrade } from '../trade/routes.mjs';
+import FishingPier from './buildings/FishingPier.js';
+import { analyseTrade, ROAD_TYPES } from '../trade/routes.mjs';
 import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
 
 // Tile types of the defences, and what they are called in this.Buildings
 const DEFENCE_KEYS = { 10: "WatchTower", 11: "GuardOutpost", 12: "Fort" };
+
+// Roads on different ground: what each is built on (tile type) and what is left when it is taken up
+const PIER_MIN_WATER = 40; // a lake has to be at least this big (tiles) for a fishing pier
+const ROAD_BASE = { Road: 0, Bridge: 2, MountainRoad: 3, ForestRoad: 6 };
+const ROAD_KEY_FOR_GROUND = { 0: "Road", 2: "Bridge", 3: "MountainRoad", 6: "ForestRoad" };
+const GROUND_UNDER_ROAD = { 17: 0, 19: 2, 20: 3, 21: 6 };
+
+// Upkeep: every UPKEEP_ROUNDS rounds each building needs this much (more at higher levels). What cannot be paid for
+// falls into disrepair and does nothing until the next payment goes through.
+export const UPKEEP_ROUNDS = 6;
+const UPKEEP = {
+    1: { wood: 2 }, 4: { wood: 3 }, 5: { wood: 3 }, 7: { wood: 3 }, 8: { stone: 5 },
+    10: { wood: 3 }, 11: { wood: 5 }, 12: { stone: 6 }, 15: { wood: 5 }, 16: { wood: 8 }, 18: { wood: 6 },
+    22: { wood: 4 },
+    17: { stone: 1 }, 19: { stone: 1, wood: 2 }, 20: { stone: 1 }, 21: { stone: 1 },
+};
+const UPKEEP_LEVEL_FACTOR = 0.1;
 
 const DEMOLISH_REFUND = 0.7; // share of the building price you get back
 
@@ -26,6 +44,8 @@ export default class Town{
         this.tileSize = 64; // width and height of one map tile, in pixels
         this.tiles = {
         }
+        this.routeBlocks = {}; // direction -> rounds left that highwaymen keep a trade route shut (set by the war)
+        this.neglected = new Set(); // tile ids of buildings in disrepair (unpaid upkeep)
         this.tileLevels = {}; // upgrade level of the buildings: tile id -> 1..10 (no entry = level 0)
         this.Buildings ={
             Grass: new Grass("grass", "a patch of grass", 0, '../../../src/grass.png'),
@@ -38,6 +58,10 @@ export default class Town{
             Tavern: new Defence("Tavern", "a place where every player can meet", '../../../src/tavern.png', { wood: 3000, iron: 1500, bronze: 300, gold: 50 }, 0, 15),
             Mansion: new Defence("Mansion", "your private house, open to visitors", '../../../src/mansion.png', { wood: 20000, iron: 10000, bronze: 3000, gold: 300 }, 0, 16),
             Road: new Defence("Road", "a paved road for trade routes", '../../../src/road.png', { stone: 12, gold: 3 }, 0, 17),
+            Bridge: new Defence("Bridge", "a road across water", '../../../src/bridge.png', { stone: 15, wood: 20, gold: 5 }, 0, 19),
+            MountainRoad: new Defence("Mountain road", "a road cut through the rock", '../../../src/mountainroad.png', { stone: 25, iron: 10, gold: 6 }, 0, 20),
+            ForestRoad: new Defence("Forest road", "a road cleared through the forest", '../../../src/forestroad.png', { stone: 12, gold: 3 }, 0, 21),
+            FishingPier: new FishingPier("Fishing pier", "a pier on a big lake that lands fish for human food", '../../../src/fishingpier.png', { wood: 900, iron: 150, bronze: 30, gold: 5 }, 4, 22),
             Bazaar: new Defence("Bazaar", "a market that trades along your roads to the edges of the map", '../../../src/bazaar.png', { wood: 4000, iron: 2000, bronze: 400, gold: 60, stone: 200 }, 0, 18),
             EnemyOutpost: new Rock("Enemy outpost", "a raiding outpost", 0, '../../../src/enemyoutpost.png'),
             Held: new Rock("Held by the enemy", "a building taken by raiders", 0, '../../../src/heldtile.png'),
@@ -386,6 +410,10 @@ export default class Town{
             16: B.Mansion,
             17: B.Road,
             18: B.Bazaar,
+            19: B.Bridge,
+            20: B.MountainRoad,
+            21: B.ForestRoad,
+            22: B.FishingPier,
         }[type]?.imgsrc;
     }
 
@@ -394,6 +422,13 @@ export default class Town{
             const src = this.tileImage(this.tiles[name]);
             const image = document.getElementById(name);
             if (src && image.getAttribute("src") !== String(src)) image.src = String(src);
+            // buildings in disrepair are shown grey with a red dashed edge
+            const broken = this.neglected.has(name);
+            if (image.classList.contains("neglected") !== broken){
+                image.classList.toggle("neglected", broken);
+                if (broken){ const cost = this.upkeepOf(name); image.title = "In disrepair: needs " + (cost ? Object.keys(cost).map((k) => cost[k] + " " + k).join(" and ") : "upkeep"); }
+                else image.removeAttribute("title");
+            }
             // the level badge on upgraded buildings (drawn by CSS from data-level)
             const cell = image.parentElement;
             const level = String(this.tileLevels[name] || 0);
@@ -412,7 +447,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 18) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 22) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -467,13 +502,17 @@ export default class Town{
             return false;
         }
         // a defence can also stand right on a road tile: that protects the trade route the most
-        const onRoad = this.tiles[id] === 17 && ["WatchTower", "GuardOutpost", "Fort"].includes(key);
+        const onRoad = ROAD_TYPES.includes(this.tiles[id]) && ["WatchTower", "GuardOutpost", "Fort"].includes(key);
+        const ground = key in ROAD_BASE ? ROAD_BASE[key] : 0;
         if (key === "Bazaar" && Object.values(this.tiles).includes(18)){
             alert("You already have a bazaar.");
             return false;
         }
-        if (this.tiles[id] !== 0 && !onRoad){
-            alert("A " + building.name.toLowerCase() + " has to be built on open grass.");
+        if (key === "FishingPier"){
+            const problem = this.pierProblem(id);
+            if (problem){ alert(problem); return false; }
+        } else if (this.tiles[id] !== ground && !onRoad){
+            alert(key in ROAD_BASE ? "A " + building.name.toLowerCase() + " has to be built on " + ["grass", "", "water", "rock", "", "", "forest"][ground] + "." : "A " + building.name.toLowerCase() + " has to be built on open grass.");
             return false;
         }
         const missing = Object.keys(building.cost).filter((item) => building.cost[item] > 0 && inventory.items[item] < building.cost[item]);
@@ -493,17 +532,115 @@ export default class Town{
         return true;
     }
 
-    // Trade routes of the bazaar (see js/trade/routes.mjs)
-    tradeReport(){
-        return analyseTrade((x, y) => this.tiles["tile" + (y * this.mapWidth + x)] || 0, this.mapWidth, this.mapHeight);
+    // How many tiles of water (and bridges and piers over it) are joined to this tile
+    waterBodySize(id){
+        const W = this.mapWidth, H = this.mapHeight;
+        const isWater = (i) => [2, 19, 22].includes(this.tiles["tile" + i]);
+        const start = Number(id.slice(4));
+        if (!isWater(start)) return 0;
+        const seen = new Set([start]), queue = [start];
+        while (queue.length){
+            const c = queue.pop(), x = c % W, y = Math.floor(c / W);
+            for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+                const nx = x + dx, ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+                const k = ny * W + nx;
+                if (!seen.has(k) && isWater(k)){ seen.add(k); queue.push(k); }
+            }
+        }
+        return seen.size;
     }
 
-    // Takes a road tile away and gives back part of its price
+    // Why a fishing pier cannot be built here (null when it can): on water, at the shore or joined to another pier, in a big lake
+    pierProblem(id){
+        if (this.tiles[id] !== 2) return "A fishing pier has to be built on water.";
+        const W = this.mapWidth, H = this.mapHeight;
+        const n = Number(id.slice(4)), x = n % W, y = Math.floor(n / W);
+        const touches = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+            const nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= W || ny >= H) return false;
+            const t = this.tiles["tile" + (ny * W + nx)];
+            return t === 22 || (t !== 2 && t !== 19);
+        });
+        if (!touches) return "A fishing pier has to start at the shore (or continue an existing pier).";
+        if (this.waterBodySize(id) < PIER_MIN_WATER) return "This water is too small to fish in. A pier needs a lake or sea of at least " + PIER_MIN_WATER + " tiles.";
+        return null;
+    }
+
+    // Builds the right kind of road for the ground under the clicked tile
+    buyRoad(inventory, familiar, document, id){
+        const key = ROAD_KEY_FOR_GROUND[this.tiles[id]];
+        if (!key){
+            alert("Roads can be built on grass, forest, rock and water.");
+            return false;
+        }
+        return this.buyDefence(key, inventory, familiar, document, id);
+    }
+
+    canBuildRoadOn(id){
+        return this.tiles[id] in ROAD_KEY_FOR_GROUND;
+    }
+
+    // Trade routes of the bazaar (see js/trade/routes.mjs)
+    tradeReport(){
+        const at = (x, y) => this.tiles["tile" + (y * this.mapWidth + x)] || 0;
+        return analyseTrade(at, this.mapWidth, this.mapHeight, (x, y) => this.neglected.has("tile" + (y * this.mapWidth + x)), this.routeBlocks);
+    }
+
+    // ---------- Upkeep ----------
+    upkeepOf(id){
+        const base = UPKEEP[this.tiles[id]];
+        if (!base) return null;
+        const factor = 1 + UPKEEP_LEVEL_FACTOR * (this.tileLevels[id] || 0);
+        const cost = {};
+        for (const kind of Object.keys(base)) cost[kind] = Math.ceil(base[kind] * factor);
+        return cost;
+    }
+
+    // Pays the upkeep of everything on the map. Buildings first, road tiles last. What you cannot pay for
+    // stops working (this.neglected) until a later payment works. Returns what happened, for the update log.
+    payUpkeep(inventory){
+        const ids = Object.keys(this.tiles).filter((id) => UPKEEP[this.tiles[id]]);
+        ids.sort((a, b) => (ROAD_TYPES.includes(this.tiles[a]) ? 1 : 0) - (ROAD_TYPES.includes(this.tiles[b]) ? 1 : 0));
+        const paid = {}, missing = {};
+        const before = this.neglected;
+        const now = new Set();
+        let fixed = 0;
+        for (const id of ids){
+            const cost = this.upkeepOf(id);
+            if (Object.keys(cost).every((kind) => inventory.items[kind] >= cost[kind])){
+                for (const kind of Object.keys(cost)){ inventory.items[kind] -= cost[kind]; paid[kind] = (paid[kind] || 0) + cost[kind]; }
+                if (before.has(id)) fixed++;
+            } else {
+                now.add(id);
+                for (const kind of Object.keys(cost)) if (inventory.items[kind] < cost[kind]) missing[kind] = true;
+            }
+        }
+        this.neglected = now;
+        return { paid, neglected: now.size, fixed, missing: Object.keys(missing) };
+    }
+
+    // The levels of the buildings of one type that are in working order (for production)
+    activeLevelsOf(type){
+        const levels = [];
+        for (const id in this.tiles){
+            if (this.tiles[id] === type && !this.neglected.has(id)) levels.push(this.tileLevels[id] || 0);
+        }
+        return levels;
+    }
+
+    isNeglected(id){
+        return this.neglected.has(id);
+    }
+
+    // Takes a road tile away (the ground comes back) and gives back part of its price
     removeRoad(id, inventory, document){
-        if (this.tiles[id] !== 17) return false;
-        const cost = this.Buildings.Road.cost;
+        const type = this.tiles[id];
+        if (!ROAD_TYPES.includes(type)) return false;
+        const cost = this.Buildings[ROAD_KEY_FOR_GROUND[GROUND_UNDER_ROAD[type]]].cost;
         for (const kind of Object.keys(cost)) inventory.items[kind] += Math.floor(cost[kind] * DEMOLISH_REFUND);
-        this.tiles[id] = 0;
+        this.tiles[id] = GROUND_UNDER_ROAD[type];
+        this.neglected.delete(id);
         if (document) this.updateTileImages(document);
         return true;
     }
@@ -599,7 +736,7 @@ export default class Town{
         const roomAfter = familiar.getMaxLimit() - room;
         const info = {
             tileId, key, name: building.name, level, refunds, freed, room, roomAfter,
-            leaves: { Mine: 3, LumberMill: 6 }[key] ?? 0,
+            leaves: { Mine: 3, LumberMill: 6, FishingPier: 2 }[key] ?? 0,
             blocked: null,
         };
         if (roomAfter < familiar.ammount){
@@ -650,17 +787,29 @@ export default class Town{
     }
 
     updateTen(inv, document, updatebox, familiar){
-        this.Buildings.Hut.updateTen(familiar, updatebox);
-        this.Buildings.Mine.updateTen(inv, document, updatebox, this.levelsOf(4));
-        this.Buildings.Farm.updateTen(inv, document, updatebox, this.levelsOf(5));
-        this.Buildings.LumberMill.updateTen(inv, document, updatebox, this.levelsOf(7));
+        // buildings in disrepair produce nothing
+        const run = (building, type, fn) => {
+            const levels = this.activeLevelsOf(type);
+            const all = building.ammount;
+            building.ammount = levels.length;
+            try { fn(levels); } finally { building.ammount = all; }
+        };
+        run(this.Buildings.Hut, 1, () => this.Buildings.Hut.updateTen(familiar, updatebox));
+        run(this.Buildings.Mine, 4, (levels) => this.Buildings.Mine.updateTen(inv, document, updatebox, levels));
+        run(this.Buildings.Farm, 5, (levels) => this.Buildings.Farm.updateTen(inv, document, updatebox, levels));
+        run(this.Buildings.FishingPier, 22, (levels) => this.Buildings.FishingPier.updateTen(inv, document, updatebox, levels));
+        run(this.Buildings.LumberMill, 7, (levels) => this.Buildings.LumberMill.updateTen(inv, document, updatebox, levels));
     }
 
     // Influence multiplier of this round (the Blood Temple's blessing).
     // Call once per round, before the house counts the influence.
     // A new blessing consumes part of the player's blood (inventory).
     influenceMultiplier(document, updatebox, inventory){
-        return this.Buildings.BloodTemple.updateTen(document, updatebox, inventory, this.levelsOf(8));
+        const temple = this.Buildings.BloodTemple;
+        const levels = this.activeLevelsOf(8);
+        const all = temple.ammount;
+        temple.ammount = levels.length;
+        try { return temple.updateTen(document, updatebox, inventory, levels); } finally { temple.ammount = all; }
     }
 
     // newGrid(document){

@@ -122,8 +122,11 @@ export default class WarMenu {
 		const { war } = this.options;
 		const info = war.outpostInfo(id);
 		if (!info) return this.close();
-		this.clear("Enemy outpost");
-		this.line(`${info.what[0].toUpperCase() + info.what.slice(1)} (${info.name}) camps here. From this outpost it sends raids against your town.`);
+		this.clear(info.label[0].toUpperCase() + info.label.slice(1));
+		this.line(`${info.what[0].toUpperCase() + info.what.slice(1)} (${info.name}) camps here. This camp ${info.goal}.`);
+		if (info.captives > 0) this.line(`Held captive here: ${info.captives.toLocaleString("en-US")} of your familiars. Destroying the camp frees them.`);
+		const loot = Object.entries(info.stolen).filter(([, v]) => v > 0).map(([k, v]) => v.toLocaleString("en-US") + " " + k);
+		if (loot.length) this.line(`Stolen from you and stored here: ${loot.join(", ")}. You get it back when the camp falls.`);
 		this.line(`Defenders: strength ${info.text}${war.towers() > 0 ? "" : " (build a watch tower to see exactly)"}.`);
 		this.line(`Raids sent so far: ${info.raids}.` + (info.raiding ? " A raiding party is out on the march right now, so the camp is weaker." : ""));
 		this.line(`Your army: power ${Math.round(war.armyPower()).toLocaleString("en-US")} (${war.armyCount().toLocaleString("en-US")} vampires). Some of your vampires will die in the fight. Destroying the outpost stops its raids and frees buildings it holds.`);

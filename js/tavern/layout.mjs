@@ -114,6 +114,38 @@ export const FURNITURE_TYPES = [
 	{ id: "sofa4", kind: "sofa", name: "Brown leather sofa" },
 	{ id: "sofa5", kind: "sofa", name: "Black and gold sofa" },
 ];
+// Rare pieces: not dropped by outposts, only sold by travelling traders (random event) or traded between players.
+const RARE = [
+	["rare1", "Brass floor lamp", 3200], ["rare2", "Silver candelabra", 3500], ["rare3", "Grandfather clock", 4200],
+	["rare4", "Marble maiden statue", 5200], ["rare5", "Bronze warrior statue", 5600], ["rare6", "Stone gargoyle", 6000],
+	["rare7", "Suit of armour", 6400], ["rare8", "Potted palm", 3000], ["rare9", "Grand harp", 7200],
+	["rare10", "Globe on a stand", 4800], ["rare11", "Tall bookshelf", 4000], ["rare12", "Blood-red throne", 10000],
+	["rare13", "Upright coffin", 8200], ["rare14", "Crystal ball", 7800], ["rare15", "Gilded mirror", 5000],
+];
+for (const [id, name, price] of RARE) FURNITURE_TYPES.push({ id, kind: "rare", name, price });
+export const COMMON_FURNITURE = FURNITURE_TYPES.filter((t) => t.kind !== "rare");
+
+// Backgrounds for a mansion (walls and floor). The owner picks one in the inventory menu; "default" is the plain hall.
+// wallA / wallB: the two wall shades, trim: the gold band, panel: the panelling, floor: rgb, sky: the window glass.
+export const BACKGROUNDS = [
+	{ id: "bg1", name: "Midnight blue hall", price: 3500, wallA: "#1c2a4a", wallB: "#16223e", trim: "#c0c8d8", panel: "#10182c", floor: [70, 78, 104], sky: "#0a1226", style: "stripes", tiles: false },
+	{ id: "bg2", name: "Emerald parlour", price: 4200, wallA: "#1e4a34", wallB: "#183c2a", trim: "#d8c070", panel: "#0e2a1c", floor: [112, 78, 52], sky: "#102a38", style: "stripes", tiles: false },
+	{ id: "bg3", name: "Old stone keep", price: 5000, wallA: "#5a5a60", wallB: "#4a4a50", trim: "#8a7a5a", panel: "#34343a", floor: [92, 90, 94], sky: "#1a2030", style: "bricks", tiles: true },
+	{ id: "bg4", name: "Ivory ballroom", price: 6000, wallA: "#e0d8c4", wallB: "#d4ccb6", trim: "#c9a45f", panel: "#b8ae94", floor: [230, 226, 216], sky: "#7a98c8", style: "plain", tiles: true },
+	{ id: "bg5", name: "Black and gold salon", price: 7500, wallA: "#16161a", wallB: "#1e1e24", trim: "#e8c070", panel: "#0a0a0c", floor: [40, 38, 44], sky: "#1a1630", style: "stripes", tiles: true },
+	{ id: "bg6", name: "Crimson chapel", price: 6500, wallA: "#7a1020", wallB: "#6a0c1a", trim: "#e8c070", panel: "#3a0810", floor: [96, 56, 44], sky: "#5a1a6a", style: "plain", tiles: false },
+	{ id: "bg7", name: "Violet observatory", price: 8000, wallA: "#3a2058", wallB: "#2e184a", trim: "#b0a0e0", panel: "#1c1030", floor: [74, 58, 100], sky: "#06041a", style: "plain", tiles: false },
+	{ id: "bg8", name: "Frozen palace", price: 9500, wallA: "#a8c8dc", wallB: "#98bcd2", trim: "#f0f8ff", panel: "#6a90aa", floor: [188, 212, 228], sky: "#c0e0f0", style: "bricks", tiles: true },
+];
+// everything a player can own (and trade)
+export const ITEM_TYPES = [...FURNITURE_TYPES, ...BACKGROUNDS.map((b) => ({ id: b.id, kind: "background", name: b.name + " (background)", price: b.price }))];
+export const SHOP_ITEMS = ITEM_TYPES.filter((t) => t.price);
 export function furnitureType(id) {
 	return FURNITURE_TYPES.find((t) => t.id === id) || null;
+}
+export function itemType(id) {
+	return ITEM_TYPES.find((t) => t.id === id) || null;
+}
+export function backgroundType(id) {
+	return BACKGROUNDS.find((t) => t.id === id) || null;
 }

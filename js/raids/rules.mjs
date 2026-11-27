@@ -13,11 +13,22 @@ export const UNIT_POWER = {
 	badabook: 120, draugr: 300, strigoi: 700, vampireMaster: 1800, vampireElder: 4500, bloodDemon: 11000, bloodLeviathan: 27000,
 };
 
+// Raids come about twice as often as they used to: roughly every 5 to 14 minutes per outpost
 export const FACTIONS = {
-	bandits: { name: "the Ashen Road Bandits", mult: 1.0, every: [60, 100], what: "a band of organised bandits" },
-	nest: { name: "the Gnarlmaw Nest", mult: 1.25, every: [80, 130], what: "a nest of foul monsters" },
-	clan: { name: "the Clan of the Pale Moon", mult: 1.6, every: [100, 160], what: "a rival vampire clan" },
+	bandits: { name: "the Ashen Road Bandits", mult: 1.0, every: [30, 55], what: "a band of organised bandits" },
+	nest: { name: "the Gnarlmaw Nest", mult: 1.25, every: [40, 70], what: "a nest of foul monsters" },
+	clan: { name: "the Clan of the Pale Moon", mult: 1.6, every: [50, 85], what: "a rival vampire clan" },
 };
+
+// What an outpost is for. Every outpost has one purpose, and they differ in strength.
+export const PURPOSES = {
+	conquest: { label: "war camp", strengthMul: 1.0, goal: "takes your buildings" },
+	thieves: { label: "slavers' camp", strengthMul: 0.55, goal: "steals your familiars" },
+	plunder: { label: "plunderers' camp", strengthMul: 0.8, goal: "steals your resources" },
+	route: { label: "highwaymen's camp", strengthMul: 0.7, goal: "raids your trade routes" },
+};
+export const MAX_RAIDS = 3;              // raids on the march at the same time
+export const ROUTE_BLOCK_ROUNDS = 30;    // how long a raided trade route pays nothing (5 minutes)
 
 // Tile types of the war
 export const TILE = { WATCH_TOWER: 10, GUARD_OUTPOST: 11, FORT: 12, OUTPOST: 13, HELD: 14 };
@@ -29,11 +40,12 @@ export const GARRISON = { [TILE.WATCH_TOWER]: 0.15, [TILE.GUARD_OUTPOST]: 0.35, 
 export const baseStrength = (level) => 12 * Math.pow(1.5, Math.max(0, Math.min(level, 40) - STRENGTH_FLOOR_LEVEL));
 
 export function maxOutposts(level) {
-	return level >= 15 ? 3 : level >= 10 ? 2 : 1;
+	return level >= 22 ? 6 : level >= 16 ? 5 : level >= 12 ? 4 : level >= 8 ? 3 : level >= 5 ? 2 : 1;
 }
 
 // The full strength of an outpost (it grows a little with every raid it sends)
-export const outpostCap = (level, faction, raids = 0) => baseStrength(level) * FACTIONS[faction].mult * (1 + 0.05 * Math.min(raids, 20));
+export const outpostCap = (level, faction, raids = 0, purpose = "conquest", jitter = 1) =>
+	baseStrength(level) * FACTIONS[faction].mult * (PURPOSES[purpose] ? PURPOSES[purpose].strengthMul : 1) * jitter * (1 + 0.05 * Math.min(raids, 20));
 
 // Guard outposts: each one weakens the raiders a little, and can turn a raid back before it leaves
 export const guardPenalty = (guards) => Math.max(0.7, 1 - 0.05 * guards);

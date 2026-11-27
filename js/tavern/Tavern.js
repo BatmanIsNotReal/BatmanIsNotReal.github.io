@@ -4,7 +4,7 @@
 //   - right-click another player: Dice / Page / Add friend / Trade
 // The server (server.js, /ws/tavern) decides where everybody stands; the shape of the room is shared
 // with it in layout.mjs.
-import { ROOM, FLOOR, FURNITURE, STOOLS, STOOL_OFFSETS, STOOL_LIFT, MAX_SAY, SAY_SHOW_MS, spotProblem, stoolAt, snapToStool, furnitureType } from "./layout.mjs";
+import { ROOM, FLOOR, FURNITURE, STOOLS, STOOL_OFFSETS, STOOL_LIFT, MAX_SAY, SAY_SHOW_MS, spotProblem, stoolAt, snapToStool, furnitureType, itemType, backgroundType } from "./layout.mjs";
 import { drawAvatar, defaultAvatar, normalizeAvatar } from "../profile/Avatar.js";
 
 const RESOURCES = [["blood", "Blood"], ["humanFood", "Human food"], ["wood", "Wood"], ["iron", "Iron"], ["bronze", "Bronze"], ["gold", "Gold"]];
@@ -82,7 +82,15 @@ export default class Tavern {
 		window.addEventListener("resize", () => this.resize());
 		this.paintRoom();
 		this.rooms = { tavern: { room: this.room, lighting: this.lighting } };
-		this.paintMansionRoom();
+		this.mansionRooms = { default: this.paintMansionRoom("default") };
+		this.rooms.mansion = this.mansionRooms.default;
+	}
+
+	// The mansion room with a given background (painted once, then kept)
+	mansionRoom(id) {
+		const key = backgroundType(id) ? id : "default";
+		if (!this.mansionRooms[key]) this.mansionRooms[key] = this.paintMansionRoom(key);
+		return this.mansionRooms[key];
 	}
 
 	// ---------- Opening and closing ----------
@@ -143,7 +151,9 @@ export default class Tavern {
 			this.kind = m.room ? m.room.kind : "tavern";
 			this.isOwner = !!(m.room && m.room.mine);
 			this.furn = m.furniture || [];
-			this.room = this.rooms[this.kind].room; this.lighting = this.rooms[this.kind].lighting;
+			this.bg = m.background || "default";
+			const painted = this.kind === "mansion" ? this.mansionRoom(this.bg) : this.rooms[this.kind];
+			this.room = painted.room; this.lighting = painted.lighting;
 			this.title.textContent = this.kind === "mansion" ? m.room.owner + "'s mansion" : "The Thirsty Fang";
 			this.help.textContent = this.kind === "mansion"
 				? (this.isOwner ? "Click the floor to walk. Right-click yourself to open your inventory and drop furniture; right-click a piece to pick it up or a visitor to send them out." : "Click the floor to walk. Just type to talk, Enter to send. Right-click a player for Dice, Page, Add friend, Trade and their inventory.")
@@ -187,6 +197,11 @@ export default class Tavern {
 			this.furn.push(m.item);
 		} else if (m.t === "furnDel") {
 			this.furn = this.furn.filter((i) => i.uid !== m.uid);
+		} else if (m.t === "bg") {
+			this.bg = m.id;
+			const painted = this.mansionRoom(m.id);
+			this.room = painted.room; this.lighting = painted.lighting;
+			this.addLog("", m.id === "default" ? "The owner took the background down." : "The owner hung a new background: " + backgroundType(m.id).name + ".", "note");
 		} else if (m.t === "kicked") {
 			this.close(m.reason);
 		} else if (m.t === "error") {
@@ -289,7 +304,7 @@ export default class Tavern {
 
 	// A piece of furniture under the pointer (the one in front wins)
 	furnitureAt(x, y) {
-		const box = { chair: [24, 42, 18], table: [78, 36, 24], sofa: [64, 42, 18], fireplace: [66, 78, 18] };
+		const box = { chair: [24, 42, 18], table: [78, 36, 24], sofa: [64, 42, 18], fireplace: [66, 78, 18], rare: [46, 125, 18] };
 		let best = null;
 		for (const item of this.furn) {
 			const type = furnitureType(item.type);
@@ -371,12 +386,24 @@ export default class Tavern {
 		const box = this.invBox;
 		if (!box) return;
 		box.textContent = "";
-		const ids = Object.keys(items || {}).filter((id) => furnitureType(id) && items[id] > 0);
-		if (!ids.length) box.append(this.el("div", "tv-inv-empty", "Nothing."));
+		const ids = Object.keys(items || {}).filter((id) => itemType(id) && items[id] > 0);
 		const mineToPlace = this.menuPid === this.me && this.kind === "mansion" && this.isOwner;
+		if (!ids.length && !(mineToPlace && this.bg !== "default")) box.append(this.el("div", "tv-inv-empty", "Nothing."));
+		if (mineToPlace && this.bg !== "default") {
+			const off = this.el("button", "tv-menu-item tv-inv-item", "Take the background down");
+			off.type = "button";
+			off.addEventListener("click", () => { this.send({ t: "bg", id: "default" }); this.closeMenu(); });
+			box.append(off);
+		}
 		for (const id of ids) {
 			const row = this.el("div", "tv-inv-row");
-			const label = furnitureType(id).name + " x" + items[id];
+			const label = itemType(id).name + " x" + items[id];
+			if (mineToPlace && itemType(id).kind === "background") {
+				const use = this.el("button", "tv-menu-item tv-inv-item", label + " - hang it");
+				use.type = "button";
+				use.addEventListener("click", () => { this.send({ t: "bg", id }); this.closeMenu(); });
+				row.append(use); box.append(row); continue;
+			}
 			if (!mineToPlace) { row.textContent = label; box.append(row); continue; }
 			// your own items: right-click one (or click it) and press Drop
 			const b = this.el("button", "tv-menu-item tv-inv-item", label);
@@ -437,6 +464,15 @@ export default class Tavern {
 		return offer;
 	}
 
+	readItems() {
+		const items = {};
+		for (const [id, input] of Object.entries(this.tradeItemInputs || {})) {
+			const n = Math.max(0, Math.min(Math.floor(Number(input.value) || 0), Number(input.max) || 0));
+			if (n) items[id] = n;
+		}
+		return items;
+	}
+
 	showTrade(m) {
 		this.request.hidden = true;
 		const box = this.tradeBox;
@@ -466,6 +502,24 @@ export default class Tavern {
 				line.append(cell);
 				theirs.append(line);
 			}
+			// furniture and backgrounds (the server knows what you own)
+			this.tradeItemInputs = {};
+			const ownedIds = Object.keys(m.owned || {}).filter((id) => itemType(id) && m.owned[id] > 0);
+			if (ownedIds.length) {
+				mine.append(this.el("h4", "", "Furniture"));
+				for (const id of ownedIds) {
+					const row = this.el("label", "tv-trade-row");
+					row.append(this.el("span", "", itemType(id).name + " (" + m.owned[id] + ")"));
+					const input = this.el("input"); input.type = "number"; input.min = 0; input.max = m.owned[id]; input.value = 0;
+					input.addEventListener("input", () => this.sendOffer());
+					this.tradeItemInputs[id] = input;
+					row.append(input);
+					mine.append(row);
+				}
+			}
+			theirs.append(this.el("h4", "", "Furniture"));
+			this.theirItemsBox = this.el("div", "tv-trade-items", "none");
+			theirs.append(this.theirItemsBox);
 			cols.append(mine, theirs);
 			this.tradeStatus = this.el("p", "tv-trade-status");
 			const buttons = this.el("div", "tv-trade-buttons");
@@ -481,6 +535,8 @@ export default class Tavern {
 			box.hidden = false;
 		}
 		for (const [key] of RESOURCES) this.theirCells[key].textContent = ((m.theirs && m.theirs[key]) || 0).toLocaleString("en-US");
+		const theirItems = Object.entries(m.theirItems || {}).filter(([, n]) => n > 0);
+		this.theirItemsBox.textContent = theirItems.length ? theirItems.map(([id, n]) => n + " x " + (itemType(id) ? itemType(id).name : id)).join(", ") : "none";
 		this.acceptButton.textContent = m.myOk ? "Accepted (click to undo)" : "Accept";
 		this.acceptButton.classList.toggle("on", !!m.myOk);
 		this.tradeStatus.textContent = m.myOk && m.theirOk ? "Both agreed..." : m.theirOk ? m.with.name + " has accepted." : m.myOk ? "Waiting for " + m.with.name + "..." : "Change the numbers, then both press Accept. Any change cancels earlier accepts.";
@@ -488,7 +544,7 @@ export default class Tavern {
 
 	sendOffer() {
 		clearTimeout(this.offerTimer);
-		this.offerTimer = setTimeout(() => this.send({ t: "tradeOffer", offer: this.readOffer(), have: this.have() }), 180);
+		this.offerTimer = setTimeout(() => this.send({ t: "tradeOffer", offer: this.readOffer(), items: this.readItems(), have: this.have() }), 180);
 	}
 
 	endTrade(m) {
@@ -780,47 +836,70 @@ export default class Tavern {
 	}
 
 	// ---------- The mansion: an empty room ----------
-	paintMansionRoom() {
+	paintMansionRoom(bgId = "default") {
+		const bg = backgroundType(bgId);
+		const P = bg || { wallA: "#521e2e", wallB: "#44182a", trim: "#c9a45f", panel: "#2a1018", floor: [128, 88, 58], sky: "#14203a", style: "stripes", tiles: false };
 		const d = this.document;
 		const make = () => { const c = d.createElement("canvas"); c.width = ROOM.width; c.height = ROOM.height; return c; };
 		const room = make(), lighting = make();
 		const ctx = room.getContext("2d");
 		const wallH = FLOOR.top + 20;
-		ctx.fillStyle = "#4a1a28"; ctx.fillRect(0, 0, ROOM.width, wallH);
-		for (let x = 0; x < ROOM.width; x += 60) { ctx.fillStyle = (x / 60) % 2 ? "#521e2e" : "#44182a"; ctx.fillRect(x, 0, 60, wallH); ctx.fillStyle = "rgba(201,164,95,0.25)"; ctx.fillRect(x + 29, 20, 2, wallH - 70); }
-		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, 0, ROOM.width, 12);
-		ctx.fillStyle = "#2a1018"; ctx.fillRect(0, 150, ROOM.width, 70); // panelling
-		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, 148, ROOM.width, 4);
-		for (let x = 20; x < ROOM.width; x += 120) { ctx.strokeStyle = "rgba(201,164,95,0.35)"; ctx.lineWidth = 2; ctx.strokeRect(x, 162, 100, 44); }
-		for (const x of [380, 800, 1220]) { // tall windows
-			ctx.fillStyle = "#c9a45f"; ctx.fillRect(x - 8, 24, 96, 118);
-			ctx.fillStyle = "#14203a"; ctx.fillRect(x, 32, 80, 102);
-			ctx.fillStyle = "#e8d890"; for (let i = 0; i < 5; i++) ctx.fillRect(x + 8 + ((i * 37) % 64), 40 + ((i * 23) % 40), 2, 2);
-			ctx.fillStyle = "#c9a45f"; ctx.fillRect(x + 37, 32, 6, 102); ctx.fillRect(x, 80, 80, 6);
-		}
-		// polished floor
-		for (let y = FLOOR.top - 20, row = 0; y < ROOM.height; y += 40, row++) {
-			for (let x = -((row * 83) % 200); x < ROOM.width; x += 200) {
-				const shade = 0.94 + ((x * 7 + y * 13) % 17) / 170;
-				ctx.fillStyle = `rgb(${Math.round(128 * shade)}, ${Math.round(88 * shade)}, ${Math.round(58 * shade)})`;
-				ctx.fillRect(x, y, 198, 38);
-				ctx.fillStyle = "rgba(255, 235, 190, 0.1)"; ctx.fillRect(x, y, 198, 3);
-				ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(x + 198, y, 2, 38);
+		ctx.fillStyle = P.wallB; ctx.fillRect(0, 0, ROOM.width, wallH);
+		if (P.style === "bricks") {
+			for (let y = 0, row = 0; y < wallH; y += 24, row++) for (let x = -((row % 2) * 30); x < ROOM.width; x += 60) {
+				ctx.fillStyle = (x * 7 + y * 3) % 5 < 2 ? P.wallA : P.wallB; ctx.fillRect(x + 1, y + 1, 58, 22);
 			}
-			ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0, y + 38, ROOM.width, 2);
+		} else {
+			for (let x = 0; x < ROOM.width; x += 60) {
+				ctx.fillStyle = P.style === "stripes" && (x / 60) % 2 ? P.wallA : P.style === "stripes" ? P.wallB : P.wallA;
+				ctx.fillRect(x, 0, 60, wallH);
+				if (P.style === "stripes") { ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(x + 29, 20, 2, wallH - 70); }
+			}
+			if (P.style === "plain") { ctx.fillStyle = "rgba(255,255,255,0.07)"; for (let x = 30; x < ROOM.width; x += 60) for (let y = 40; y < 140; y += 40) ctx.fillRect(x, y, 4, 4); }
+		}
+		ctx.fillStyle = P.trim; ctx.fillRect(0, 0, ROOM.width, 12);
+		ctx.fillStyle = P.panel; ctx.fillRect(0, 150, ROOM.width, 70); // panelling
+		ctx.fillStyle = P.trim; ctx.fillRect(0, 148, ROOM.width, 4);
+		for (let x = 20; x < ROOM.width; x += 120) { ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 2; ctx.strokeRect(x, 162, 100, 44); }
+		for (const x of [380, 800, 1220]) { // tall windows
+			ctx.fillStyle = P.trim; ctx.fillRect(x - 8, 24, 96, 118);
+			ctx.fillStyle = P.sky; ctx.fillRect(x, 32, 80, 102);
+			ctx.fillStyle = "#e8d890"; for (let i = 0; i < 5; i++) ctx.fillRect(x + 8 + ((i * 37) % 64), 40 + ((i * 23) % 40), 2, 2);
+			ctx.fillStyle = P.trim; ctx.fillRect(x + 37, 32, 6, 102); ctx.fillRect(x, 80, 80, 6);
+		}
+		// the floor: boards, or large tiles in two shades
+		const [fr, fg, fb] = P.floor;
+		if (P.tiles) {
+			for (let y = FLOOR.top - 20, row = 0; y < ROOM.height; y += 80, row++) for (let x = 0, col = 0; x < ROOM.width; x += 80, col++) {
+				const k = (row + col) % 2 ? 1 : 0.86;
+				ctx.fillStyle = `rgb(${Math.round(fr * k)}, ${Math.round(fg * k)}, ${Math.round(fb * k)})`; ctx.fillRect(x, y, 80, 80);
+				ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(x, y, 80, 3);
+				ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(x + 78, y, 2, 80); ctx.fillRect(x, y + 78, 80, 2);
+			}
+		} else {
+			for (let y = FLOOR.top - 20, row = 0; y < ROOM.height; y += 40, row++) {
+				for (let x = -((row * 83) % 200); x < ROOM.width; x += 200) {
+					const shade = 0.94 + ((x * 7 + y * 13) % 17) / 170;
+					ctx.fillStyle = `rgb(${Math.round(fr * shade)}, ${Math.round(fg * shade)}, ${Math.round(fb * shade)})`;
+					ctx.fillRect(x, y, 198, 38);
+					ctx.fillStyle = "rgba(255, 235, 190, 0.1)"; ctx.fillRect(x, y, 198, 3);
+					ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(x + 198, y, 2, 38);
+				}
+				ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0, y + 38, ROOM.width, 2);
+			}
 		}
 		const grad = ctx.createLinearGradient(0, FLOOR.top - 20, 0, FLOOR.top + 60);
 		grad.addColorStop(0, "rgba(0,0,0,0.45)"); grad.addColorStop(1, "rgba(0,0,0,0)");
 		ctx.fillStyle = grad; ctx.fillRect(0, FLOOR.top - 20, ROOM.width, 80);
 		ctx.fillStyle = "#0e0806"; ctx.fillRect(0, FLOOR.bottom + 8, ROOM.width, ROOM.height);
-		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, FLOOR.bottom + 8, ROOM.width, 5);
+		ctx.fillStyle = P.trim; ctx.fillRect(0, FLOOR.bottom + 8, ROOM.width, 5);
 		ctx.fillStyle = "#6a4426"; ctx.fillRect(730, FLOOR.bottom + 8, 140, 28);
 		ctx.fillStyle = "#2a1608"; ctx.fillRect(742, FLOOR.bottom + 14, 116, 22);
 		const lc = lighting.getContext("2d");
 		const v = lc.createRadialGradient(800, 520, 320, 800, 520, 1050);
 		v.addColorStop(0, "rgba(10,4,6,0)"); v.addColorStop(1, "rgba(10,4,6,0.5)");
 		lc.fillStyle = v; lc.fillRect(0, 0, ROOM.width, ROOM.height);
-		this.rooms.mansion = { room, lighting };
+		return { room, lighting };
 	}
 
 	// ---------- The furniture ----------
@@ -828,17 +907,92 @@ export default class Tavern {
 	paintFurniture(ctx, id, x, y, now) {
 		const type = furnitureType(id);
 		if (!type) return;
-		const v = Number(id.slice(-1)) - 1;
+		const v = parseInt(id.replace(/\D/g, ""), 10) - 1;
 		x = Math.round(x); y = Math.round(y);
 		ctx.save();
 		ctx.fillStyle = "rgba(0,0,0,0.32)";
-		const wide = { chair: 20, table: [46, 50, 76, 46, 52][v] || 50, sofa: 62, fireplace: 64 }[type.kind];
+		const wide = { chair: 20, table: [46, 50, 76, 46, 52][v] || 50, sofa: 62, fireplace: 64, rare: v === 10 ? 48 : v === 11 ? 36 : 26 }[type.kind];
 		ctx.beginPath(); ctx.ellipse(x, y + 14, wide, 7, 0, 0, 6.3); ctx.fill();
 		if (type.kind === "chair") this.paintChair(ctx, x, y, v);
 		else if (type.kind === "table") this.paintTableItem(ctx, x, y, v);
 		else if (type.kind === "sofa") this.paintSofa(ctx, x, y, v);
+		else if (type.kind === "rare") this.paintRare(ctx, x, y, v, now);
 		else this.paintFireplace(ctx, x, y, v, now);
 		ctx.restore();
+	}
+
+	// The rare pieces. (x, y) is the middle of the bottom edge; v = 0..14 is the piece.
+	paintRare(ctx, x, y, v, now) {
+		const t = (now || 0) / 1000;
+		const R = (c, dx, dy, w, h) => { ctx.fillStyle = c; ctx.fillRect(x + dx, y + dy, w, h); };
+		const E = (c, dx, dy, rx, ry) => { ctx.fillStyle = c; ctx.beginPath(); ctx.ellipse(x + dx, y + dy, rx, ry, 0, 0, 6.3); ctx.fill(); };
+		const flame = (fx, fy, k) => { const h = 8 + 4 * Math.sin(t * 9 + k); ctx.fillStyle = "#ff9a2a"; ctx.beginPath(); ctx.ellipse(fx, fy - h / 2, 3, h / 2, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = "#ffe27a"; ctx.beginPath(); ctx.ellipse(fx, fy - h / 3, 1.5, h / 3, 0, 0, 6.3); ctx.fill(); };
+		const pedestal = (c) => { R("#1a1410", -22, -4, 44, 18); R(c, -20, -2, 40, 14); R(c, -16, -26, 32, 24); R("rgba(255,255,255,0.15)", -16, -26, 32, 3); };
+		if (v === 0) { // brass floor lamp
+			E("#8a6a28", 0, 10, 18, 5); R("#c9a45f", -3, -112, 6, 120);
+			const g = ctx.createRadialGradient(x, y - 118, 4, x, y - 118, 50); g.addColorStop(0, "rgba(255,225,140,0.55)"); g.addColorStop(1, "rgba(255,225,140,0)");
+			ctx.fillStyle = g; ctx.fillRect(x - 55, y - 170, 110, 110);
+			ctx.fillStyle = "#f0e2b4"; ctx.beginPath(); ctx.moveTo(x - 24, y - 92); ctx.lineTo(x + 24, y - 92); ctx.lineTo(x + 15, y - 128); ctx.lineTo(x - 15, y - 128); ctx.fill();
+		} else if (v === 1) { // candelabra
+			R("#9a9aa6", -14, 6, 28, 6); R("#c0c0cc", -4, -50, 8, 56);
+			ctx.strokeStyle = "#c0c0cc"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - 26, y - 56); ctx.quadraticCurveTo(x - 26, y - 40, x, y - 40); ctx.quadraticCurveTo(x + 26, y - 40, x + 26, y - 56); ctx.stroke();
+			for (const [i, dx] of [-26, 0, 26].entries()) { R("#f0ead8", dx - 3, -72, 6, 18); flame(x + dx, y - 72, i); }
+		} else if (v === 2) { // grandfather clock
+			R("#1a0f08", -26, -134, 52, 140); R("#6a4222", -24, -132, 48, 136); R("#7a5030", -28, -140, 56, 10);
+			E("#efe6cc", 0, -104, 17, 17); ctx.strokeStyle = "#1a0f08"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x, y - 104); ctx.lineTo(x + 8, y - 110); ctx.moveTo(x, y - 104); ctx.lineTo(x - 3, y - 118); ctx.stroke();
+			R("#2a1a0c", -14, -76, 28, 60); const sw = Math.sin(t * 3) * 8; E("#c9a45f", sw, -26, 6, 6); R("#c9a45f", sw / 2 - 1, -70, 2, 44);
+		} else if (v === 3) { // marble maiden
+			pedestal("#cfc9c0"); E("#f2eee6", 0, -86, 9, 10);
+			ctx.fillStyle = "#f2eee6"; ctx.beginPath(); ctx.moveTo(x - 10, y - 76); ctx.lineTo(x + 10, y - 76); ctx.lineTo(x + 20, y - 26); ctx.lineTo(x - 20, y - 26); ctx.fill();
+			R("rgba(0,0,0,0.12)", 2, -74, 8, 48); R("#f2eee6", -24, -70, 8, 30);
+		} else if (v === 4) { // bronze warrior
+			pedestal("#4a3a28"); E("#a8743a", 0, -98, 10, 10); R("#8a5a28", -11, -108, 22, 6);
+			R("#a8743a", -13, -88, 26, 36); R("#8a5a28", -11, -52, 9, 26); R("#8a5a28", 2, -52, 9, 26);
+			R("#d0d0d8", 20, -120, 4, 80); R("#a8743a", 14, -92, 16, 4);
+		} else if (v === 5) { // gargoyle
+			pedestal("#6a6a70"); E("#8a8a92", 0, -46, 20, 14);
+			ctx.fillStyle = "#6a6a72"; ctx.beginPath(); ctx.moveTo(x - 14, y - 52); ctx.lineTo(x - 44, y - 78); ctx.lineTo(x - 30, y - 40); ctx.fill(); ctx.beginPath(); ctx.moveTo(x + 14, y - 52); ctx.lineTo(x + 44, y - 78); ctx.lineTo(x + 30, y - 40); ctx.fill();
+			E("#8a8a92", 0, -66, 11, 11); R("#8a8a92", -10, -80, 4, 8); R("#8a8a92", 6, -80, 4, 8); R("#e03a2a", -6, -68, 3, 3); R("#e03a2a", 3, -68, 3, 3);
+		} else if (v === 6) { // suit of armour
+			R("#6a6a74", -12, -22, 10, 26); R("#6a6a74", 2, -22, 10, 26); R("#8a8a96", -16, -70, 32, 50); R("#a4a4b0", -12, -66, 24, 18);
+			E("#a4a4b0", 0, -86, 11, 13); R("#2a2a30", -7, -88, 14, 4); R("#c03030", -2, -104, 4, 12);
+			R("#5a3a1a", 22, -124, 3, 124); ctx.fillStyle = "#c0c0cc"; ctx.beginPath(); ctx.moveTo(x + 18, y - 120); ctx.lineTo(x + 24, y - 142); ctx.lineTo(x + 30, y - 120); ctx.fill();
+		} else if (v === 7) { // potted palm
+			R("#1a0f08", -16, -26, 32, 30); R("#b0623a", -14, -24, 28, 26); R("#8a4a28", -17, -28, 34, 6);
+			ctx.strokeStyle = "#2f7a3a"; ctx.lineWidth = 6; ctx.lineCap = "round";
+			for (const a of [-1.2, -0.6, 0, 0.6, 1.2]) { ctx.beginPath(); ctx.moveTo(x, y - 26); ctx.quadraticCurveTo(x + Math.sin(a) * 30, y - 90 - Math.cos(a) * 12, x + Math.sin(a) * 52, y - 62 + Math.abs(a) * 10); ctx.stroke(); }
+			ctx.lineCap = "butt";
+		} else if (v === 8) { // harp
+			R("#8a6a28", -26, 4, 52, 6); ctx.strokeStyle = "#c9a45f"; ctx.lineWidth = 6;
+			ctx.beginPath(); ctx.moveTo(x - 24, y + 4); ctx.lineTo(x - 24, y - 100); ctx.quadraticCurveTo(x + 10, y - 128, x + 26, y - 70); ctx.lineTo(x + 20, y + 4); ctx.stroke();
+			ctx.strokeStyle = "rgba(255,240,200,0.8)"; ctx.lineWidth = 1;
+			for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.moveTo(x - 20 + i * 5.5, y - 8); ctx.lineTo(x - 20 + i * 5.5 + 2, y - 98 + i * 4); ctx.stroke(); }
+		} else if (v === 9) { // globe on a stand
+			R("#5a3a1a", -24, 8, 48, 5); R("#5a3a1a", -3, -34, 6, 44); R("#5a3a1a", -20, 4, 40, 5);
+			E("#2a5a9a", 0, -62, 30, 30); ctx.fillStyle = "#4a8a4a"; ctx.beginPath(); ctx.ellipse(x - 8, y - 66, 10, 14, 0.4, 0, 6.3); ctx.ellipse(x + 12, y - 54, 8, 9, -0.3, 0, 6.3); ctx.fill();
+			ctx.strokeStyle = "#c9a45f"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(x, y - 62, 34, 34, 0.35, 1.9, 5.6); ctx.stroke();
+		} else if (v === 10) { // bookshelf
+			R("#1a0f08", -46, -126, 92, 132); R("#5a3a1e", -44, -124, 88, 128);
+			for (let r = 0; r < 4; r++) {
+				const by = -120 + r * 30; R("#2a1a0c", -42, by + 26, 84, 4);
+				for (let b = 0, bx = -40; bx < 38; b++) { const w = 5 + ((b * 7 + r * 3) % 5); ctx.fillStyle = ["#8a2a2a", "#2a4a8a", "#2a6a3a", "#c9a45f", "#6a3a7a", "#8a5a2a"][(b * 5 + r * 2) % 6]; ctx.fillRect(x + bx, y + by + 4 + ((b + r) % 3) * 2, w, 22 - ((b + r) % 3) * 2); bx += w + 1; }
+			}
+		} else if (v === 11) { // throne
+			R("#1a0f08", -36, -124, 72, 138); R("#9a1020", -32, -120, 64, 100); R("#c9a45f", -36, -124, 72, 6); R("#c9a45f", -36, -124, 6, 112); R("#c9a45f", 30, -124, 6, 112);
+			E("#c9a45f", 0, -126, 14, 8); R("#7a0c18", -38, -40, 76, 34); R("#c9a45f", -40, -42, 80, 5); R("#c9a45f", -34, -6, 8, 14); R("#c9a45f", 26, -6, 8, 14); R("#7a0c18", -28, -20, 56, 14);
+		} else if (v === 12) { // upright coffin
+			ctx.fillStyle = "#1a0f08"; ctx.beginPath(); ctx.moveTo(x - 16, y - 130); ctx.lineTo(x + 16, y - 130); ctx.lineTo(x + 28, y - 96); ctx.lineTo(x + 20, y + 6); ctx.lineTo(x - 20, y + 6); ctx.lineTo(x - 28, y - 96); ctx.fill();
+			ctx.fillStyle = "#2c2024"; ctx.beginPath(); ctx.moveTo(x - 13, y - 124); ctx.lineTo(x + 13, y - 124); ctx.lineTo(x + 23, y - 94); ctx.lineTo(x + 16, y + 2); ctx.lineTo(x - 16, y + 2); ctx.lineTo(x - 23, y - 94); ctx.fill();
+			R("#c9a45f", -3, -108, 6, 40); R("#c9a45f", -12, -96, 24, 5); R("#7a0c18", -14, -4, 28, 4);
+		} else if (v === 13) { // crystal ball
+			pedestal("#2a2038"); const g = 0.6 + 0.4 * Math.sin(t * 2);
+			const gl = ctx.createRadialGradient(x, y - 48, 4, x, y - 48, 54); gl.addColorStop(0, `rgba(190,120,255,${0.5 * g})`); gl.addColorStop(1, "rgba(190,120,255,0)"); ctx.fillStyle = gl; ctx.fillRect(x - 56, y - 104, 112, 112);
+			E("#6a3aa8", 0, -46, 20, 20); E(`rgba(220,180,255,${0.5 + 0.3 * g})`, -6, -52, 9, 9); E("rgba(255,255,255,0.7)", -8, -56, 3, 3);
+		} else { // gilded mirror
+			R("#1a1008", -32, -132, 64, 138); R("#c9a45f", -30, -130, 60, 134); R("#8a6a28", -26, -126, 52, 126);
+			R("#b8d4e4", -22, -122, 44, 118); ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.beginPath(); ctx.moveTo(x - 10, y - 122); ctx.lineTo(x + 2, y - 122); ctx.lineTo(x - 16, y - 4); ctx.lineTo(x - 22, y - 4); ctx.fill();
+			R("#c9a45f", -34, 4, 12, 6); R("#c9a45f", 22, 4, 12, 6);
+		}
 	}
 
 	paintChair(ctx, x, y, v) {

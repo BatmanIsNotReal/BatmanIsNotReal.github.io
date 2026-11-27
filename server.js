@@ -389,7 +389,7 @@ function cleanMap(value) {
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-i]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-m]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }
@@ -1309,7 +1309,7 @@ const saveMansions = makeSaver(MANSIONS_FILE, () => ({ mansions: Object.fromEntr
 function loadMansions() {
 	try {
 		const saved = JSON.parse(fs.readFileSync(MANSIONS_FILE, "utf8"));
-		for (const [id, m] of Object.entries(saved.mansions || {})) if (m && Array.isArray(m.items)) mansions.set(id, { items: m.items, nextUid: m.nextUid || 1 });
+		for (const [id, m] of Object.entries(saved.mansions || {})) if (m && Array.isArray(m.items)) mansions.set(id, { items: m.items, nextUid: m.nextUid || 1, background: TAVERN.backgroundType(m.background) ? m.background : "default" });
 	} catch {
 		// No mansions saved yet (or the file is damaged): start empty.
 	}
@@ -1317,7 +1317,7 @@ function loadMansions() {
 
 function mansionOf(ownerId) {
 	let m = mansions.get(ownerId);
-	if (!m) { m = { items: [], nextUid: 1 }; mansions.set(ownerId, m); }
+	if (!m) { m = { items: [], nextUid: 1, background: "default" }; mansions.set(ownerId, m); }
 	return m;
 }
 
@@ -1353,13 +1353,64 @@ async function handleHouse(req, res) {
 		if (now - (dropAt.get(id) || 0) < DROP_COOLDOWN_MS) return sendJson(res, 200, { ok: true, found: null });
 		dropAt.set(id, now);
 		if (Math.random() >= OUTPOST_DROP_CHANCE) return sendJson(res, 200, { ok: true, found: null });
-		const type = TAVERN.FURNITURE_TYPES[Math.floor(Math.random() * TAVERN.FURNITURE_TYPES.length)];
+		const type = TAVERN.COMMON_FURNITURE[Math.floor(Math.random() * TAVERN.COMMON_FURNITURE.length)];
 		const owned = furnitureOf(me);
 		owned[type.id] = (owned[type.id] || 0) + 1;
 		savePlayers();
 		return sendJson(res, 200, { ok: true, found: { id: type.id, name: type.name } });
 	}
+	if (body.action === "offer") {
+		// a travelling trader turns up: the server picks the piece and the price, and remembers it
+		if ((me.level || 1) < HOUSE_LEVEL) return sendJson(res, 200, { ok: true, offer: null });
+		const now = Date.now();
+		if (now - (lastTrader.get(id) || 0) < TRADER_GAP_MS) return sendJson(res, 200, { ok: true, offer: null });
+		const item = pickShopItem();
+		lastTrader.set(id, now);
+		traderOffers.set(id, { id: item.id, price: item.price, at: now });
+		return sendJson(res, 200, { ok: true, offer: { id: item.id, name: item.name, price: item.price, kind: item.kind } });
+	}
+	if (body.action === "buy" || body.action === "decline") {
+		const offer = traderOffers.get(id);
+		if (!offer || Date.now() - offer.at > 15 * 60 * 1000) { traderOffers.delete(id); return sendJson(res, 400, { error: "The trader has left." }); }
+		traderOffers.delete(id);
+		if (body.action === "decline") return sendJson(res, 200, { ok: true });
+		const owned = furnitureOf(me);
+		owned[offer.id] = (owned[offer.id] || 0) + 1;
+		savePlayers();
+		const item = TAVERN.itemType(offer.id);
+		return sendJson(res, 200, { ok: true, id: offer.id, name: item.name, price: offer.price });
+	}
 	return sendJson(res, 400, { error: "Unknown action" });
+}
+const traderOffers = new Map(); // player id -> { id, price, at }: what a travelling trader has offered
+const lastTrader = new Map();   // player id -> when the trader last visited them
+const TRADER_GAP_MS = process.env.TRADER_GAP_MS ? Number(process.env.TRADER_GAP_MS) : 2 * 60 * 60 * 1000; // at least 2 hours between visits
+// The dearer the piece, the rarer: weight 10 up to 4,200 gold, 5 up to 6,500, 2 up to 8,200, 1 above
+function pickShopItem() {
+	const weight = (item) => (item.price <= 4200 ? 10 : item.price <= 6500 ? 5 : item.price <= 8200 ? 2 : 1);
+	const items = TAVERN.SHOP_ITEMS;
+	let roll = Math.random() * items.reduce((sum, item) => sum + weight(item), 0);
+	for (const item of items) { roll -= weight(item); if (roll < 0) return item; }
+	return items[items.length - 1];
+}
+
+// The owner picks a background for the mansion from the ones they own; the old one goes back to their inventory
+function houseBackground(conn, message) {
+	if (conn.kind !== "mansion" || conn.ownerId !== conn.playerId) return;
+	const owner = players.get(conn.ownerId);
+	if (!owner) return;
+	const id = String(message.id);
+	if (id !== "default" && !TAVERN.backgroundType(id)) return;
+	const owned = furnitureOf(owner);
+	const m = mansionOf(conn.ownerId);
+	if (id === m.background) return;
+	if (id !== "default" && !(owned[id] > 0)) return wsSend(conn, { t: "notice", text: "You do not have that background." });
+	if (m.background && m.background !== "default") owned[m.background] = (owned[m.background] || 0) + 1;
+	if (id !== "default") { owned[id]--; if (owned[id] <= 0) delete owned[id]; }
+	m.background = id;
+	savePlayers(); saveMansions();
+	tavBroadcast({ t: "bg", id }, null, conn.tvRoom);
+	wsSend(conn, { t: "inv", pid: conn.pid, items: { ...owned } });
 }
 
 // In the room: show a player's inventory (furniture they own, not what stands in the mansion)
@@ -1490,6 +1541,7 @@ function tavJoin(conn, message) {
 		t: "hello", you: conn.pid, players: roster,
 		room: { kind, owner: ownerPlayer ? ownerPlayer.vampireName : "", mine: ownerId === id },
 		furniture: ownerId ? mansionOf(ownerId).items : [],
+		background: ownerId ? mansionOf(ownerId).background || "default" : "default",
 	});
 	tavBroadcast({ t: "join", pid: conn.pid, info: tavInfo(conn) }, conn);
 }
@@ -1540,6 +1592,7 @@ function tavReceive(conn, message) {
 	if (message.t === "drop") return houseDrop(conn, message);
 	if (message.t === "pickup") return housePickup(conn, message);
 	if (message.t === "kick") return houseKick(conn, String(message.pid));
+	if (message.t === "bg") return houseBackground(conn, message);
 
 	if (message.t === "tradeRequest") return tradeAsk(conn, String(message.to));
 	if (message.t === "tradeReply") return tradeAnswer(conn, !!message.accept);
@@ -1572,10 +1625,27 @@ function cleanOffer(input) {
 
 function tradeSide(trade, playerId) { return trade.a.playerId === playerId ? "a" : "b"; }
 
+// Furniture and backgrounds in a trade: { itemId: count }, never more than the player owns (the server knows)
+function cleanItems(input, player) {
+	const items = {};
+	if (!input || typeof input !== "object" || !player) return items;
+	const owned = furnitureOf(player);
+	for (const [id, value] of Object.entries(input)) {
+		const n = Number(value);
+		if (TAVERN.itemType(id) && Number.isInteger(n) && n > 0) items[id] = Math.min(n, owned[id] || 0);
+		if (items[id] <= 0) delete items[id];
+	}
+	return items;
+}
+function itemsText(items) {
+	return Object.entries(items).map(([id, n]) => n + " x " + TAVERN.itemType(id).name).join(", ");
+}
+
 function tradeView(trade, side) {
 	const other = side === "a" ? "b" : "a";
 	const partner = trade[other];
-	return { t: "trade", with: { pid: partner.pid, name: partner.name }, mine: trade.offer[side], theirs: trade.offer[other], myOk: trade.ok[side], theirOk: trade.ok[other] };
+	const me = players.get(trade[side].playerId);
+	return { t: "trade", with: { pid: partner.pid, name: partner.name }, mine: trade.offer[side], theirs: trade.offer[other], myItems: trade.items[side], theirItems: trade.items[other], owned: me ? { ...furnitureOf(me) } : {}, myOk: trade.ok[side], theirOk: trade.ok[other] };
 }
 
 function tradeSend(trade) {
@@ -1622,7 +1692,7 @@ function tradeAnswer(conn, accept) {
 	if (!from) return;
 	if (!accept) return wsSend(from, { t: "notice", text: conn.name + " does not want to trade." });
 	if (tradeOf.has(from.playerId) || tradeOf.has(conn.playerId)) return;
-	const trade = { a: from, b: conn, offer: { a: {}, b: {} }, ok: { a: false, b: false }, have: { a: {}, b: {} }, touched: Date.now() };
+	const trade = { a: from, b: conn, offer: { a: {}, b: {} }, items: { a: {}, b: {} }, ok: { a: false, b: false }, have: { a: {}, b: {} }, touched: Date.now() };
 	tradeOf.set(from.playerId, trade);
 	tradeOf.set(conn.playerId, trade);
 	tradeSend(trade);
@@ -1637,6 +1707,7 @@ function tradeOffer(conn, message) {
 	for (const kind of Object.keys(offer)) if (offer[kind] > (trade.have[side][kind] || 0)) offer[kind] = trade.have[side][kind] || 0;
 	for (const kind of Object.keys(offer)) if (!offer[kind]) delete offer[kind];
 	trade.offer[side] = offer;
+	trade.items[side] = cleanItems(message.items, players.get(conn.playerId));
 	trade.ok.a = false; trade.ok.b = false;   // any change means both have to agree again
 	trade.touched = Date.now();
 	tradeSend(trade);
@@ -1660,7 +1731,16 @@ function tradeAccept(conn, message) {
 
 	// both agreed: settle it
 	const { a, b } = trade, offerA = trade.offer.a, offerB = trade.offer.b;
-	if (!Object.keys(offerA).length && !Object.keys(offerB).length) { trade.ok.a = trade.ok.b = false; tradeSend(trade); return wsSend(conn, { t: "notice", text: "Nothing is offered yet." }); }
+	const playerA = players.get(a.playerId), playerB = players.get(b.playerId);
+	const itemsA = cleanItems(trade.items.a, playerA), itemsB = cleanItems(trade.items.b, playerB);
+	const sameItems = (x, y) => JSON.stringify(Object.entries(x).sort()) === JSON.stringify(Object.entries(y).sort());
+	if (!sameItems(itemsA, trade.items.a) || !sameItems(itemsB, trade.items.b)) {
+		trade.items.a = itemsA; trade.items.b = itemsB;
+		trade.ok.a = trade.ok.b = false; tradeSend(trade);
+		return wsSend(conn, { t: "notice", text: "Someone no longer has what they offered. Check the offer again." });
+	}
+	const hasItems = Object.keys(itemsA).length || Object.keys(itemsB).length;
+	if (!Object.keys(offerA).length && !Object.keys(offerB).length && !hasItems) { trade.ok.a = trade.ok.b = false; tradeSend(trade); return wsSend(conn, { t: "notice", text: "Nothing is offered yet." }); }
 	if ((settlements.get(a.playerId) || []).length >= MAX_PENDING_SETTLEMENTS || (settlements.get(b.playerId) || []).length >= MAX_PENDING_SETTLEMENTS) {
 		trade.ok.a = trade.ok.b = false; tradeSend(trade);
 		return wsSend(conn, { t: "notice", text: "A game has not collected its earlier results yet. Try again in a moment." });
@@ -1671,10 +1751,21 @@ function tradeAccept(conn, message) {
 		for (const [k, n] of Object.entries(get)) d[k] = (d[k] || 0) + n;
 		return d;
 	};
-	const said = (offer) => Object.keys(offer).length ? stakeText(offer) : "nothing";
-	queueSettlement(a.playerId, delta(offerA, offerB), "Trade with " + b.name + ": you gave " + said(offerA) + " and got " + said(offerB) + ".");
-	queueSettlement(b.playerId, delta(offerB, offerA), "Trade with " + a.name + ": you gave " + said(offerB) + " and got " + said(offerA) + ".");
-	saveDice();
+	const said = (offer, items) => [Object.keys(offer).length ? stakeText(offer) : "", Object.keys(items).length ? itemsText(items) : ""].filter(Boolean).join(", ") || "nothing";
+	for (const [from, to, give] of [[playerA, playerB, itemsA], [playerB, playerA, itemsB]]) {
+		for (const [id, n] of Object.entries(give)) {
+			const have = furnitureOf(from);
+			have[id] -= n; if (have[id] <= 0) delete have[id];
+			const got = furnitureOf(to);
+			got[id] = (got[id] || 0) + n;
+		}
+	}
+	if (hasItems) savePlayers();
+	if (Object.keys(offerA).length || Object.keys(offerB).length) {
+		queueSettlement(a.playerId, delta(offerA, offerB), "Trade with " + b.name + ": you gave " + said(offerA, itemsA) + " and got " + said(offerB, itemsB) + ".");
+		queueSettlement(b.playerId, delta(offerB, offerA), "Trade with " + a.name + ": you gave " + said(offerB, itemsB) + " and got " + said(offerA, itemsA) + ".");
+		saveDice();
+	}
 	endTrade(a.playerId, "Trade complete.", true);
 }
 

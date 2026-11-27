@@ -124,3 +124,6 @@ body.tv-active > #diceModal, body.tv-active > #friendsModal { visibility: visibl
 .bazaar-routes .blocked { color: #ff8a8a; }
 .bazaar-routes .open b { color: var(--gold); font-weight: normal; }
 .bazaar-total { color: var(--gold); }
+
+/* A building in disrepair (unpaid upkeep) */
+img.tile.neglected { filter: grayscale(0.8) brightness(0.75); outline: 2px dashed #d33; outline-offset: -3px; }

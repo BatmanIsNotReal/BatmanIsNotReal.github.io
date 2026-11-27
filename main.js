@@ -4,7 +4,7 @@ import Vampire from './js/Vampire.js';
 import Familiar from './js/Familiar.js';
 import HousePar from './js/House.js';
 import Timers from './js/Timers.js';
-import Town from './js/town/Town.js';
+import Town, { UPKEEP_ROUNDS } from './js/town/Town.js';
 import UpdateBox from './js/town/updateBox/updatesBox.js';
 import Upgrade from './js/upgrades/Upgrade.js';
 import EventHandler from './js/events/EventHandler.js';
@@ -110,7 +110,10 @@ const Timer = new Timers();
 //house 
 let House = new HousePar(houseSize, xpRates, houseImages);
 
-let eventHandler = new EventHandler(Inv, Familiars, House, () => musicHandler.playSpell());
+let eventHandler = new EventHandler(Inv, Familiars, House, () => musicHandler.playSpell(), {
+	offer: () => houseCall("offer"),
+	answer: (action) => houseCall(action),
+});
 
 var modal = document.getElementById("myModal");
 var span = document.getElementById("close");
@@ -154,10 +157,11 @@ for (let i = 0; i < tiles.length; i++){
 		currentTile = tiles[i].id;
 		if (roadMode){ buildRoadHere(); return; }
 		if (myTown.tiles[currentTile] === 9) caveMenu.open();
+		else if ([15, 16, 18].includes(myTown.tiles[currentTile]) && myTown.isNeglected(currentTile)) alert("This building is in disrepair: " + (myTown.tiles[currentTile] === 18 ? "the bazaar" : "it") + " needs " + Object.entries(myTown.upkeepOf(currentTile)).map(([k, v]) => v + " " + k).join(" and ") + " for its upkeep. It is paid every minute.");
 		else if (myTown.tiles[currentTile] === 15) openTavern();
 		else if (myTown.tiles[currentTile] === 16) openMansion();
 		else if (myTown.tiles[currentTile] === 18) bazaarMenu.open();
-		else if (myTown.tiles[currentTile] === 17){
+		else if ([17, 19, 20, 21].includes(myTown.tiles[currentTile])){
 			if (confirm("Take up this road tile? You get 70% of its price back.")){ myTown.removeRoad(currentTile, Inv, document); displayUpdate(); save(); }
 		}
 		else if (myTown.tiles[currentTile] >= 10 && myTown.tiles[currentTile] <= 14) warMenu.open(currentTile);
@@ -236,10 +240,9 @@ function setRoadMode(on){
 	roadBar.hidden = !on;
 }
 function buildRoadHere(){
-	if (myTown.tiles[currentTile] !== 0) return; // only grass: anything else is ignored while building roads
-	const items = myTown.Buildings.Road.cost;
-	if (Object.keys(items).some((kind) => Inv.items[kind] < items[kind])){ setRoadMode(false); alert("You are out of stone or gold for more road tiles."); return; }
-	if (myTown.buyDefence("Road", Inv, Familiars, document, currentTile)){ displayUpdate(); save(); }
+	if (!myTown.canBuildRoadOn(currentTile)) return; // roads go on grass, forest, rock and water: anything else is ignored
+	if (myTown.buyRoad(Inv, Familiars, document, currentTile)){ displayUpdate(); save(); }
+	else setRoadMode(false); // could not pay: the reason was shown
 }
 
 //buy buildings check
@@ -253,7 +256,8 @@ const buildingActions = {
 	buyGuardOutpost: () => myTown.buyDefence("GuardOutpost", Inv, Familiars, document, currentTile),
 	buyFort: () => myTown.buyDefence("Fort", Inv, Familiars, document, currentTile),
 	buyTavern: () => myTown.buyDefence("Tavern", Inv, Familiars, document, currentTile),
-	buyRoad: () => { const ok = myTown.buyDefence("Road", Inv, Familiars, document, currentTile); if (ok && !buildingFromMapWindow) setRoadMode(true); return ok; },
+	buyRoad: () => { const ok = myTown.buyRoad(Inv, Familiars, document, currentTile); if (ok && !buildingFromMapWindow) setRoadMode(true); return ok; },
+	buyFishingPier: () => myTown.buyDefence("FishingPier", Inv, Familiars, document, currentTile),
 	buyBazaar: () => myTown.buyDefence("Bazaar", Inv, Familiars, document, currentTile),
 	buyMansion: () => { const ok = myTown.buyDefence("Mansion", Inv, Familiars, document, currentTile, House.level); if (ok) houseCall("claim"); return ok; },
 };
@@ -264,13 +268,13 @@ const buildingActions = {
 function familiarState(){
 	// Every building has familiars working in it (workersRequired each), on top of the free gatherers
 	const staff = (building) => building.ammount * building.workersRequired;
-	const { Farm, LumberMill, Mine, BloodTemple } = myTown.Buildings;
+	const { Farm, LumberMill, Mine, BloodTemple, FishingPier } = myTown.Buildings;
 	return {
 		width: myTown.mapWidth,
 		height: myTown.mapHeight,
 		tiles: myTown.tiles,
 		counts: {
-			food: Familiars.foodGather + staff(Farm),
+			food: Familiars.foodGather + staff(Farm) + staff(FishingPier),
 			wood: Familiars.woodGather + staff(LumberMill),
 			blood: Familiars.bloodGather + staff(BloodTemple),
 			mine: staff(Mine),
@@ -304,6 +308,7 @@ window.vampireMap = {
 	openTavern: () => openTavern(),
 	openMansion: () => openMansion(),
 	openBazaar: () => bazaarMenu.open(),
+	neglected: () => [...myTown.neglected],
 	removeRoad: (id) => {
 		if (!confirm("Take up this road tile? You get 70% of its price back.")) return;
 		if (myTown.removeRoad(id, Inv, document)){ displayUpdate(); save(); }
@@ -519,11 +524,11 @@ function displayUpdate(){
 	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
 	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
 
-	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern", "Mansion", "Road", "Bazaar"]){
+	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern", "Mansion", "Road", "Bridge", "MountainRoad", "ForestRoad", "Bazaar", "FishingPier"]){
 		const building = myTown.Buildings[key];
 		for (const kind of ["Wood", "Iron", "Bronze", "Gold", "Stone"]){
 			const element = document.getElementById("building" + key + kind);
-			if (element) element.textContent = building.cost[kind.toLowerCase()].toLocaleString("en-US");
+			if (element) element.textContent = (building.cost[kind.toLowerCase()] || 0).toLocaleString("en-US");
 		}
 		const need = document.getElementById("building" + key + "FamiliarsRequired");
 		if (need) need.textContent = building.workersRequired;
@@ -596,6 +601,7 @@ function showTrends(){
 }
 
 let tradeLeftover = 0;
+let upkeepRound = 0;
 //every 10 seconds
 window.setInterval(function(){
 	const before = { ...Inv.items };
@@ -618,6 +624,18 @@ window.setInterval(function(){
 	//Town
 	myTown.updateTen(Inv, document, updateBox, Familiars);
 	war.updateTen();
+
+	// Upkeep, once a minute: buildings and roads have to be maintained or they stop working
+	upkeepRound++;
+	if (upkeepRound % UPKEEP_ROUNDS === 0){
+		const result = myTown.payUpkeep(Inv);
+		const paid = Object.entries(result.paid).map(([kind, n]) => formatNumber(n) + " " + kind);
+		let line = paid.length ? "Upkeep paid: " + paid.join(" and ") + "." : "";
+		if (result.neglected > 0) line += (line ? " " : "") + result.neglected + (result.neglected === 1 ? " building is" : " buildings are") + " in disrepair (not enough " + result.missing.join(" or ") + ") and " + (result.neglected === 1 ? "does" : "do") + " nothing until paid.";
+		else if (result.fixed > 0) line += " Everything is in working order again.";
+		if (line) updateBox.townUpdatesAdd(line, document);
+		myTown.updateTileImages(document);
+	}
 
 	// Trade routes of the bazaar: gold every round
 	{
@@ -842,10 +860,12 @@ const saveFields = {
 	stoneAmmount: field(Inv.items, "stone"),
 	bronzeAmmount: field(Inv.items, "bronze"),
 	goldAmmount: field(Inv.items, "gold"),
+	neglected: [() => [...myTown.neglected], (value) => { if (Array.isArray(value)) myTown.neglected = new Set(value.filter((id) => typeof id === "string" && /^tile\d+$/.test(id))); }],
 
 	hutAmmount: field(myTown.Buildings.Hut, "ammount"),
 	mineAmmount: field(myTown.Buildings.Mine, "ammount"),
 	farmAmmount: field(myTown.Buildings.Farm, "ammount"),
+	fishingPierAmmount: field(myTown.Buildings.FishingPier, "ammount"),
 	lumberMillAmmount: field(myTown.Buildings.LumberMill, "ammount"),
 	watchTowerAmmount: field(myTown.Buildings.WatchTower, "ammount"),
 	guardOutpostAmmount: field(myTown.Buildings.GuardOutpost, "ammount"),
@@ -986,7 +1006,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 18 ? type.toString(36) : 0; // 10 to 18 are written as a to i
+		tiles += Number.isInteger(type) && type > 0 && type <= 22 ? type.toString(36) : 0; // 10 to 22 are written as a to m
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };

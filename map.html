@@ -87,6 +87,16 @@
 				</div>
 			</div>
 
+			<div class="button buy-building-button" id="buyFishingPier">Buy fishing pier
+				<div class="hover">
+					<p>A wooden pier that lands fish: human food, like a farm. Upgradable.</p>
+					<p>Build on water at the shore (or at the end of another pier), in a lake or sea of at least 40 tiles</p>
+					<p>price: <span id="buildingFishingPierWood"></span> wood, <span id="buildingFishingPierIron"></span> iron, <span id="buildingFishingPierBronze"></span> bronze, <span id="buildingFishingPierGold"></span> gold</p>
+					<p>familiars required: <span id="buildingFishingPierFamiliarsRequired"></span></p>
+					<p>Upkeep: 4 wood every minute</p>
+				</div>
+			</div>
+
 			<div class="button buy-building-button" id="buyTavern">Buy tavern
 				<div class="hover">
 					<p>A place where every player can meet: chat, trade, dice and friends. You can have one.</p>
@@ -107,9 +117,11 @@
 
 			<div class="button buy-building-button" id="buyRoad">Buy road tile
 				<div class="hover">
-					<p>A paved road for trade routes. After the first tile you keep laying roads by clicking grass (Esc to stop)</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingRoadStone"></span> stone, <span id="buildingRoadGold"></span> gold per tile</p>
+					<p>A paved road for trade routes. It can be built on grass, forest, rock (a mountain road) and water (a bridge). After the first tile you keep laying roads by clicking tiles (Esc to stop)</p>
+					<p>price per tile: <span id="buildingRoadStone"></span> stone, <span id="buildingRoadGold"></span> gold on grass or forest.
+						Bridge: <span id="buildingBridgeStone"></span> stone, <span id="buildingBridgeWood"></span> wood, <span id="buildingBridgeGold"></span> gold.
+						Mountain road: <span id="buildingMountainRoadStone"></span> stone, <span id="buildingMountainRoadIron"></span> iron, <span id="buildingMountainRoadGold"></span> gold</p>
+					<p>Upkeep: 1 stone per road tile every minute</p>
 				</div>
 			</div>
 
@@ -222,7 +234,7 @@
 				currentTile = event.target.id;
 				sync();
 				if (game.map.tiles()[currentTile] === 18) { game.map.openBazaar(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
-				else if (game.map.tiles()[currentTile] === 17) game.map.removeRoad(currentTile);
+				else if ([17, 19, 20, 21].includes(game.map.tiles()[currentTile])) game.map.removeRoad(currentTile);
 				else if (game.map.tiles()[currentTile] === 16) { game.map.openMansion(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.tiles()[currentTile] === 15) { game.map.openTavern(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.tiles()[currentTile] >= 10) { game.map.openWar(currentTile); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
@@ -260,6 +272,11 @@
 					if (!img || img.dataset.type === String(tiles[id])) continue;
 					const src = game.map.imageFor(tiles[id]);
 					if (src) { img.src = String(src); img.dataset.type = String(tiles[id]); }
+				}
+				const broken = new Set(game.map.neglected());
+				for (const id in tiles) {
+					const img = document.getElementById(id);
+					if (img) img.classList.toggle("neglected", broken.has(id));
 				}
 				// level badges and the open upgrade menu
 				const levels = game.map.levels();

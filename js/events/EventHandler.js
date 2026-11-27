@@ -39,7 +39,9 @@ function loseFamiliars(familiars, count){
 export default class EventHandler{
     // inventory, familiars and house are what the events can take from (and house.level sets how much)
     // onEvent: called when an event pops up (the game plays a sound with it)
-    constructor(inventory, familiars, house, onEvent = () => {}){
+    // trader: { offer() -> Promise<{offer}|null>, answer("buy"|"decline") -> Promise<{ok}|null> } for the travelling trader
+    constructor(inventory, familiars, house, onEvent = () => {}, trader = null){
+        this.trader = trader;
         this.onEvent = onEvent;
         this.inventory = inventory;
         this.familiars = familiars;
@@ -95,7 +97,45 @@ export default class EventHandler{
         return { inventory: this.inventory, familiars: this.familiars, level: this.house.level };
     }
 
-    getRandomEvent(){
+    // A travelling trader sells a rare piece of furniture or a mansion background (the server chooses the piece
+    // and the price). Only for players who can have a mansion.
+    async traderEvent(){
+        let result = null;
+        try { result = await this.trader.offer(); } catch { result = null; }
+        if (!result || !result.offer) return this.getRandomEvent(true);
+        const offer = result.offer;
+        const container = document.getElementById("inner-content-event");
+        removeAllChildren(container);
+        const modaleventbox = document.getElementById("modal-event");
+        modaleventbox.style.display = "block";
+        this.onEvent();
+        const header = document.createElement("h3");
+        header.textContent = "travelling trader";
+        const text = document.createElement("p");
+        text.textContent = "A trader with a laden cart stops at your gate. He unwraps a rare piece for your mansion: " + offer.name + ". \"For you, only " + offer.price.toLocaleString("en-US") + " gold.\" You have " + Math.floor(this.inventory.items.gold).toLocaleString("en-US") + " gold.";
+        const buy = document.createElement("button");
+        buy.textContent = "BUY IT (" + offer.price.toLocaleString("en-US") + " gold)";
+        const no = document.createElement("button");
+        no.textContent = "NO THANKS";
+        container.append(header, text, buy, no);
+        buy.addEventListener("click", async () => {
+            if (this.inventory.items.gold < offer.price){ this.messageBox("You cannot afford it. The trader shrugs and drives on."); this.trader.answer("decline"); return; }
+            const done = await this.trader.answer("buy");
+            if (done && done.ok){
+                this.inventory.items.gold -= offer.price;
+                this.messageBox("You bought: " + offer.name + ". It is in your mansion inventory (right-click yourself inside your mansion to place it).");
+            }else{
+                this.messageBox("The trader changed his mind and left. You paid nothing.");
+            }
+        });
+        no.addEventListener("click", () => { this.trader.answer("decline"); modaleventbox.style.display = "none"; });
+    }
+
+    getRandomEvent(noTrader = false){
+        if (noTrader !== true && this.trader && this.house.level >= 6 && Math.random() < 0.07){ // about 1 visit in 14 events; with the server's 2 hour gap that is one trader every 4 to 5 hours
+            this.traderEvent();
+            return;
+        }
         const container = document.getElementById("inner-content-event");
         removeAllChildren(container);
         

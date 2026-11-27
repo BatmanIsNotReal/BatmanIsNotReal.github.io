@@ -4,7 +4,7 @@
 export const MAX_LEVEL = 10;
 
 // Tile type number -> building that can be upgraded
-export const UPGRADABLE = { 1: "Hut", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple" };
+export const UPGRADABLE = { 1: "Hut", 4: "Mine", 5: "Farm", 7: "LumberMill", 8: "BloodTemple", 22: "FishingPier" };
 
 // Output of farms, lumber mills and mines grows by this much of the base for every level
 export const OUTPUT_PER_LEVEL = 0.15;   // level 10 = 2.5x (tuned with the economy simulation: 0.25 gave 3.5x)
@@ -22,6 +22,7 @@ export const TEMPLE_BOOST_PER_LEVEL = 2.0;    // level 10: influence +45%
 //   workers + familiarFactor: free familiars that are put to work on the upgrade
 const BASE = {
 	Farm:        { wood: 300,   iron: 60,    bronze: 40,   gold: 6,   blood: 1000,   workers: 5,  familiarFactor: 0.2 },
+	FishingPier: { wood: 350,   iron: 70,    bronze: 45,   gold: 7,   blood: 1100,   workers: 4,  familiarFactor: 0.2 },
 	LumberMill:  { wood: 400,   iron: 80,    bronze: 50,   gold: 8,   blood: 1200,   workers: 5,  familiarFactor: 0.2 },
 	Mine:        { wood: 1500,  iron: 500,   bronze: 300,  gold: 50,  blood: 20000,  workers: 10, familiarFactor: 0.2 },
 	Hut:         { wood: 150,   iron: 30,    bronze: 20,   gold: 3,   blood: 500,    workers: 0,  familiarFactor: 0 }, // huts cost no familiars
