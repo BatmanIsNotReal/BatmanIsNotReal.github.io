@@ -7,6 +7,7 @@ export default class Inventory{
             humanFood: 10,
             wood: 30,
             iron: 0,
+            stone: 0,
             bronze: 0,
             gold: 0,
         }
@@ -86,6 +87,14 @@ export default class Inventory{
 
     addIron(ammount){
         this.items.iron = this.items.iron + ammount;
+    }
+
+    addStone(ammount){
+        this.items.stone = this.items.stone + ammount;
+    }
+
+    getStoneAmmount(){
+        return this.items.stone;
     }
 
     addBronze(ammount){

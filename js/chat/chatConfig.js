@@ -32,4 +32,5 @@ export const UNDERGROUND_API_URL = CHAT_API_URL.replace(/\/chat$/, "/underground
 // ...and the tavern and the friend list.
 export const TAVERN_WS_URL = CHAT_API_URL.replace(/^http/, "ws").replace(/\/api\/chat$/, "/ws/tavern");
 export const FRIENDS_API_URL = CHAT_API_URL.replace(/\/chat$/, "/friends");
+export const HOUSE_API_URL = CHAT_API_URL.replace(/\/chat$/, "/house");
 export const UNDERGROUND_WS_URL = CHAT_API_URL.replace(/^http/, "ws").replace(/\/api\/chat$/, "/ws/underground");

@@ -328,6 +328,7 @@ export default class War {
 			if (this.raid && this.raid.outpost === id) { this.raid = null; lines.push("The raiders on the march have lost their home and scatter."); }
 			const prize = loot(o.strength);
 			this.reward(prize);
+			if (this.onOutpostDestroyed) this.onOutpostDestroyed();
 			if (this.nextOutpost === null) this.nextOutpost = 90 + Math.floor(this.random() * 60);
 			lines.push(`Victory! The outpost is destroyed and its raids stop.`);
 			if (freed) lines.push(`${freed} of your buildings were freed.`);

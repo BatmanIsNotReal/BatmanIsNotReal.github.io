@@ -14,7 +14,7 @@ const TILE_IMAGES = {
 	0: "src/grass.png", 1: "src/smallHut.png", 2: "src/water.png", 3: "src/rock.png", 4: "src/mine.png",
 	5: "src/farm.png", 6: "src/forest.png", 7: "src/lumbermill.png", 8: "src/bloodtemple.png", 9: "src/cave.png",
 	// the war tiles are written as letters in the map: a b c d e = 10 to 14
-	a: "src/watchtower.png", b: "src/guardoutpost.png", c: "src/fort.png", d: "src/enemyoutpost.png", e: "src/heldtile.png", f: "src/tavern.png",
+	a: "src/watchtower.png", b: "src/guardoutpost.png", c: "src/fort.png", d: "src/enemyoutpost.png", e: "src/heldtile.png", f: "src/tavern.png", g: "src/mansion.png", h: "src/road.png", i: "src/bazaar.png",
 };
 const BUILDINGS = [["Huts", 1], ["Farms", 5], ["Mines", 4], ["Lumber mills", 7], ["Blood temples", 8], ["Watch towers", "a"], ["Guard outposts", "b"], ["Forts", "c"]];
 const STATS = [
@@ -48,6 +48,13 @@ function banner(player, isPrivate) {
 	if (player.online) line.appendChild(element("span", "online-dot"));
 	line.append((player.online ? "Online now · " : "") + "Level " + player.level);
 	text.appendChild(line);
+	if (player.mansion) {
+		const visit = element("a", "button", "Visit mansion");
+		visit.href = "play.html?visit=" + encodeURIComponent(player.vampireName);
+		visit.style.display = "inline-block";
+		visit.style.margin = "0.4rem 0";
+		text.appendChild(visit);
+	}
 	if (!isPrivate && player.bio) text.appendChild(element("p", "bio", player.bio));
 	box.append(canvas, text);
 	return box;

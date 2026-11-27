@@ -84,6 +84,7 @@ export default class FriendsMenu {
 			dot.title = r.online ? "online" : "offline";
 			li.append(dot, el("span", "friends-name", r.name + " (level " + r.level + ")"),
 				small("Dice", () => { this.close(); this.o.openDice(r.name); }),
+				...(r.mansion ? [small("Visit", () => { this.close(); this.o.visit(r.name); })] : []),
 				small("Page", () => this.o.openPage(r.name)),
 				small("Remove", () => { if (confirm("Remove " + r.name + " from your friends?")) this.act("remove", r.name); }));
 		});

@@ -29,6 +29,7 @@ const CHAT_FILE = path.join(DATA_DIR, "chat.json");
 const PLAYERS_FILE = path.join(DATA_DIR, "players.json");
 const DICE_FILE = path.join(DATA_DIR, "dice.json");
 const FRIENDS_FILE = path.join(DATA_DIR, "friends.json");
+const MANSIONS_FILE = path.join(DATA_DIR, "mansions.json");
 
 // ---------- Chat limits ----------
 const MAX_STORED_MESSAGES = 200;   // older messages are dropped
@@ -335,6 +336,8 @@ async function handlePlayer(req, res) {
 		stats,
 		...(existing && existing.profile ? { profile: existing.profile } : {}),
 		...(existing && existing.helmets ? { helmets: existing.helmets } : {}),
+		...(existing && existing.furniture ? { furniture: existing.furniture } : {}),
+		...(existing && existing.mansion ? { mansion: true } : {}),
 	});
 	savePlayers();
 	return sendJson(res, 200, { ok: true });
@@ -386,7 +389,7 @@ function cleanMap(value) {
 	const { width, height, tiles, levels } = value;
 	if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width > 200 || height > 100) return null;
 	const count = width * height;
-	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-f]+$/.test(tiles)) return null;
+	if (typeof tiles !== "string" || tiles.length !== count || !/^[0-9a-i]+$/.test(tiles)) return null;
 	if (typeof levels !== "string" || levels.length !== count || !/^[0-9a]+$/.test(levels)) return null;
 	return { width, height, tiles, levels };
 }
@@ -408,6 +411,7 @@ async function handleProfile(req, res, url) {
 			accent: profile.accent || 0,
 			helmet: profile.helmet || 0,
 			level: player.level || 1,
+			mansion: !!player.mansion,
 			online: lastSeen.has(id) && Date.now() - lastSeen.get(id) < ONLINE_WINDOW_MS,
 		};
 		if (profile.isPublic === false) return sendJson(res, 200, { ...page, private: true });
@@ -1217,7 +1221,7 @@ function requestsFor(id) {
 function friendsView(id) {
 	const named = (otherId) => players.get(otherId);
 	const friends = [...friendsOf(id)].map((fid) => ({ fid, p: named(fid) })).filter((x) => x.p)
-		.map(({ fid, p }) => ({ name: p.vampireName, online: lastSeen.has(fid), level: p.level || 1 }))
+		.map(({ fid, p }) => ({ name: p.vampireName, online: lastSeen.has(fid), level: p.level || 1, mansion: !!p.mansion }))
 		.sort((a, b) => (b.online - a.online) || a.name.localeCompare(b.name));
 	const incoming = [...requestsFor(id)].map(named).filter(Boolean).map((p) => ({ name: p.vampireName }));
 	const outgoing = [];
@@ -1290,6 +1294,123 @@ async function handleFriends(req, res) {
 	return sendJson(res, 200, { ok: true, message, ...friendsView(id) });
 }
 
+// ---------- Mansions and furniture ----------
+// A player with level 6 can buy a mansion on their map. Its room is an empty hall that other players can visit
+// (the tavern's room code is used, with room "m:<owner id>"). Furniture is found when an enemy outpost is
+// destroyed and is kept on the server: player.furniture = { typeId: count } is what a player owns,
+// mansions.get(ownerId).items = [{ uid, type, x, y }] is what stands in their mansion.
+const mansions = new Map();
+const HOUSE_LEVEL = 6;
+const OUTPOST_DROP_CHANCE = Number(process.env.DROP_CHANCE || 0.6);
+const DROP_COOLDOWN_MS = process.env.DROP_COOLDOWN_MS ? Number(process.env.DROP_COOLDOWN_MS) : 15000;
+const dropAt = new Map();
+const saveMansions = makeSaver(MANSIONS_FILE, () => ({ mansions: Object.fromEntries(mansions) }), 1500, 2);
+
+function loadMansions() {
+	try {
+		const saved = JSON.parse(fs.readFileSync(MANSIONS_FILE, "utf8"));
+		for (const [id, m] of Object.entries(saved.mansions || {})) if (m && Array.isArray(m.items)) mansions.set(id, { items: m.items, nextUid: m.nextUid || 1 });
+	} catch {
+		// No mansions saved yet (or the file is damaged): start empty.
+	}
+}
+
+function mansionOf(ownerId) {
+	let m = mansions.get(ownerId);
+	if (!m) { m = { items: [], nextUid: 1 }; mansions.set(ownerId, m); }
+	return m;
+}
+
+function furnitureOf(player) {
+	if (!player.furniture || typeof player.furniture !== "object") player.furniture = {};
+	return player.furniture;
+}
+
+async function handleHouse(req, res) {
+	if (req.method === "OPTIONS") return sendPreflight(res);
+	if (req.method !== "POST") {
+		res.writeHead(405, { Allow: "POST, OPTIONS" });
+		return res.end();
+	}
+	if (isFriendsRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
+	let body;
+	try { body = await readJsonBody(req); } catch (error) { return sendJson(res, error.status || 400, { error: error.message }); }
+	body = body && typeof body === "object" ? body : {};
+	const id = typeof body.id === "string" ? body.id : "";
+	if (!/^[a-f0-9]{32}$/.test(id)) return sendJson(res, 400, { error: "Invalid player id" });
+	const me = players.get(id);
+	if (!me) return sendJson(res, 403, { error: "The server does not know you yet." });
+	lastSeen.set(id, Date.now());
+
+	if (body.action === "claim") {
+		if ((me.level || 1) < HOUSE_LEVEL) return sendJson(res, 400, { error: "You need level " + HOUSE_LEVEL + " for a mansion." });
+		if (!me.mansion) { me.mansion = true; savePlayers(); }
+		return sendJson(res, 200, { ok: true });
+	}
+	if (body.action === "outpost") {
+		// the browser says an enemy outpost was destroyed: the server rolls the drop
+		const now = Date.now();
+		if (now - (dropAt.get(id) || 0) < DROP_COOLDOWN_MS) return sendJson(res, 200, { ok: true, found: null });
+		dropAt.set(id, now);
+		if (Math.random() >= OUTPOST_DROP_CHANCE) return sendJson(res, 200, { ok: true, found: null });
+		const type = TAVERN.FURNITURE_TYPES[Math.floor(Math.random() * TAVERN.FURNITURE_TYPES.length)];
+		const owned = furnitureOf(me);
+		owned[type.id] = (owned[type.id] || 0) + 1;
+		savePlayers();
+		return sendJson(res, 200, { ok: true, found: { id: type.id, name: type.name } });
+	}
+	return sendJson(res, 400, { error: "Unknown action" });
+}
+
+// In the room: show a player's inventory (furniture they own, not what stands in the mansion)
+function houseInventory(conn, pid) {
+	const target = tavConns.get(pid);
+	if (!target || target.tvRoom !== conn.tvRoom) return;
+	const p = players.get(target.playerId);
+	wsSend(conn, { t: "inv", pid, items: p ? { ...furnitureOf(p) } : {} });
+}
+
+function houseDrop(conn, message) {
+	if (conn.kind !== "mansion" || conn.ownerId !== conn.playerId) return;
+	const type = TAVERN.furnitureType(String(message.type));
+	const owner = players.get(conn.ownerId);
+	if (!type || !owner) return;
+	const owned = furnitureOf(owner);
+	if (!(owned[type.id] > 0)) return wsSend(conn, { t: "notice", text: "You do not have that." });
+	const m = mansionOf(conn.ownerId);
+	if (m.items.length >= TAVERN.MAX_FURNITURE_IN_MANSION) return wsSend(conn, { t: "notice", text: "The mansion is full of furniture." });
+	owned[type.id]--;
+	if (owned[type.id] <= 0) delete owned[type.id];
+	const item = { uid: m.nextUid++, type: type.id, x: conn.x, y: conn.y };
+	m.items.push(item);
+	savePlayers(); saveMansions();
+	tavBroadcast({ t: "furnAdd", item }, null, conn.tvRoom);
+	wsSend(conn, { t: "inv", pid: conn.pid, items: { ...owned } });
+}
+
+function housePickup(conn, message) {
+	if (conn.kind !== "mansion" || conn.ownerId !== conn.playerId) return;
+	const m = mansionOf(conn.ownerId);
+	const index = m.items.findIndex((i) => i.uid === Number(message.uid));
+	const owner = players.get(conn.ownerId);
+	if (index < 0 || !owner) return;
+	const [item] = m.items.splice(index, 1);
+	const owned = furnitureOf(owner);
+	owned[item.type] = (owned[item.type] || 0) + 1;
+	savePlayers(); saveMansions();
+	tavBroadcast({ t: "furnDel", uid: item.uid }, null, conn.tvRoom);
+	wsSend(conn, { t: "inv", pid: conn.pid, items: { ...owned } });
+}
+
+function houseKick(conn, pid) {
+	if (conn.kind !== "mansion" || conn.ownerId !== conn.playerId) return;
+	const target = tavConns.get(pid);
+	if (!target || target === conn || target.tvRoom !== conn.tvRoom) return;
+	wsSend(target, { t: "kicked", reason: conn.name + " sent you out of the mansion." });
+	wsClose(target, 4002);
+	wsSend(conn, { t: "notice", text: target.name + " was sent out." });
+}
+
 // ---------- The tavern ----------
 // WebSocket /ws/tavern: one big room where players meet. No fighting. The client sends
 //      { t: "join", id }                         once (id = the player's own id)
@@ -1312,12 +1433,13 @@ const TRADE_IDLE_MS = 5 * 60000;
 const tradeOf = new Map();       // player id -> trade (both players point to the same one)
 const tradeRequests = new Map(); // player id (who was asked) -> { fromId, timer }
 
-function tavOthers(except) {
-	return [...tavConns.values()].filter((c) => c !== except).map((c) => ({ x: c.x, y: c.y }));
+function tavOthers(except, room = except && except.tvRoom) {
+	return [...tavConns.values()].filter((c) => c !== except && c.tvRoom === room).map((c) => ({ x: c.x, y: c.y }));
 }
 
-function tavBroadcast(object, except = null) {
-	for (const c of tavConns.values()) if (c !== except) wsSend(c, object);
+// Sends to everybody in the same room (the tavern or one mansion)
+function tavBroadcast(object, except = null, room = except && except.tvRoom) {
+	for (const c of tavConns.values()) if (c !== except && c.tvRoom === room) wsSend(c, object);
 }
 
 function tavInfo(c) {
@@ -1330,6 +1452,17 @@ function tavJoin(conn, message) {
 	const player = /^[a-f0-9]{32}$/.test(id) ? players.get(id) : null;
 	if (!player) return wsSend(conn, { t: "error", error: "Create your vampire first (it has to be saved on the server)." });
 	if (tavConns.size >= TAV_MAX_PLAYERS) return wsSend(conn, { t: "error", error: "The tavern is full right now. Try again in a moment." });
+	// Where to: the tavern, or the mansion of the player called message.visit
+	let room = "tavern", kind = "tavern", ownerId = null;
+	if (typeof message.visit === "string" && message.visit) {
+		ownerId = nameOwners.get(nameKey(clean(message.visit, MAX_NAME_LENGTH))) || null;
+		const owner = ownerId ? players.get(ownerId) : null;
+		if (!owner || !owner.mansion) return wsSend(conn, { t: "error", error: "There is no mansion to visit there." });
+		room = "m:" + ownerId; kind = "mansion";
+		let inside = 0;
+		for (const c of tavConns.values()) if (c.tvRoom === room) inside++;
+		if (inside >= TAVERN.MAX_PER_VISIT_PLAYERS) return wsSend(conn, { t: "error", error: "That mansion is full right now." });
+	}
 	const old = tavByPlayer.get(id);
 	if (old) wsClose(old, 4000);
 
@@ -1343,15 +1476,21 @@ function tavJoin(conn, message) {
 	conn.face = 1;
 	conn.lastInput = Date.now();
 	conn.lastMove = 0; conn.lastSay = 0; conn.lastTradeAsk = 0;
-	const spot = TAVERN.freeSpawn(tavOthers(null));
+	conn.tvRoom = room; conn.kind = kind; conn.ownerId = ownerId;
+	const spot = TAVERN.freeSpawn(tavOthers(null, room), kind);
 	conn.x = spot.x; conn.y = spot.y;
 	tavConns.set(conn.pid, conn);
 	tavByPlayer.set(id, conn);
 	lastSeen.set(id, Date.now());
 
 	const roster = {};
-	for (const [pid, c] of tavConns) roster[pid] = tavInfo(c);
-	wsSend(conn, { t: "hello", you: conn.pid, players: roster });
+	for (const [pid, c] of tavConns) if (c.tvRoom === room) roster[pid] = tavInfo(c);
+	const ownerPlayer = ownerId ? players.get(ownerId) : null;
+	wsSend(conn, {
+		t: "hello", you: conn.pid, players: roster,
+		room: { kind, owner: ownerPlayer ? ownerPlayer.vampireName : "", mine: ownerId === id },
+		furniture: ownerId ? mansionOf(ownerId).items : [],
+	});
 	tavBroadcast({ t: "join", pid: conn.pid, info: tavInfo(conn) }, conn);
 }
 
@@ -1363,7 +1502,7 @@ function tavDrop(conn) {
 	const asked = tradeRequests.get(conn.playerId);
 	if (asked) { clearTimeout(asked.timer); tradeRequests.delete(conn.playerId); }
 	for (const [target, r] of tradeRequests) if (r.fromId === conn.playerId) { clearTimeout(r.timer); tradeRequests.delete(target); }
-	tavBroadcast({ t: "left", pid: conn.pid });
+	tavBroadcast({ t: "left", pid: conn.pid }, null, conn.tvRoom);
 }
 
 function tavReceive(conn, message) {
@@ -1380,7 +1519,7 @@ function tavReceive(conn, message) {
 		const x = Math.round(Number(message.x)), y = Math.round(Number(message.y));
 		if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 		if (now - conn.lastMove < 120) return wsSend(conn, { t: "you", x: conn.x, y: conn.y });
-		const problem = TAVERN.spotProblem(x, y, tavOthers(conn));
+		const problem = TAVERN.spotProblem(x, y, tavOthers(conn), conn.kind);
 		if (problem) return wsSend(conn, { t: "you", x: conn.x, y: conn.y, error: problem });
 		conn.lastMove = now;
 		if (Math.abs(x - conn.x) > 3) conn.face = x > conn.x ? 1 : -1;
@@ -1394,8 +1533,13 @@ function tavReceive(conn, message) {
 		if (now - conn.lastSay < 1000) return wsSend(conn, { t: "notice", text: "Not so fast!" });
 		if (hasSlur(text)) return wsSend(conn, { t: "notice", text: "That message is not allowed." });
 		conn.lastSay = now;
-		return tavBroadcast({ t: "say", pid: conn.pid, text });
+		return tavBroadcast({ t: "say", pid: conn.pid, text }, null, conn.tvRoom);
 	}
+
+	if (message.t === "inv") return houseInventory(conn, String(message.pid));
+	if (message.t === "drop") return houseDrop(conn, message);
+	if (message.t === "pickup") return housePickup(conn, message);
+	if (message.t === "kick") return houseKick(conn, String(message.pid));
 
 	if (message.t === "tradeRequest") return tradeAsk(conn, String(message.to));
 	if (message.t === "tradeReply") return tradeAnswer(conn, !!message.accept);
@@ -1450,7 +1594,7 @@ function endTrade(playerId, reason, done = false) {
 function tradeAsk(conn, toPid) {
 	const target = tavConns.get(toPid);
 	const now = Date.now();
-	if (!target || target === conn) return;
+	if (!target || target === conn || target.tvRoom !== conn.tvRoom) return;
 	if (now - conn.lastTradeAsk < 4000) return wsSend(conn, { t: "notice", text: "Wait a moment before asking again." });
 	if (tradeOf.has(conn.playerId)) return wsSend(conn, { t: "notice", text: "You are already trading." });
 	if (tradeOf.has(target.playerId) || tradeRequests.has(target.playerId)) return wsSend(conn, { t: "notice", text: target.name + " is busy with another trade." });
@@ -1539,7 +1683,7 @@ function handleUndergroundList(req, res) {
 	if (isUndergroundListRateLimited(clientIp(req))) return sendJson(res, 429, { error: "Too many requests. Try again in a moment." });
 	const dungeons = RULES.DUNGEONS.map((d) => {
 		const room = ugWorlds.get(d.id);
-		return { id: d.id, name: d.name, min: d.min, max: d.max, pvp: !!d.pvp, players: room ? [...room.conns.values()].map((c) => c.name).slice(0, 50) : [] };
+		return { id: d.id, name: d.name, min: d.min, max: d.max, pvp: !!d.pvp, players: room ? [...tvRoom.conns.values()].map((c) => c.name).slice(0, 50) : [] };
 	});
 	return sendJson(res, 200, { dungeons });
 }
@@ -1555,6 +1699,7 @@ const server = http.createServer((req, res) => {
 		"/api/online": () => handleOnline(req, res),
 		"/api/dice": () => handleDice(req, res),
 		"/api/friends": () => handleFriends(req, res),
+		"/api/house": () => handleHouse(req, res),
 		"/api/underground": async () => handleUndergroundList(req, res),
 	}[url.pathname];
 	if (api) {
@@ -1578,6 +1723,7 @@ Promise.all([import("./js/rules.mjs"), import("./js/underground/world.mjs"), imp
 RULES = rules;
 WORLD = world;
 TAVERN = tavern;
+loadMansions();
 server.listen(PORT, HOST, () => {
 	console.log("Vampire House is running.");
 	console.log(`  On this computer:  http://localhost:${PORT}`);

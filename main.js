@@ -29,12 +29,13 @@ import Underground from './js/underground/Underground.js';
 import War from './js/raids/War.js';
 import WarMenu from './js/raids/WarMenu.js';
 import Tavern from './js/tavern/Tavern.js';
+import BazaarMenu from './js/trade/BazaarMenu.js';
 import FriendsMenu from './js/friends/FriendsMenu.js';
 import { profileUrl } from './js/profile/profileLink.js';
 import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
 import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
-import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL, TAVERN_WS_URL, FRIENDS_API_URL } from './js/chat/chatConfig.js';
+import { DICE_API_URL, ONLINE_API_URL, GIPHY_API_KEY, CHAT_API_URL, PLAYER_API_URL, LEADERBOARD_API_URL, PROFILE_API_URL, UNDERGROUND_API_URL, UNDERGROUND_WS_URL, TAVERN_WS_URL, FRIENDS_API_URL, HOUSE_API_URL } from './js/chat/chatConfig.js';
 
 //Init data
 const houseSize = ["small hut", "respectable hut", "lesser house", "decent house", "grand house", "mansion"];
@@ -151,8 +152,14 @@ const upgradeMenu = new UpgradeMenu(document, {
 for (let i = 0; i < tiles.length; i++){
 	tiles[i].addEventListener("click", () => {
 		currentTile = tiles[i].id;
+		if (roadMode){ buildRoadHere(); return; }
 		if (myTown.tiles[currentTile] === 9) caveMenu.open();
 		else if (myTown.tiles[currentTile] === 15) openTavern();
+		else if (myTown.tiles[currentTile] === 16) openMansion();
+		else if (myTown.tiles[currentTile] === 18) bazaarMenu.open();
+		else if (myTown.tiles[currentTile] === 17){
+			if (confirm("Take up this road tile? You get 70% of its price back.")){ myTown.removeRoad(currentTile, Inv, document); displayUpdate(); save(); }
+		}
 		else if (myTown.tiles[currentTile] >= 10 && myTown.tiles[currentTile] <= 14) warMenu.open(currentTile);
 		else if (myTown.upgradeKey(currentTile)) upgradeMenu.open(currentTile);
 		else modal.style.display = "block";
@@ -207,6 +214,34 @@ const familiarWalkers = new FamiliarWalkers(document.getElementById("mapStage"),
 //map zoom with the mouse wheel
 new MapZoom(document.querySelector(".map-scroll"));
 
+// Road mode: after the first road tile, every click on grass lays another one until you stop
+let roadMode = false;
+let buildingFromMapWindow = false;
+let roadBar = null;
+function setRoadMode(on){
+	roadMode = on;
+	if (!roadBar){
+		roadBar = document.createElement("div");
+		roadBar.className = "road-bar";
+		roadBar.hidden = true;
+		const text = document.createElement("span");
+		text.textContent = "Building roads: click grass tiles. ";
+		const stop = document.createElement("button");
+		stop.type = "button"; stop.className = "button"; stop.textContent = "Stop";
+		stop.addEventListener("click", () => setRoadMode(false));
+		roadBar.append(text, stop);
+		document.body.append(roadBar);
+		document.addEventListener("keydown", (e) => { if (e.key === "Escape" && roadMode) setRoadMode(false); });
+	}
+	roadBar.hidden = !on;
+}
+function buildRoadHere(){
+	if (myTown.tiles[currentTile] !== 0) return; // only grass: anything else is ignored while building roads
+	const items = myTown.Buildings.Road.cost;
+	if (Object.keys(items).some((kind) => Inv.items[kind] < items[kind])){ setRoadMode(false); alert("You are out of stone or gold for more road tiles."); return; }
+	if (myTown.buyDefence("Road", Inv, Familiars, document, currentTile)){ displayUpdate(); save(); }
+}
+
 //buy buildings check
 const buildingActions = {
 	buyHut: (id) => myTown.buyHut(Inv, Familiars, document, currentTile, id),
@@ -218,6 +253,9 @@ const buildingActions = {
 	buyGuardOutpost: () => myTown.buyDefence("GuardOutpost", Inv, Familiars, document, currentTile),
 	buyFort: () => myTown.buyDefence("Fort", Inv, Familiars, document, currentTile),
 	buyTavern: () => myTown.buyDefence("Tavern", Inv, Familiars, document, currentTile),
+	buyRoad: () => { const ok = myTown.buyDefence("Road", Inv, Familiars, document, currentTile); if (ok && !buildingFromMapWindow) setRoadMode(true); return ok; },
+	buyBazaar: () => myTown.buyDefence("Bazaar", Inv, Familiars, document, currentTile),
+	buyMansion: () => { const ok = myTown.buyDefence("Mansion", Inv, Familiars, document, currentTile, House.level); if (ok) houseCall("claim"); return ok; },
 };
 
 // What the separate map window (map.html) uses: it shows this window's map and builds through it,
@@ -264,6 +302,12 @@ window.vampireMap = {
 	imageFor: (type) => myTown.tileImage(type),
 	openCave: () => caveMenu.open(),
 	openTavern: () => openTavern(),
+	openMansion: () => openMansion(),
+	openBazaar: () => bazaarMenu.open(),
+	removeRoad: (id) => {
+		if (!confirm("Take up this road tile? You get 70% of its price back.")) return;
+		if (myTown.removeRoad(id, Inv, document)){ displayUpdate(); save(); }
+	},
 	openWar: (id) => warMenu.open(id),
 	// Builds like a click on a building button after clicking a tile. The messages ("not enough wood")
 	// are shown in the map window, where the player is looking.
@@ -271,10 +315,12 @@ window.vampireMap = {
 		if (!buildingActions[buttonId] || !(tileId in myTown.tiles)) return;
 		const mainAlert = window.alert;
 		window.alert = (text) => mapWindow.alert(text);
+		buildingFromMapWindow = true;
 		try {
 			currentTile = tileId;
 			buildingActions[buttonId](buttonId);
 		} finally {
+			buildingFromMapWindow = false;
 			window.alert = mainAlert;
 		}
 	},
@@ -422,6 +468,7 @@ function displayUpdate(){
 	showStorage("bloodCount", Inv.getBloodAmmount());
 	showStorage("woodCount", Inv.getWoodAmmount());
 	showStorage("ironCount", Inv.getIronAmmount());
+	showStorage("stoneCount", Inv.getStoneAmmount());
 	showStorage("bronzeCount", Inv.getBronzeAmmount());
 	showStorage("goldCount", Inv.getGoldAmmount());
 	
@@ -472,13 +519,14 @@ function displayUpdate(){
 	document.getElementById("buildingBloodTempleGold").innerHTML = temple.cost.gold;
 	document.getElementById("buildingBloodTempleFamiliarsRequired").innerHTML = temple.workersRequired;
 
-	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern"]){
+	for (const key of ["WatchTower", "GuardOutpost", "Fort", "Tavern", "Mansion", "Road", "Bazaar"]){
 		const building = myTown.Buildings[key];
-		for (const kind of ["Wood", "Iron", "Bronze", "Gold"]){
+		for (const kind of ["Wood", "Iron", "Bronze", "Gold", "Stone"]){
 			const element = document.getElementById("building" + key + kind);
 			if (element) element.textContent = building.cost[kind.toLowerCase()].toLocaleString("en-US");
 		}
-		document.getElementById("building" + key + "FamiliarsRequired").textContent = building.workersRequired;
+		const need = document.getElementById("building" + key + "FamiliarsRequired");
+		if (need) need.textContent = building.workersRequired;
 	}
 
 	document.getElementById("buildingFarmFamiliarsRequired").innerHTML = myTown.Buildings.Farm.workersRequired;
@@ -531,7 +579,7 @@ window.setInterval(function(){
 
 //Which way each resource went in the last round: more earned than used (up), or the opposite (down).
 //Only what the game does by itself counts (gathering, mining, feeding, blessings), not what the player buys.
-const STORAGE_KINDS = ["blood", "humanFood", "wood", "iron", "bronze", "gold"];
+const STORAGE_KINDS = ["blood", "humanFood", "wood", "iron", "stone", "bronze", "gold"];
 const lastRoundChange = {};
 
 function showTrends(){
@@ -547,6 +595,7 @@ function showTrends(){
 	}
 }
 
+let tradeLeftover = 0;
 //every 10 seconds
 window.setInterval(function(){
 	const before = { ...Inv.items };
@@ -569,6 +618,17 @@ window.setInterval(function(){
 	//Town
 	myTown.updateTen(Inv, document, updateBox, Familiars);
 	war.updateTen();
+
+	// Trade routes of the bazaar: gold every round
+	{
+		const trade = myTown.tradeReport();
+		if (trade.income > 0){
+			tradeLeftover += trade.income;
+			const gold = Math.floor(tradeLeftover);
+			tradeLeftover -= gold;
+			if (gold > 0){ Inv.addGold(gold); updateBox.townUpdatesAdd("Your trade routes earned " + formatNumber(gold) + " gold.", document); }
+		}
+	}
 
 	for (const kind of STORAGE_KINDS) lastRoundChange[kind] = Inv.items[kind] - before[kind];
 	showTrends();
@@ -779,6 +839,7 @@ const saveFields = {
 	humanFoodAmmount: field(Inv.items, "humanFood"),
 	woodAmmount: field(Inv.items, "wood"),
 	ironAmmount: field(Inv.items, "iron"),
+	stoneAmmount: field(Inv.items, "stone"),
 	bronzeAmmount: field(Inv.items, "bronze"),
 	goldAmmount: field(Inv.items, "gold"),
 
@@ -925,7 +986,7 @@ function mapSnapshot(){
 	let levels = "";
 	for (let i = 0; i < count; i++){
 		const type = myTown.tiles["tile" + i];
-		tiles += Number.isInteger(type) && type > 0 && type <= 15 ? type.toString(36) : 0; // 10 to 15 are written as a to f
+		tiles += Number.isInteger(type) && type > 0 && type <= 18 ? type.toString(36) : 0; // 10 to 18 are written as a to i
 		levels += (myTown.tileLevels["tile" + i] || 0).toString(36).slice(0, 1);
 	}
 	return { width: myTown.mapWidth, height: myTown.mapHeight, tiles, levels };
@@ -1075,6 +1136,7 @@ const friends = new FriendsMenu(document, {
 	getPlayerId: () => signedUp ? playerSync.id : null,
 	openDice: openDiceAgainst,
 	openPage: (name) => window.open(profileUrl(name), "_blank", "noopener"),
+	visit: (name) => visitMansion(name),
 	onBadge: (count) => {
 		const badge = document.getElementById("friendsBadge");
 		if (!badge) return;
@@ -1094,11 +1156,43 @@ const tavern = new Tavern(document, {
 	onTraded: () => { if (window.vampireDice) window.vampireDice.pollNow(); setTimeout(() => window.vampireDice && window.vampireDice.pollNow(), 2500); },
 	onClose: () => { displayUpdate(); save(); friends.refresh(); },
 });
+// Mansions and furniture: the server keeps what you own and rolls the drops
+async function houseCall(action){
+	if (!signedUp || !playerSync.id) return null;
+	try {
+		await playerSync.save(playerProfile());
+		const response = await fetch(HOUSE_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: playerSync.id, action }) });
+		return await response.json();
+	} catch {
+		return null;
+	}
+}
+async function foundFurniture(){
+	const result = await houseCall("outpost");
+	if (result && result.found) updateBox.townUpdatesAdd("Among the ruins of the outpost you found: " + result.found.name + "! Place it in your mansion.", document);
+}
+function visitMansion(name){
+	if (!signedUp){ alert("Name your vampire first."); return; }
+	tavern.open({ visit: name });
+}
+function openMansion(){
+	visitMansion(Account.vampireName);
+}
 function openTavern(){
 	if (!signedUp){ alert("Name your vampire first, then you can enter the tavern."); return; }
 	tavern.open();
 }
 window.vampireTavern = tavern; // for testing
+// play.html?visit=Name (the Visit mansion button on a character page)
+{
+	const wanted = new URLSearchParams(location.search).get("visit");
+	if (wanted){
+		history.replaceState(null, "", location.pathname);
+		const wait = setInterval(() => { if (signedUp && playerSync.id){ clearInterval(wait); setTimeout(() => visitMansion(wanted), 800); } }, 500);
+		setTimeout(() => clearInterval(wait), 20000);
+	}
+}
+const bazaarMenu = new BazaarMenu(document, { getReport: () => myTown.tradeReport() });
 const caveMenu = new CaveMenu(document, {
 	apiUrl: UNDERGROUND_API_URL,
 	getLevel: () => House.level,
@@ -1136,6 +1230,7 @@ const war = new War({
 		{ key: "bloodDemon", vampire: BloodDemon }, { key: "bloodLeviathan", vampire: BloodLeviathan },
 	],
 	getLevel: () => House.level,
+	onOutpostDestroyed: () => foundFurniture(),
 	document,
 	say: (text) => updateBox.townUpdatesAdd(text, document),
 	report: (title, lines) => { if (underground.active) pendingReports.push([title, lines]); else warMenu.showReport(title, lines); },

@@ -106,3 +106,21 @@ body.tv-active > #diceModal, body.tv-active > #friendsModal { visibility: visibl
 .friends-status.bad { color: #ff8a8a; }
 .friends-badge { display: inline-block; min-width: 1.2em; margin-left: 0.3em; padding: 0 0.3em; background: var(--blood-bright); color: #fff; border-radius: 1em; font-size: 0.8em; }
 .friends-badge[hidden] { display: none; }
+
+/* Inventory and furniture menus in the tavern and the mansion */
+.tv-menu-section { padding: 0.25rem 0.4rem 0.1rem; color: var(--gold); border-top: 2px solid var(--line); margin-top: 0.15rem; font-size: 0.95rem; }
+.tv-inv { display: flex; flex-direction: column; gap: 0.1rem; max-height: 14rem; overflow: auto; }
+.tv-inv-row { padding: 0 0.4rem; color: var(--bone); font-size: 1.05rem; }
+.tv-inv-empty { padding: 0 0.4rem; color: var(--bone-dim); font-size: 1.05rem; }
+.tv-inv-row:has(.tv-inv-item) { padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.tv-drop { margin-left: 1rem; background: var(--blood-deep); font-size: 1rem; }
+
+/* Roads and the bazaar */
+.road-bar { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 30; display: flex; gap: 0.7rem; align-items: center; padding: 0.5rem 0.9rem; background: rgba(10, 6, 8, 0.94); border: 3px solid var(--gold); color: var(--bone); }
+.road-bar[hidden] { display: none; }
+.bazaar-routes { list-style: none; margin: 0.6rem 0; padding: 0; text-align: left; }
+.bazaar-routes li { padding: 0.2rem 0; }
+.bazaar-routes .closed { color: var(--bone-dim); }
+.bazaar-routes .blocked { color: #ff8a8a; }
+.bazaar-routes .open b { color: var(--gold); font-weight: normal; }
+.bazaar-total { color: var(--gold); }

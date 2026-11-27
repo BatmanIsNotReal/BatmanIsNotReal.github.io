@@ -126,6 +126,10 @@
 					<p>Iron: <span id="ironCount"></span><span class="trend" id="ironTrend"></span></p>
 				</div>
 
+				<div class="stone hover-parent">
+					<p>Stone: <span id="stoneCount"></span><span class="trend" id="stoneTrend"></span></p>
+				</div>
+
 				<div class="bronze hover-parent">
 					<p>Bronze: <span id="bronzeCount"></span><span class="trend" id="bronzeTrend"></span></p>
 				</div>
@@ -509,6 +513,31 @@
 				</div>
 			</div>
 
+			<div class="button buy-building-button" id="buyMansion">Buy mansion
+				<div class="hover">
+					<p>Your private house. Other players can visit; you can place furniture and send visitors out. Needs level 6. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingMansionWood"></span> wood, <span id="buildingMansionIron"></span> iron, <span id="buildingMansionBronze"></span> bronze, <span id="buildingMansionGold"></span> gold</p>
+					<p>familiars required: <span id="buildingMansionFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyRoad">Buy road tile
+				<div class="hover">
+					<p>A paved road for trade routes. After the first tile you keep laying roads by clicking grass (Esc to stop)</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingRoadStone"></span> stone, <span id="buildingRoadGold"></span> gold per tile</p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyBazaar">Buy bazaar
+				<div class="hover">
+					<p>A market. Roads from it to the edges of the map open trade routes that pay gold every round. You can have one</p>
+					<p>Build on grassland. Road tiles must touch it to open a route</p>
+					<p>price: <span id="buildingBazaarWood"></span> wood, <span id="buildingBazaarIron"></span> iron, <span id="buildingBazaarBronze"></span> bronze, <span id="buildingBazaarGold"></span> gold, <span id="buildingBazaarStone"></span> stone</p>
+				</div>
+			</div>
+
 			<h4 class="build-heading">Defences</h4>
 			<div class="button buy-building-button" id="buyWatchTower">Buy watch tower
 				<div class="hover">
@@ -635,6 +664,15 @@
 			<h3 id="warTitle">War</h3>
 			<div id="warBody" class="war-body"></div>
 			<div id="warActions" class="cave-actions war-actions"></div>
+		</div>
+	</div>
+
+	<!-- The bazaar and its trade routes (js/trade/BazaarMenu.js) -->
+	<div id="bazaarModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="bazaarTitle">
+		<div class="modal-content cave-content">
+			<div id="bazaarClose" class="close">&times;</div>
+			<h3 id="bazaarTitle">Bazaar</h3>
+			<div id="bazaarBody" class="bazaar-body"></div>
 		</div>
 	</div>
 

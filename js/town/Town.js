@@ -9,6 +9,7 @@ import Forest from './terrain/Forest.js';
 import LumberMill from './buildings/LumberMill.js';
 import BloodTemple from './buildings/BloodTemple.js';
 import Defence from './buildings/Defence.js';
+import { analyseTrade } from '../trade/routes.mjs';
 import { UPGRADABLE, MAX_LEVEL, HUT_ROOM_PER_LEVEL, costFor, effectText } from './BuildingUpgrades.js';
 
 // Tile types of the defences, and what they are called in this.Buildings
@@ -35,6 +36,9 @@ export default class Town{
             GuardOutpost: new Defence("Guard outpost", "turns raids back and weakens raiders", '../../../src/guardoutpost.png', { wood: 1000, iron: 400, bronze: 100, gold: 0 }, 10, 11),
             Fort: new Defence("Fort", "a garrison that protects the buildings around it", '../../../src/fort.png', { wood: 5000, iron: 3000, bronze: 1000, gold: 150 }, 40, 12),
             Tavern: new Defence("Tavern", "a place where every player can meet", '../../../src/tavern.png', { wood: 3000, iron: 1500, bronze: 300, gold: 50 }, 0, 15),
+            Mansion: new Defence("Mansion", "your private house, open to visitors", '../../../src/mansion.png', { wood: 20000, iron: 10000, bronze: 3000, gold: 300 }, 0, 16),
+            Road: new Defence("Road", "a paved road for trade routes", '../../../src/road.png', { stone: 12, gold: 3 }, 0, 17),
+            Bazaar: new Defence("Bazaar", "a market that trades along your roads to the edges of the map", '../../../src/bazaar.png', { wood: 4000, iron: 2000, bronze: 400, gold: 60, stone: 200 }, 0, 18),
             EnemyOutpost: new Rock("Enemy outpost", "a raiding outpost", 0, '../../../src/enemyoutpost.png'),
             Held: new Rock("Held by the enemy", "a building taken by raiders", 0, '../../../src/heldtile.png'),
             Forest: new Forest("Forest", "a forest", 0, '../../../src/forest.png'),
@@ -379,6 +383,9 @@ export default class Town{
             13: B.EnemyOutpost,
             14: B.Held,
             15: B.Tavern,
+            16: B.Mansion,
+            17: B.Road,
+            18: B.Bazaar,
         }[type]?.imgsrc;
     }
 
@@ -405,7 +412,7 @@ export default class Town{
         if (!saved || typeof saved !== "object" || !(savedWidth > 0)) return;
         for (const [name, type] of Object.entries(saved)){
             const match = /^tile(\d+)$/.exec(name);
-            if (!match || !Number.isInteger(type) || type < 0 || type > 15) continue;
+            if (!match || !Number.isInteger(type) || type < 0 || type > 18) continue;
             const index = Number(match[1]);
             const row = Math.floor(index / savedWidth);
             const col = index % savedWidth;
@@ -449,13 +456,23 @@ export default class Town{
     }
 
     // Builds a defence (key: WatchTower, GuardOutpost, Fort) or the tavern on a patch of grass
-    buyDefence(key, inventory, familiar, document, id){
+    buyDefence(key, inventory, familiar, document, id, level = 99){
         const building = this.Buildings[key];
+        if (key === "Mansion"){
+            if (level < 6){ alert("You need level 6 to buy a mansion."); return false; }
+            if (Object.values(this.tiles).includes(16)){ alert("You already have a mansion."); return false; }
+        }
         if (key === "Tavern" && Object.values(this.tiles).includes(15)){
             alert("You already have a tavern.");
             return false;
         }
-        if (this.tiles[id] !== 0){
+        // a defence can also stand right on a road tile: that protects the trade route the most
+        const onRoad = this.tiles[id] === 17 && ["WatchTower", "GuardOutpost", "Fort"].includes(key);
+        if (key === "Bazaar" && Object.values(this.tiles).includes(18)){
+            alert("You already have a bazaar.");
+            return false;
+        }
+        if (this.tiles[id] !== 0 && !onRoad){
             alert("A " + building.name.toLowerCase() + " has to be built on open grass.");
             return false;
         }
@@ -473,6 +490,21 @@ export default class Town{
         building.ammount++;
         this.tiles[id] = building.tileType;
         document.getElementById(id).src = String(building.imgsrc);
+        return true;
+    }
+
+    // Trade routes of the bazaar (see js/trade/routes.mjs)
+    tradeReport(){
+        return analyseTrade((x, y) => this.tiles["tile" + (y * this.mapWidth + x)] || 0, this.mapWidth, this.mapHeight);
+    }
+
+    // Takes a road tile away and gives back part of its price
+    removeRoad(id, inventory, document){
+        if (this.tiles[id] !== 17) return false;
+        const cost = this.Buildings.Road.cost;
+        for (const kind of Object.keys(cost)) inventory.items[kind] += Math.floor(cost[kind] * DEMOLISH_REFUND);
+        this.tiles[id] = 0;
+        if (document) this.updateTileImages(document);
         return true;
     }
 

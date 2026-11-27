@@ -27,6 +27,7 @@
 			<span>Human food: <span data-from="humanFoodCount"></span></span>
 			<span>Wood: <span data-from="woodCount"></span></span>
 			<span>Iron: <span data-from="ironCount"></span></span>
+			<span>Stone: <span data-from="stoneCount"></span></span>
 			<span>Bronze: <span data-from="bronzeCount"></span></span>
 			<span>Gold: <span data-from="goldCount"></span></span>
 		</p>
@@ -92,6 +93,31 @@
 					<p>Build on grassland</p>
 					<p>price: <span id="buildingTavernWood"></span> wood, <span id="buildingTavernIron"></span> iron, <span id="buildingTavernBronze"></span> bronze, <span id="buildingTavernGold"></span> gold</p>
 					<p>familiars required: <span id="buildingTavernFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyMansion">Buy mansion
+				<div class="hover">
+					<p>Your private house. Other players can visit; you can place furniture and send visitors out. Needs level 6. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingMansionWood"></span> wood, <span id="buildingMansionIron"></span> iron, <span id="buildingMansionBronze"></span> bronze, <span id="buildingMansionGold"></span> gold</p>
+					<p>familiars required: <span id="buildingMansionFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyRoad">Buy road tile
+				<div class="hover">
+					<p>A paved road for trade routes. After the first tile you keep laying roads by clicking grass (Esc to stop)</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingRoadStone"></span> stone, <span id="buildingRoadGold"></span> gold per tile</p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyBazaar">Buy bazaar
+				<div class="hover">
+					<p>A market. Roads from it to the edges of the map open trade routes that pay gold every round. You can have one</p>
+					<p>Build on grassland. Road tiles must touch it to open a route</p>
+					<p>price: <span id="buildingBazaarWood"></span> wood, <span id="buildingBazaarIron"></span> iron, <span id="buildingBazaarBronze"></span> bronze, <span id="buildingBazaarGold"></span> gold, <span id="buildingBazaarStone"></span> stone</p>
 				</div>
 			</div>
 
@@ -195,7 +221,10 @@
 				if (!event.target.classList.contains("tile")) return;
 				currentTile = event.target.id;
 				sync();
-				if (game.map.tiles()[currentTile] === 15) { game.map.openTavern(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				if (game.map.tiles()[currentTile] === 18) { game.map.openBazaar(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				else if (game.map.tiles()[currentTile] === 17) game.map.removeRoad(currentTile);
+				else if (game.map.tiles()[currentTile] === 16) { game.map.openMansion(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
+				else if (game.map.tiles()[currentTile] === 15) { game.map.openTavern(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.tiles()[currentTile] >= 10) { game.map.openWar(currentTile); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.tiles()[currentTile] === 9) { game.map.openCave(); try { window.opener.focus(); } catch { /* the game window cannot be focused */ } }
 				else if (game.map.upgradeKey(currentTile)) upgradeMenu.open(currentTile);

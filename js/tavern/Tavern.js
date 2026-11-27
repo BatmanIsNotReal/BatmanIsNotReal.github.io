@@ -4,7 +4,7 @@
 //   - right-click another player: Dice / Page / Add friend / Trade
 // The server (server.js, /ws/tavern) decides where everybody stands; the shape of the room is shared
 // with it in layout.mjs.
-import { ROOM, FLOOR, FURNITURE, STOOLS, STOOL_OFFSETS, STOOL_LIFT, MAX_SAY, SAY_SHOW_MS, spotProblem, stoolAt, snapToStool } from "./layout.mjs";
+import { ROOM, FLOOR, FURNITURE, STOOLS, STOOL_OFFSETS, STOOL_LIFT, MAX_SAY, SAY_SHOW_MS, spotProblem, stoolAt, snapToStool, furnitureType } from "./layout.mjs";
 import { drawAvatar, defaultAvatar, normalizeAvatar } from "../profile/Avatar.js";
 
 const RESOURCES = [["blood", "Blood"], ["humanFood", "Human food"], ["wood", "Wood"], ["iron", "Iron"], ["bronze", "Bronze"], ["gold", "Gold"]];
@@ -81,11 +81,19 @@ export default class Tavern {
 		d.addEventListener("keydown", (e) => this.onKey(e));
 		window.addEventListener("resize", () => this.resize());
 		this.paintRoom();
+		this.rooms = { tavern: { room: this.room, lighting: this.lighting } };
+		this.paintMansionRoom();
 	}
 
 	// ---------- Opening and closing ----------
-	async open() {
+	// opts.visit: the name of a player whose mansion to visit (without it you go to the tavern)
+	async open(opts = {}) {
 		if (this.active) return;
+		this.build();
+		this.visit = opts.visit || null;
+		this.kind = "tavern"; this.isOwner = false; this.furn = [];
+		this.room = this.rooms.tavern.room; this.lighting = this.rooms.tavern.lighting;
+		this.title.textContent = this.visit ? this.visit + "'s mansion" : "The Thirsty Fang";
 		this.build();
 		this.active = true;
 		this.players.clear(); this.bubbles.clear(); this.effects = [];
@@ -103,7 +111,7 @@ export default class Tavern {
 		if (!this.active) return;
 		const me = this.o.getPlayer();
 		this.ws = new WebSocket(this.o.url);
-		this.ws.onopen = () => this.send({ t: "join", id: me.id });
+		this.ws.onopen = () => this.send({ t: "join", id: me.id, visit: this.visit });
 		this.ws.onmessage = (event) => { try { this.receive(JSON.parse(event.data)); } catch { /* ignore a broken message */ } };
 		this.ws.onclose = () => { if (this.active) this.close("The connection to the tavern was lost."); };
 		this.ws.onerror = () => {};
@@ -132,9 +140,18 @@ export default class Tavern {
 	receive(m) {
 		if (m.t === "hello") {
 			this.me = m.you;
+			this.kind = m.room ? m.room.kind : "tavern";
+			this.isOwner = !!(m.room && m.room.mine);
+			this.furn = m.furniture || [];
+			this.room = this.rooms[this.kind].room; this.lighting = this.rooms[this.kind].lighting;
+			this.title.textContent = this.kind === "mansion" ? m.room.owner + "'s mansion" : "The Thirsty Fang";
+			this.help.textContent = this.kind === "mansion"
+				? (this.isOwner ? "Click the floor to walk. Right-click yourself to open your inventory and drop furniture; right-click a piece to pick it up or a visitor to send them out." : "Click the floor to walk. Just type to talk, Enter to send. Right-click a player for Dice, Page, Add friend, Trade and their inventory.")
+				: "Click the floor to walk. Just type to talk, Enter to send. Right-click a player for Dice, Page, Add friend, Trade and their inventory.";
 			for (const pid in m.players) this.players.set(pid, { ...m.players[pid] });
 			this.log.textContent = "";
-			this.addLog("", "You step into the tavern.", "note");
+			this.addLog("", this.kind === "mansion" ? "You step into the mansion." : "You step into the tavern.", "note");
+			this.leave.textContent = this.kind === "mansion" ? "Leave mansion" : "Leave tavern";
 			this.updateCount();
 		} else if (m.t === "join") {
 			this.players.set(m.pid, { ...m.info });
@@ -164,6 +181,14 @@ export default class Tavern {
 			this.addLog(p.name, m.text, m.pid === this.me ? "mine" : "");
 		} else if (m.t === "notice") {
 			this.addLog("", m.text, "note");
+		} else if (m.t === "inv") {
+			if (this.menuPid === m.pid) this.fillInventory(m.items);
+		} else if (m.t === "furnAdd") {
+			this.furn.push(m.item);
+		} else if (m.t === "furnDel") {
+			this.furn = this.furn.filter((i) => i.uid !== m.uid);
+		} else if (m.t === "kicked") {
+			this.close(m.reason);
 		} else if (m.t === "error") {
 			this.close(m.error);
 		} else if (m.t === "pong") {
@@ -213,8 +238,8 @@ export default class Tavern {
 		const now = performance.now();
 		if (now - this.lastMove < MOVE_COOLDOWN_MS) return;
 		const clicked = this.toRoom(e);
-		const { x, y } = snapToStool(clicked.x, clicked.y);
-		const problem = spotProblem(x, y, this.others());
+		const { x, y } = this.kind === "tavern" ? snapToStool(clicked.x, clicked.y) : clicked;
+		const problem = spotProblem(x, y, this.others(), this.kind);
 		if (problem) { this.addLog("", problem, "bad"); return; }
 		this.lastMove = now;
 		// show it at once; the server corrects us if it disagrees
@@ -255,7 +280,6 @@ export default class Tavern {
 	playerAt(x, y) {
 		let best = null, bestDistance = 1e9;
 		for (const [pid, p] of this.players) {
-			if (pid === this.me) continue;
 			if (Math.abs(x - p.x) > 32 || y < p.y - 80 || y > p.y + 26) continue;
 			const dist = Math.abs(x - p.x) + Math.abs(y - p.y);
 			if (dist < bestDistance) { best = pid; bestDistance = dist; }
@@ -263,11 +287,57 @@ export default class Tavern {
 		return best;
 	}
 
+	// A piece of furniture under the pointer (the one in front wins)
+	furnitureAt(x, y) {
+		const box = { chair: [24, 42, 18], table: [78, 36, 24], sofa: [64, 42, 18], fireplace: [66, 78, 18] };
+		let best = null;
+		for (const item of this.furn) {
+			const type = furnitureType(item.type);
+			if (!type) continue;
+			const [hx, up, down] = box[type.kind];
+			if (Math.abs(x - item.x) <= hx && y >= item.y - up && y <= item.y + down && (!best || item.y > best.y)) best = item;
+		}
+		return best;
+	}
+
 	onContext(e) {
 		e.preventDefault();
-		const pid = this.playerAt(...Object.values(this.toRoom(e)));
-		if (!pid) { this.closeMenu(); return; }
-		this.openMenu(pid);
+		const at = this.toRoom(e);
+		const pid = this.playerAt(at.x, at.y);
+		if (pid) return this.openMenu(pid);
+		const item = this.kind === "mansion" && this.isOwner ? this.furnitureAt(at.x, at.y) : null;
+		if (item) return this.openFurnitureMenu(item);
+		this.closeMenu();
+	}
+
+	placeMenu(x, y) {
+		const m = this.menu;
+		if (x !== undefined) { this.menuX = x; this.menuY = y; }
+		const left = Math.min(this.menuX, innerWidth - m.offsetWidth - 6);
+		const top = Math.min(this.menuY, innerHeight - m.offsetHeight - 6);
+		m.style.left = Math.max(4, left) + "px";
+		m.style.top = Math.max(4, top) + "px";
+	}
+
+	menuButton(label, action, parent = this.menu) {
+		const b = this.el("button", "tv-menu-item", label);
+		b.type = "button";
+		b.addEventListener("click", () => action(b));
+		parent.append(b);
+		return b;
+	}
+
+	// Right-click a piece of furniture in your own mansion
+	openFurnitureMenu(item) {
+		const type = furnitureType(item.type);
+		const r = this.canvas.getBoundingClientRect();
+		const scale = r.width / ROOM.width;
+		this.menuPid = null;
+		this.menu.textContent = "";
+		this.menu.append(this.el("div", "tv-menu-name", type ? type.name : "Furniture"));
+		this.menuButton("Pick up", () => { this.send({ t: "pickup", uid: item.uid }); this.closeMenu(); });
+		this.menu.hidden = false;
+		this.placeMenu(r.left + item.x * scale + 14, r.top + item.y * scale);
 	}
 
 	openMenu(pid) {
@@ -279,26 +349,59 @@ export default class Tavern {
 		const m = this.menu;
 		m.textContent = "";
 		m.append(this.el("div", "tv-menu-name", p.name + " (level " + p.level + ")"));
-		const add = (label, action) => {
-			const b = this.el("button", "tv-menu-item", label);
-			b.type = "button";
-			b.addEventListener("click", () => { this.closeMenu(); action(p, pid); });
-			m.append(b);
-		};
-		add("Dice", (pl) => this.o.openDice(pl.name));
-		add("Page", (pl) => this.o.openPage(pl.name));
-		add("Add friend", (pl) => this.o.addFriend(pl.name).then((res) => this.addLog("", res.ok ? res.message : res.error, res.ok ? "note" : "bad")));
-		add("Trade", (p2, id) => { this.send({ t: "tradeRequest", to: id }); this.addLog("", "Asking " + p2.name + " to trade...", "note"); });
+		const done = (fn) => () => { this.closeMenu(); fn(); };
+		if (pid !== this.me) {
+			this.menuButton("Dice", done(() => this.o.openDice(p.name)));
+			this.menuButton("Page", done(() => this.o.openPage(p.name)));
+			this.menuButton("Add friend", done(() => this.o.addFriend(p.name).then((res) => this.addLog("", res.ok ? res.message : res.error, res.ok ? "note" : "bad"))));
+			this.menuButton("Trade", done(() => { this.send({ t: "tradeRequest", to: pid }); this.addLog("", "Asking " + p.name + " to trade...", "note"); }));
+			if (this.kind === "mansion" && this.isOwner) this.menuButton("Send out", done(() => this.send({ t: "kick", pid })));
+		}
+		m.append(this.el("div", "tv-menu-section", "Inventory"));
+		this.invBox = this.el("div", "tv-inv");
+		this.invBox.append(this.el("div", "tv-inv-empty", "..."));
+		m.append(this.invBox);
 		m.hidden = false;
 		// the box starts at their waist and hangs down from there
-		const left = Math.min(r.left + p.x * scale + 14, innerWidth - m.offsetWidth - 6);
-		const top = Math.min(r.top + (p.y - 4) * scale, innerHeight - m.offsetHeight - 6);
-		m.style.left = Math.max(4, left) + "px";
-		m.style.top = Math.max(4, top) + "px";
+		this.placeMenu(r.left + p.x * scale + 14, r.top + (p.y - 4) * scale);
+		this.send({ t: "inv", pid });
+	}
+
+	fillInventory(items) {
+		const box = this.invBox;
+		if (!box) return;
+		box.textContent = "";
+		const ids = Object.keys(items || {}).filter((id) => furnitureType(id) && items[id] > 0);
+		if (!ids.length) box.append(this.el("div", "tv-inv-empty", "Nothing."));
+		const mineToPlace = this.menuPid === this.me && this.kind === "mansion" && this.isOwner;
+		for (const id of ids) {
+			const row = this.el("div", "tv-inv-row");
+			const label = furnitureType(id).name + " x" + items[id];
+			if (!mineToPlace) { row.textContent = label; box.append(row); continue; }
+			// your own items: right-click one (or click it) and press Drop
+			const b = this.el("button", "tv-menu-item tv-inv-item", label);
+			b.type = "button";
+			const open = (e) => {
+				e.preventDefault();
+				const next = row.querySelector(".tv-drop");
+				if (next) { next.remove(); return; }
+				const drop = this.el("button", "tv-menu-item tv-drop", "Drop");
+				drop.type = "button";
+				drop.addEventListener("click", () => { this.send({ t: "drop", type: id }); this.closeMenu(); });
+				row.append(drop);
+				this.placeMenu();
+			};
+			b.addEventListener("contextmenu", open);
+			b.addEventListener("click", open);
+			row.append(b);
+			box.append(row);
+		}
+		this.placeMenu();
 	}
 
 	closeMenu() {
 		this.menuPid = null;
+		this.invBox = null;
 		if (this.menu) this.menu.hidden = true;
 	}
 
@@ -424,7 +527,8 @@ export default class Tavern {
 		this.lastDraw = now;
 		const ctx = this.ctx;
 		ctx.drawImage(this.room, 0, 0);
-		this.drawLive(ctx, now);
+		if (this.kind === "tavern") this.drawLive(ctx, now);
+		for (const item of [...this.furn].sort((a, b) => a.y - b.y)) this.paintFurniture(ctx, item.type, item.x, item.y, now);
 		const list = [...this.players.entries()].sort((a, b) => a[1].y - b[1].y);
 		for (const fx of this.effects) {
 			const age = (now - fx.at) / 450;
@@ -442,7 +546,7 @@ export default class Tavern {
 		const sprite = this.avatarFor(pid);
 		const S = 3, w = sprite.width * S, h = sprite.height * S;
 		const mine = pid === this.me;
-		const lift = stoolAt(p.x, p.y) ? STOOL_LIFT : 0; // sitting on a stool
+		const lift = this.kind === "tavern" && stoolAt(p.x, p.y) ? STOOL_LIFT : 0; // sitting on a stool
 		ctx.save();
 		ctx.fillStyle = "rgba(0,0,0,0.4)";
 		ctx.beginPath(); ctx.ellipse(p.x, p.y + 16, 18, 7, 0, 0, 6.3); ctx.fill();
@@ -463,7 +567,7 @@ export default class Tavern {
 		if (pid === this.me && this.draft) { text = this.draft; draft = true; }
 		else { const b = this.bubbles.get(pid); if (b && b.until > now) text = b.text; }
 		if (!text) return;
-		this.drawBubble(ctx, p.x, p.y - 74 - (stoolAt(p.x, p.y) ? STOOL_LIFT : 0), draft && Math.floor(now / 450) % 2 === 0 ? text + "|" : text, draft);
+		this.drawBubble(ctx, p.x, p.y - 74 - (this.kind === "tavern" && stoolAt(p.x, p.y) ? STOOL_LIFT : 0), draft && Math.floor(now / 450) % 2 === 0 ? text + "|" : text, draft);
 	}
 
 	drawBubble(ctx, x, y, text, draft) {
@@ -673,5 +777,121 @@ export default class Tavern {
 		ctx.fillStyle = "#14090a"; ctx.fillRect(f.x + 10, f.y - 36, f.w - 20, f.h + 36); // the opening
 		ctx.fillStyle = "#6a3a1a"; ctx.fillRect(f.x + 40, f.y + 28, f.w - 80, 14); // logs
 		ctx.fillStyle = "#7a7480"; ctx.fillRect(f.x - 26, f.y + f.h - 4, f.w + 52, 12); // ledge
+	}
+
+	// ---------- The mansion: an empty room ----------
+	paintMansionRoom() {
+		const d = this.document;
+		const make = () => { const c = d.createElement("canvas"); c.width = ROOM.width; c.height = ROOM.height; return c; };
+		const room = make(), lighting = make();
+		const ctx = room.getContext("2d");
+		const wallH = FLOOR.top + 20;
+		ctx.fillStyle = "#4a1a28"; ctx.fillRect(0, 0, ROOM.width, wallH);
+		for (let x = 0; x < ROOM.width; x += 60) { ctx.fillStyle = (x / 60) % 2 ? "#521e2e" : "#44182a"; ctx.fillRect(x, 0, 60, wallH); ctx.fillStyle = "rgba(201,164,95,0.25)"; ctx.fillRect(x + 29, 20, 2, wallH - 70); }
+		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, 0, ROOM.width, 12);
+		ctx.fillStyle = "#2a1018"; ctx.fillRect(0, 150, ROOM.width, 70); // panelling
+		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, 148, ROOM.width, 4);
+		for (let x = 20; x < ROOM.width; x += 120) { ctx.strokeStyle = "rgba(201,164,95,0.35)"; ctx.lineWidth = 2; ctx.strokeRect(x, 162, 100, 44); }
+		for (const x of [380, 800, 1220]) { // tall windows
+			ctx.fillStyle = "#c9a45f"; ctx.fillRect(x - 8, 24, 96, 118);
+			ctx.fillStyle = "#14203a"; ctx.fillRect(x, 32, 80, 102);
+			ctx.fillStyle = "#e8d890"; for (let i = 0; i < 5; i++) ctx.fillRect(x + 8 + ((i * 37) % 64), 40 + ((i * 23) % 40), 2, 2);
+			ctx.fillStyle = "#c9a45f"; ctx.fillRect(x + 37, 32, 6, 102); ctx.fillRect(x, 80, 80, 6);
+		}
+		// polished floor
+		for (let y = FLOOR.top - 20, row = 0; y < ROOM.height; y += 40, row++) {
+			for (let x = -((row * 83) % 200); x < ROOM.width; x += 200) {
+				const shade = 0.94 + ((x * 7 + y * 13) % 17) / 170;
+				ctx.fillStyle = `rgb(${Math.round(128 * shade)}, ${Math.round(88 * shade)}, ${Math.round(58 * shade)})`;
+				ctx.fillRect(x, y, 198, 38);
+				ctx.fillStyle = "rgba(255, 235, 190, 0.1)"; ctx.fillRect(x, y, 198, 3);
+				ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(x + 198, y, 2, 38);
+			}
+			ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(0, y + 38, ROOM.width, 2);
+		}
+		const grad = ctx.createLinearGradient(0, FLOOR.top - 20, 0, FLOOR.top + 60);
+		grad.addColorStop(0, "rgba(0,0,0,0.45)"); grad.addColorStop(1, "rgba(0,0,0,0)");
+		ctx.fillStyle = grad; ctx.fillRect(0, FLOOR.top - 20, ROOM.width, 80);
+		ctx.fillStyle = "#0e0806"; ctx.fillRect(0, FLOOR.bottom + 8, ROOM.width, ROOM.height);
+		ctx.fillStyle = "#c9a45f"; ctx.fillRect(0, FLOOR.bottom + 8, ROOM.width, 5);
+		ctx.fillStyle = "#6a4426"; ctx.fillRect(730, FLOOR.bottom + 8, 140, 28);
+		ctx.fillStyle = "#2a1608"; ctx.fillRect(742, FLOOR.bottom + 14, 116, 22);
+		const lc = lighting.getContext("2d");
+		const v = lc.createRadialGradient(800, 520, 320, 800, 520, 1050);
+		v.addColorStop(0, "rgba(10,4,6,0)"); v.addColorStop(1, "rgba(10,4,6,0.5)");
+		lc.fillStyle = v; lc.fillRect(0, 0, ROOM.width, ROOM.height);
+		this.rooms.mansion = { room, lighting };
+	}
+
+	// ---------- The furniture ----------
+	// (x, y) is where the owner stood: the middle of the bottom of the piece
+	paintFurniture(ctx, id, x, y, now) {
+		const type = furnitureType(id);
+		if (!type) return;
+		const v = Number(id.slice(-1)) - 1;
+		x = Math.round(x); y = Math.round(y);
+		ctx.save();
+		ctx.fillStyle = "rgba(0,0,0,0.32)";
+		const wide = { chair: 20, table: [46, 50, 76, 46, 52][v] || 50, sofa: 62, fireplace: 64 }[type.kind];
+		ctx.beginPath(); ctx.ellipse(x, y + 14, wide, 7, 0, 0, 6.3); ctx.fill();
+		if (type.kind === "chair") this.paintChair(ctx, x, y, v);
+		else if (type.kind === "table") this.paintTableItem(ctx, x, y, v);
+		else if (type.kind === "sofa") this.paintSofa(ctx, x, y, v);
+		else this.paintFireplace(ctx, x, y, v, now);
+		ctx.restore();
+	}
+
+	paintChair(ctx, x, y, v) {
+		const pal = [["#8a5a2c", "#8a5a2c"], ["#b07a3c", "#c89a58"], ["#6a4220", "#b02a38"], ["#2a1a12", "#3a2a22"], ["#c9a45f", "#6a1a2a"]][v];
+		ctx.fillStyle = "#1a0f08";
+		ctx.fillRect(x - 15, y + 2, 5, 14); ctx.fillRect(x + 10, y + 2, 5, 14);
+		ctx.fillStyle = pal[0]; ctx.fillRect(x - 14, y - 34, 28, 28); // back
+		ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(x - 10, y - 30, 20, 20);
+		if (v === 3) { ctx.fillStyle = pal[0]; ctx.fillRect(x - 15, y - 40, 6, 8); ctx.fillRect(x + 9, y - 40, 6, 8); }
+		if (v === 4) { ctx.fillStyle = "#e8c070"; ctx.fillRect(x - 14, y - 34, 28, 3); ctx.fillRect(x - 14, y - 34, 3, 28); ctx.fillRect(x + 11, y - 34, 3, 28); }
+		ctx.fillStyle = "#1a0f08"; ctx.fillRect(x - 18, y - 8, 36, 14);
+		ctx.fillStyle = pal[1]; ctx.fillRect(x - 17, y - 7, 34, 11);
+		ctx.fillStyle = "rgba(255,255,255,0.15)"; ctx.fillRect(x - 17, y - 7, 34, 3);
+	}
+
+	paintTableItem(ctx, x, y, v) {
+		const pal = [["#8a5a2c", "#5a3418"], ["#c89a58", "#8a6a38"], ["#7a4a22", "#4a2a12"], ["#e4e0dc", "#3a3a44"], ["#2e2018", "#140c08"]][v];
+		const w = [46, 40, 76, 46, 50][v], h = [30, 26, 24, 28, 28][v];
+		ctx.fillStyle = "#1a0f08";
+		for (const dx of [-w + 8, w - 12]) ctx.fillRect(x + dx, y - 6, 5, 20);
+		ctx.fillStyle = pal[1];
+		if (v === 0 || v === 3) { ctx.beginPath(); ctx.ellipse(x, y - 4, w, h, 0, 0, 6.3); ctx.fill(); ctx.fillStyle = pal[0]; ctx.beginPath(); ctx.ellipse(x, y - 12, w, h, 0, 0, 6.3); ctx.fill(); }
+		else { ctx.fillRect(x - w, y - 10, w * 2, h + 2); ctx.fillStyle = pal[0]; ctx.fillRect(x - w, y - 22, w * 2, h - 2); }
+		if (v === 3) { ctx.strokeStyle = "rgba(120,120,140,0.5)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - 20, y - 18); ctx.lineTo(x + 6, y - 8); ctx.stroke(); }
+		if (v === 2) { ctx.fillStyle = "#e8e0d0"; for (const dx of [-50, -20, 10, 40]) ctx.fillRect(x + dx, y - 20, 12, 3); }
+	}
+
+	paintSofa(ctx, x, y, v) {
+		const pal = [["#9a1a2a", "#7a1020"], ["#2a6a3a", "#1e5028"], ["#2a4a8a", "#1c3466"], ["#7a4a28", "#5a3318"], ["#1c1c22", "#101014"]][v];
+		ctx.fillStyle = "#1a0f08"; ctx.fillRect(x - 56, y + 4, 6, 12); ctx.fillRect(x + 50, y + 4, 6, 12);
+		ctx.fillStyle = pal[1]; ctx.fillRect(x - 58, y - 40, 116, 30); // back
+		ctx.fillStyle = pal[0]; ctx.fillRect(x - 54, y - 38, 108, 24);
+		ctx.fillStyle = pal[1]; ctx.fillRect(x - 62, y - 22, 16, 34); ctx.fillRect(x + 46, y - 22, 16, 34); // arms
+		ctx.fillStyle = pal[0]; ctx.fillRect(x - 60, y - 22, 12, 6); ctx.fillRect(x + 48, y - 22, 12, 6);
+		ctx.fillStyle = pal[0]; ctx.fillRect(x - 46, y - 12, 92, 22); // seat
+		ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(x - 1, y - 12, 2, 22);
+		ctx.fillStyle = "rgba(255,255,255,0.12)"; ctx.fillRect(x - 46, y - 12, 92, 3);
+		if (v === 4) { ctx.fillStyle = "#e8c070"; ctx.fillRect(x - 62, y - 40, 124, 3); ctx.fillRect(x - 62, y - 22, 16, 3); ctx.fillRect(x + 46, y - 22, 16, 3); }
+	}
+
+	paintFireplace(ctx, x, y, v, now) {
+		const pal = [["#5a5662", "#7a7480", "#14090a"], ["#8a3a2a", "#a8523a", "#14090a"], ["#e0dcd6", "#f0ece6", "#2a1a1a"]][v];
+		ctx.fillStyle = "#1a0f08"; ctx.fillRect(x - 62, y - 80, 124, 96);
+		ctx.fillStyle = pal[0]; ctx.fillRect(x - 60, y - 78, 120, 92);
+		for (let yy = y - 78; yy < y + 14; yy += 14) for (let xx = x - 60 + (((yy - y) / 14) & 1) * 14; xx < x + 60; xx += 28) { ctx.fillStyle = pal[1]; ctx.fillRect(xx + 2, yy + 2, 24, 10); }
+		ctx.fillStyle = pal[2]; ctx.fillRect(x - 34, y - 52, 68, 62);
+		ctx.fillStyle = pal[1]; ctx.fillRect(x - 70, y - 86, 140, 12); // mantel
+		ctx.fillStyle = "#6a3a1a"; ctx.fillRect(x - 26, y + 0, 52, 9); // logs
+		const t = (now || 0) / 1000;
+		for (let i = 0; i < 3; i++) {
+			const f = Math.sin(t * (7 + i * 1.7) + i * 2) * 0.5 + 0.5, hgt = 18 + f * 16 + (i === 1 ? 10 : 0), fx = x - 18 + i * 18;
+			ctx.fillStyle = "#e8481a"; ctx.beginPath(); ctx.moveTo(fx - 10, y); ctx.quadraticCurveTo(fx - 4, y - hgt * 0.7, fx + (f - 0.5) * 6, y - hgt); ctx.quadraticCurveTo(fx + 6, y - hgt * 0.6, fx + 10, y); ctx.fill();
+			ctx.fillStyle = "#ffc03a"; ctx.beginPath(); ctx.moveTo(fx - 5, y); ctx.quadraticCurveTo(fx - 2, y - hgt * 0.45, fx + (f - 0.5) * 4, y - hgt * 0.62); ctx.quadraticCurveTo(fx + 3, y - hgt * 0.4, fx + 5, y); ctx.fill();
+		}
 	}
 }

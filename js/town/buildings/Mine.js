@@ -23,13 +23,17 @@ export default class Mine{
     // levels: the upgrade level of each building of this kind (see BuildingUpgrades.js)
     // One line for all mines together: "Your 12 mines found 340 iron, 45 bronze and 6 gold."
     checkForLoot(inv, document, updatebox, levels = []){
-        let iron = 0, bronze = 0, gold = 0;
+        let iron = 0, stone = 0, bronze = 0, gold = 0;
         for (let i = 0; i < this.ammount; i++){
             const gain = this.gain * outputMultiplier(levels[i] || 0);
             var chance = this.getRandomInt(0, 1000);
             if (chance <= 300){
                 //your miners discovered an ore of iron
                 iron += this.getRandomInt(10*gain, 30*gain);
+            }
+            if (chance >= 700 && chance <= 950){
+                //your miners cut a block of stone
+                stone += this.getRandomInt(6*gain, 20*gain);
             }
             if (chance <= 100){
                 //your miners discovered a branch of bronze
@@ -42,6 +46,7 @@ export default class Mine{
         }
         const found = [];
         if (iron > 0){ inv.addIron(iron); found.push(formatNumber(iron) + " iron"); }
+        if (stone > 0){ inv.addStone(stone); found.push(formatNumber(stone) + " stone"); }
         if (bronze > 0){ inv.addBronze(bronze); found.push(formatNumber(bronze) + " bronze"); }
         if (gold > 0){ inv.addGold(gold); found.push(formatNumber(gold) + " gold"); }
         if (found.length){
