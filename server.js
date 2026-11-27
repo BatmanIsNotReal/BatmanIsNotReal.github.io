@@ -336,6 +336,7 @@ async function handlePlayer(req, res) {
 		stats,
 		...(existing && existing.profile ? { profile: existing.profile } : {}),
 		...(existing && existing.helmets ? { helmets: existing.helmets } : {}),
+		...Object.fromEntries(["hairs", "robes", "shirts", "armors", "weapons"].filter((list) => existing && existing[list]).map((list) => [list, existing[list]])),
 		...(existing && existing.furniture ? { furniture: existing.furniture } : {}),
 		...(existing && existing.mansion ? { mansion: true } : {}),
 	});
@@ -352,7 +353,7 @@ async function handlePlayer(req, res) {
 // so they can be faked. This is a showcase, not a ranking you can trust blindly.
 const isProfileRateLimited = createRateLimiter(20, 60000);
 const isProfileReadRateLimited = createRateLimiter(60, 60000);
-const AVATAR_KEYS = { skin: 6, hairStyle: 7, hairColor: 8, eyes: 5, eyeColor: 6, mouth: 5, cloak: 6, cloakColor: 8, accessory: 7 };
+const AVATAR_KEYS = { skin: 6, hairStyle: 12, hairColor: 8, eyes: 5, eyeColor: 6, mouth: 5, cloak: 19, cloakColor: 8, accessory: 7, weapon: 7 };
 const MAX_BIO_LENGTH = 150;
 const ATTRIBUTE_KEYS = ["health", "defence", "strength", "magic"];
 const POINTS_PER_LEVEL = 5;
@@ -371,6 +372,26 @@ function cleanAttributes(value, level, fallback) {
 	return spent <= POINTS_PER_LEVEL * Math.max(0, (level || 1) - 1) ? result : fallback || { health: 1, defence: 1, strength: 1, magic: 1 };
 }
 const ACCENT_COUNT = 8;
+// Found hair, clothes and weapons are only allowed on the avatar of a player who owns them
+function ownedParts(player) {
+	const owned = {};
+	for (const [kind, list] of Object.entries(RULES.LOOT_LISTS)) owned[kind] = player[list] || [];
+	return owned;
+}
+function limitFoundParts(avatar, player, fallback) {
+	const before = fallback || {};
+	const owned = ownedParts(player);
+	for (const key of Object.keys(RULES.PART_BASE)) {
+		if (RULES.choiceAllowed(key, avatar[key], owned)) continue;
+		avatar[key] = Number.isInteger(before[key]) && RULES.choiceAllowed(key, before[key], owned) ? before[key] : 0;
+	}
+	return avatar;
+}
+function lootLists(player) {
+	const result = {};
+	for (const list of Object.values(RULES.LOOT_LISTS)) result[list] = player[list] || [];
+	return result;
+}
 
 function cleanAvatar(value) {
 	const avatar = {};
@@ -455,7 +476,7 @@ async function handleProfile(req, res, url) {
 	const accent = Number.isInteger(body.accent) && body.accent >= 0 && body.accent < ACCENT_COUNT ? body.accent : 0;
 	const map = ("map" in body && cleanMap(body.map)) || previous.map || null;
 	player.profile = {
-		avatar: cleanAvatar(body.avatar),
+		avatar: limitFoundParts(cleanAvatar(body.avatar), player, previous.avatar),
 		bio,
 		accent,
 		isPublic: body.isPublic !== false,
@@ -467,7 +488,7 @@ async function handleProfile(req, res, url) {
 	};
 	player.updatedAt = Date.now();
 	savePlayers();
-	return sendJson(res, 200, { ok: true, helmets: player.helmets || [] });
+	return sendJson(res, 200, { ok: true, helmets: player.helmets || [], ...lootLists(player) });
 }
 
 // ---------- Active players API ----------
@@ -1014,10 +1035,11 @@ function ugRoster(room) {
 	for (const c of room.conns.values()) wsSend(c, { t: "roster", players: roster });
 }
 
+const DEATH_KINDS = ["wood", "iron", "bronze", "gold"]; // what a death costs
 function ugRoom(dungeon) {
 	let room = ugWorlds.get(dungeon.id);
 	if (room) return room;
-	room = { dungeon, conns: new Map() };
+	room = { dungeon, conns: new Map(), stolen: new Map() };
 	room.world = new WORLD.World(dungeon.id, {
 		onKill(pid, monster, reward) {
 			const conn = room.conns.get(pid);
@@ -1033,13 +1055,46 @@ function ugRoom(dungeon) {
 			wsSend(conn, { t: "helmet", dungeon: dungeonId, name: RULES.HELMET_NAMES[dungeonId], isNew, owned: player.helmets });
 			postChatAnnouncement(`${player.vampireName} found the ${RULES.HELMET_NAMES[dungeonId]} in ${room.dungeon.name}!`, CRIER_NAME);
 		},
-		onDeath(pid, by) {
+		onLoot(pid, dungeonId, kind, item) {
 			const conn = room.conns.get(pid);
-			if (conn) wsSend(conn, { t: "died", by });
+			const player = conn && players.get(conn.playerId);
+			const list = RULES.LOOT_LISTS[kind];
+			if (!player || !list || !Number.isInteger(item)) return;
+			player[list] = Array.isArray(player[list]) ? player[list] : [];
+			const isNew = !player[list].includes(item);
+			if (isNew) { player[list].push(item); savePlayers(); }
+			const name = RULES.LOOT_NAMES[kind][item];
+			wsSend(conn, { t: "loot", kind, dungeon: dungeonId, item, name, isNew, owned: player[list] });
+			if (isNew) postChatAnnouncement(`${player.vampireName} found "${name}" in ${room.dungeon.name}!`, CRIER_NAME);
+		},
+		onDeath(pid, by, killerPid) {
+			// Dying costs a share of wood, iron, bronze and gold. The server works it out from what it last heard
+			// of the player's stores, so that it can hand exactly that to the vampire who made the kill.
+			const conn = room.conns.get(pid);
+			const victim = conn && players.get(conn.playerId);
+			let lost = null;
+			if (victim && victim.stats) {
+				lost = {};
+				for (const kind of DEATH_KINDS) {
+					const amount = Math.floor((victim.stats[kind] || 0) * RULES.DEATH_LOSS);
+					if (amount > 0) { lost[kind] = amount; victim.stats[kind] -= amount; }
+				}
+				savePlayers();
+			}
+			if (killerPid) room.stolen.set(pid, lost || {});
+			if (conn) wsSend(conn, { t: "died", by, ...(lost ? { lost } : {}) });
 		},
 		onPlayerKill(killerPid, victimPid, victimLevel) {
 			const conn = room.conns.get(killerPid);
-			if (conn) wsSend(conn, { t: "reward", xp: 25 * Math.max(1, victimLevel || 1), name: "a rival vampire" });
+			const taken = room.stolen.get(victimPid) || {};
+			room.stolen.delete(victimPid);
+			const victimConn = room.conns.get(victimPid);
+			const killer = conn && players.get(conn.playerId);
+			if (killer && killer.stats) {
+				for (const [kind, amount] of Object.entries(taken)) killer.stats[kind] = Math.min((killer.stats[kind] || 0) + amount, MAX_STAT_VALUE);
+				if (Object.keys(taken).length) savePlayers();
+			}
+			if (conn) wsSend(conn, { t: "reward", ...taken, xp: 25 * Math.max(1, victimLevel || 1), name: victimConn ? "slaying " + victimConn.name : "a rival vampire" });
 		},
 	});
 	ugWorlds.set(dungeon.id, room);

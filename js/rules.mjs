@@ -93,6 +93,41 @@ export const DUNGEONS = [
 	{ id: 6, name: "The Abyss", min: 5, max: 99, pvp: true },
 ];
 
+export const LOOT_CHANCE = 1 / 600;      // per monster kill, for hair and for a robe (each rolled on its own)
+export const HAIR_NAMES = ["", "Tangled mop", "Ponytail", "Warrior braids", "Flame crest", "Shadow mane"];
+export const ROBE_NAMES = ["", "Rat-pelt cloak", "Bone-plate robe", "Crimson vestments", "Ember mantle", "Black Throne regalia"];
+export const SHIRT_NAMES = ["", "Plain shirt", "Striped shirt", "Laced shirt", "Squire's vest"];
+export const ARMOR_NAMES = ["", "Bronze armour", "Blue armour", "Green armour", "Red armour"];
+export const WEAPON_NAMES = ["", "Oak staff", "Iron sword", "Crystal staff", "Silver sword", "Blood staff", "Flame sword"];
+export const LOOT_NAMES = { hair: HAIR_NAMES, robe: ROBE_NAMES, shirt: SHIRT_NAMES, armor: ARMOR_NAMES, weapon: WEAPON_NAMES };
+// What each kind of loot is called in the player file (list of owned item numbers)
+export const LOOT_LISTS = { hair: "hairs", robe: "robes", shirt: "shirts", armor: "armors", weapon: "weapons" };
+// Hair and robes: item number = dungeon number. The rest: a random item the dungeon is "deep" enough for
+// (LOOT_TIERS[kind][item] = the first dungeon where it can drop).
+export const LOOT_TIERS = { shirt: [0, 1, 1, 2, 3], armor: [0, 1, 3, 2, 4], weapon: [0, 1, 1, 2, 3, 4, 5] };
+// Where the found items sit in the avatar's choice numbers: choice = start + item - 1 (weapon: choice = item).
+export const PART_BASE = { hairStyle: 7, cloak: 6, weapon: 1 };
+export const PART_GROUPS = {
+	hairStyle: [{ kind: "hair", start: 7, count: 5 }],
+	cloak: [{ kind: "robe", start: 6, count: 5 }, { kind: "shirt", start: 11, count: 4 }, { kind: "armor", start: 15, count: 4 }],
+	weapon: [{ kind: "weapon", start: 1, count: 6 }],
+};
+// owned = { hair: [item numbers], robe: [...], shirt: [...], armor: [...], weapon: [...] }
+export function choiceAllowed(key, index, owned = {}) {
+	if (!(key in PART_BASE)) return true;
+	if (index < PART_BASE[key]) return true;
+	for (const group of PART_GROUPS[key]) {
+		if (index >= group.start && index < group.start + group.count) return (owned[group.kind] || []).includes(index - group.start + 1);
+	}
+	return false;
+}
+export function lootItem(kind, dungeon, random) {
+	const tiers = LOOT_TIERS[kind];
+	if (!tiers) return dungeon;
+	const items = [];
+	for (let item = 1; item < tiers.length; item++) if (tiers[item] <= dungeon) items.push(item);
+	return items[Math.floor(random() * items.length)];
+}
 export const HELMET_NAMES = ["", "Gnawed Rat Skull", "Bone Crown", "Crimson Cowl", "Molten Horns", "Helm of the Black Throne"];
 
 export const dungeonById = (id) => DUNGEONS.find((d) => d.id === id) || null;

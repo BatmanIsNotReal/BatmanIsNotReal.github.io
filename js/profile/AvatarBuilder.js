@@ -1,10 +1,11 @@
 // The character builder: a preview and one "< choice >" row for every part.
 // Used when signing up and in the "My character" window.
-import { OPTIONS, LABELS, KEYS, drawAvatar, normalizeAvatar, randomAvatar } from "./Avatar.js";
+import { OPTIONS, LABELS, KEYS, allowedChoices, drawAvatar, normalizeAvatar, randomAvatar } from "./Avatar.js";
 
 export default class AvatarBuilder {
 	// container: an empty element to fill. avatar: the starting choices. onChange: called after every change.
-	constructor(container, avatar, onChange = () => {}) {
+	constructor(container, avatar, onChange = () => {}, owned = () => ({})) {
+		this.owned = owned; // () => { hair: [item numbers], robe: [...], shirt: [...], armor: [...], weapon: [...] }
 		this.container = container;
 		this.onChange = onChange;
 		this.avatar = normalizeAvatar(avatar);
@@ -42,7 +43,11 @@ export default class AvatarBuilder {
 		random.type = "button";
 		random.className = "button avatar-random";
 		random.textContent = "Surprise me";
-		random.addEventListener("click", () => this.setValue(randomAvatar()));
+		random.addEventListener("click", () => {
+			const next = randomAvatar();
+			for (const key of ["hairStyle", "cloak", "weapon"]) { const list = allowedChoices(key, this.owned()); next[key] = list[Math.floor(Math.random() * list.length)]; }
+			this.setValue(next);
+		});
 
 		const left = document.createElement("div");
 		left.className = "avatar-preview";
@@ -57,8 +62,9 @@ export default class AvatarBuilder {
 		button.textContent = symbol;
 		button.setAttribute("aria-label", label);
 		button.addEventListener("click", () => {
-			const count = OPTIONS[key].length;
-			this.avatar[key] = (this.avatar[key] + direction + count) % count;
+			const list = allowedChoices(key, this.owned());
+			const at = list.indexOf(this.avatar[key]);
+			this.avatar[key] = list[((at < 0 ? 0 : at) + direction + list.length) % list.length];
 			this.redraw();
 			this.onChange(this.getValue());
 		});

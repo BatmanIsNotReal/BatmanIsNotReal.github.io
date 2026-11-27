@@ -1,7 +1,7 @@
 // One underground level: players, monsters, shots, walls. No drawing and no networking in here, so the
 // server runs it for everyone and the browser can run it alone for testing (?solo).
 import {
-	ARENA, PLAYER_RADIUS, PLAYER_SPEED, CLAW, FIRE, RESPAWN_SECONDS, SHIELD_SECONDS, HELMET_CHANCE,
+	ARENA, PLAYER_RADIUS, PLAYER_SPEED, CLAW, FIRE, RESPAWN_SECONDS, SHIELD_SECONDS, HELMET_CHANCE, LOOT_CHANCE, lootItem,
 	dungeonById, monstersOf, maxHealth, damageTaken, clawDamage, fireDamage,
 } from "../rules.mjs";
 
@@ -104,13 +104,14 @@ export function obstaclesFor(dungeonId) {
 }
 
 export class World {
-	// hooks: { onKill(playerId, monster, reward), onHelmet(playerId, dungeonId), onDeath(playerId, byName), onPlayerKill(killerId, victimId) }
+	// hooks: { onKill(playerId, monster, reward), onHelmet(playerId, dungeonId), onLoot(playerId, dungeonId, kind, itemNumber) (kind: hair, robe, shirt, armor or weapon), onDeath(playerId, byName, killerId or null), onPlayerKill(killerId, victimId) }
 	constructor(dungeonId, hooks = {}, options = {}) {
 		this.dungeon = dungeonById(dungeonId);
 		if (!this.dungeon) throw new Error("unknown dungeon " + dungeonId);
 		this.hooks = hooks;
 		this.rng = options.rng || Math.random;
 		this.helmetChance = options.helmetChance ?? HELMET_CHANCE;
+		this.lootChance = options.lootChance ?? LOOT_CHANCE;
 		this.obstacles = obstaclesFor(this.dungeon.id);
 		this.kinds = monstersOf(this.dungeon.id);
 		this.players = new Map();
@@ -289,6 +290,9 @@ export class World {
 		by.kills++;
 		this.hooks.onKill?.(by.id, m, m.reward);
 		if (this.rng() < this.helmetChance) this.hooks.onHelmet?.(by.id, this.dungeon.id);
+		for (const kind of ["hair", "robe", "shirt", "armor", "weapon"]) {
+			if (this.rng() < this.lootChance) this.hooks.onLoot?.(by.id, this.dungeon.id, kind, lootItem(kind, this.dungeon.id, this.rng));
+		}
 	}
 
 	hitPlayer(p, rawDamage, by, magic = false) {
@@ -303,8 +307,9 @@ export class World {
 		p.claw = p.fire = false;
 		this.fx.push({ k: "boom", x: p.x, y: p.y, c: "#a01028" });
 		const killerName = by ? by.name : "the dark";
-		this.hooks.onDeath?.(p.id, killerName);
-		if (by && by !== p && this.pvp) {
+		const killedByPlayer = !!(by && by !== p && this.pvp);
+		this.hooks.onDeath?.(p.id, killerName, killedByPlayer ? by.id : null);
+		if (killedByPlayer) {
 			by.kills++;
 			this.hooks.onPlayerKill?.(by.id, p.id, p.level);
 		}

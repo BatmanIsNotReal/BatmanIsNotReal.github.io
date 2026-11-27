@@ -6,6 +6,8 @@
 //   S skin   s skin (shadow)   H hair   h hair (dark)   E eye colour   g eye glow
 //   C cloak  c cloak (dark)    K black  W white  T tooth  R blood red  G gold  P bone
 
+import { choiceAllowed } from "../rules.mjs";
+
 export const WIDTH = 16;
 export const HEIGHT = 22;
 
@@ -262,6 +264,219 @@ const ACCESSORIES = [
 	] } },
 ];
 
+
+// ---------- Hair and robes found in the underground (one hair and one robe for each dungeon) ----------
+// They use the player's own hair and cloak colours; F f V D r O M m are fixed extra colours (see HELMET_COLORS).
+const LOOT_HAIR = [
+	{ name: "Tangled mop", loot: 1, part: { y: 1, rows: [
+		"....H..HH..H....",
+		".....HHHHHHH....",
+		"....HHHHHHHHH...",
+		"....HhHHHHhHH...",
+		"...HH.H..H.HH...",
+		"...H........H...",
+	] } },
+	{ name: "Ponytail", loot: 2, part: { y: 2, rows: [
+		".....HHHHHH.....",
+		"....HHHHHHHH....",
+		"....HH....HHH...",
+		"..........HHH...",
+		"..........HHh...",
+		"...........Hh...",
+		"...........hH...",
+		"............H...",
+	] } },
+	{ name: "Warrior braids", loot: 3, part: { y: 2, rows: [
+		".....HHHHHH.....",
+		"....HHHHHHHH....",
+		"...HHHH..HHHH...",
+		"...HHH....HHH...",
+		"...Hh......hH...",
+		"...hH......Hh...",
+		"...Hh......hH...",
+		"...hH......Hh...",
+		"....H......H....",
+	] } },
+	{ name: "Flame crest", loot: 4, part: { y: 0, rows: [
+		".....F..F..F....",
+		".....FF.FF.FF...",
+		"....fFFFFFFFf...",
+		"....HHFFFFHH....",
+		"....HHHHHHHH....",
+		"....Hh....hH....",
+	] } },
+	{ name: "Shadow mane", loot: 5, part: { y: 2, rows: [
+		".....HHHHHH.....",
+		"....HHHHHHHH....",
+		"...HHHH..HHHH...",
+		"..HHHHH..HHHHH..",
+		"..HHHH....HHHH..",
+		"..HHH......HHH..",
+		"..HHH......HHH..",
+		"..HHh......hHH..",
+		"..HVh......hVH..",
+		"..VV........VV..",
+		"..V..........V..",
+	] } },
+];
+
+const LOOT_ROBES = [
+	{ name: "Rat-pelt cloak", loot: 1, part: { y: 11, rows: [
+		"....CCCssCCC....",
+		".PPPCCCCCCCCPPP.",
+		".PPPCCCccCCCPPP.",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCCC.",
+		".CCCCCCccCCCCCC.",
+		".CCPCCCccCCCPCC.",
+		".CCCCCCccCCCCCC.",
+		".CC.CCCccCCC.CC.",
+	] } },
+	{ name: "Bone-plate robe", loot: 2, part: { y: 11, rows: [
+		"....CCCssCCC....",
+		"..CCCPPPPPPCCC..",
+		"..CCPPPPPPPPCC..",
+		"..CCCPPPPPPCCC..",
+		"..CCPPPPPPPPCC..",
+		"..CCCPPPPPPCCC..",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		".CCCCCCccCCCCCC.",
+		".CCCCCCccCCCCCC.",
+		".CCCCCCccCCCCCC.",
+	] } },
+	{ name: "Crimson vestments", loot: 3, part: { y: 11, rows: [
+		"....CCCssCCC....",
+		"..CCCCRRRRCCCCC.",
+		"..CCCCRGGRCCCCC.",
+		"..CCCCCRRCCCCCC.",
+		"..CCCCCRRCCCCCC.",
+		"..CCCCCRRCCCCCC.",
+		"..CCCCCRRCCCCCC.",
+		".CCCCCCRRCCCCCC.",
+		".CCCCCCRRCCCCCC.",
+		".CCCCCCRRCCCCCC.",
+		".RRRRRRRRRRRRRR.",
+	] } },
+	{ name: "Ember mantle", loot: 4, part: { y: 11, rows: [
+		"....CCCssCCC....",
+		".FFFCCCCCCCCFFF.",
+		".fFFCCCccCCCFFf.",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		"..CCCCCccCCCCC..",
+		".CCCCCCccCCCCCC.",
+		".CCCCCCccCCCCCC.",
+		".CfCfCCccCCfCfC.",
+		".FfFfFFFFFFfFfF.",
+	] } },
+	{ name: "Black Throne regalia", loot: 5, part: { y: 11, rows: [
+		"...G.CCssCC.G...",
+		"..GGCCCCCCCCGG..",
+		"..VVCCCGGCCCVV..",
+		"..CCCCCGGCCCCC..",
+		"..CCCCCCCCCCCC..",
+		"..CCVCCCCCCVCC..",
+		"..CCCCCVVCCCCC..",
+		".CCCCCCVVCCCCCC.",
+		".CCCCCCVVCCCCCC.",
+		".VCCCCCVVCCCCCV.",
+		".VVVVVVVVVVVVVV.",
+	] } },
+];
+
+// How many hair styles and robes everybody can pick from the start; the found ones come after them
+export const BASE_COUNT = { hairStyle: HAIR.length, cloak: CLOAKS.length, weapon: 1 };
+HAIR.push(...LOOT_HAIR);
+CLOAKS.push(...LOOT_ROBES);
+
+// ---------- Shirts, armour and weapons (found in the underground) ----------
+const SHIRT_BASE = [
+	"...CCCCssCCCC...",
+	"..CCCCCCCCCCCC..",
+	".CCCCCCCCCCCCCC.",
+	".CCCCCCCCCCCCCC.",
+	".SSCCCCCCCCCCSS.",
+	".SSCCCCCCCCCCSS.",
+	".SS.CCCCCCCC.SS.",
+	".SS.CCCCCCCC.SS.",
+	"....CCCCCCCC....",
+	"....CCCCCCCC....",
+	"....CCCCCCCC....",
+];
+const setAt = (row, x, text) => row.slice(0, x) + text + row.slice(x + text.length);
+const SHIRTS = [
+	{ name: "Plain shirt", part: { y: 11, rows: SHIRT_BASE } },
+	{ name: "Striped shirt", part: { y: 11, rows: SHIRT_BASE.map((row, i) => (i % 2 ? row.replace(/C/g, "P") : row)) } },
+	{ name: "Laced shirt", part: { y: 11, rows: SHIRT_BASE.map((row, i) => (i < 5 ? setAt(row, 7, ["ss", "sO", "Os", "sO", "Os"][i]) : row)) } },
+	{ name: "Squire's vest", part: { y: 11, rows: [
+		"...PPPPssPPPP...",
+		"..PPPCCssCCPPP..",
+		".PPPCCCccCCCPPP.",
+		".PPPCCCccCCCPPP.",
+		".PPPCCCccCCCPPP.",
+		".PPPCCCccCCCPPP.",
+		".PP.CCCccCCC.PP.",
+		".SS.CCCccCCC.SS.",
+		"....CCCccCCC....",
+		"....CCCccCCC....",
+		"....CCCccCCC....",
+	] } },
+];
+const ARMOR_TEMPLATE = [
+	"...AAAAssAAAA...",
+	".aAAAAAAAAAAAAa.",
+	"aAALAAAaaAAALAAa",
+	"aAAAAAAaaAAAAAAa",
+	".aAAAAAaaAAAAAa.",
+	".aAAAAAaaAAAAAa.",
+	"..aAAAAaaAAAAa..",
+	"..aAAAAaaAAAAa..",
+	"..aGGGGGGGGGGa..",
+	"..AAAAAaaAAAAA..",
+	"..AAAAAaaAAAAA..",
+];
+const armor = (name, A, a, L) => ({ name, colors: { A, a, L }, part: { y: 11, rows: ARMOR_TEMPLATE } });
+const ARMORS = [
+	armor("Bronze armour", "#c88a3a", "#7a4c1a", "#f0c070"),
+	armor("Blue armour", "#3d6fcf", "#1f3a7a", "#8fb8ff"),
+	armor("Green armour", "#3a9a52", "#1d5a2c", "#8fe0a0"),
+	armor("Red armour", "#c42a3a", "#6e0f1a", "#ff8a96"),
+];
+CLOAKS.push(...SHIRTS, ...ARMORS);
+
+// Weapons are held at the right side. Letters: w n wood  B b blade  Q q crystal  R r blood orb  G gold  F f flame
+const right = (text) => text.padStart(16, ".");
+const staff = (head, colors) => {
+	const y = 1, rows = head.map(right);
+	while (y + rows.length < HEIGHT) rows.push(right("wn"));
+	return { y, rows, colors };
+};
+const sword = (blade, tip, guard, colors) => {
+	const rows = [right(tip), ...Array(9).fill(right(blade)), right(guard), right("wn"), right("wn"), right("GG")];
+	return { y: 3, rows, colors };
+};
+const WOOD = { w: "#8a5a30", n: "#4e3119" };
+const WEAPONS = [
+	{ name: "None", part: null },
+	{ name: "Oak staff", part: staff(["w.w.", "www.", "wn"], WOOD) },
+	{ name: "Iron sword", part: sword("Bb", "B.", "GGGG", { ...WOOD, B: "#d6dcea", b: "#8e96aa" }) },
+	{ name: "Crystal staff", part: staff(["Q.", "QQQ", "QqQ", "Q."], { ...WOOD, Q: "#5ad7ff", q: "#1f8fc0" }) },
+	{ name: "Silver sword", part: sword("BBb", "BB.", "GGGGG", { ...WOOD, B: "#eef6ff", b: "#9ab7d8" }) },
+	{ name: "Blood staff", part: staff(["R.", "RRR", "RrR", "R."], { ...WOOD, R: "#d02a3a", r: "#5c0f1a" }) },
+	{ name: "Flame sword", part: sword("BBb", "F.", "GGGGG", { ...WOOD, B: "#ffb43c", b: "#d4541c", F: "#ff6a1c" }) },
+];
+
+// Which choice numbers a player may use: the ones everybody has plus the found ones (owned = dungeon numbers)
+export function allowedChoices(key, owned = {}) {
+	const list = [];
+	for (let i = 0; i < OPTIONS[key].length; i++) if (choiceAllowed(key, i, owned)) list.push(i);
+	return list;
+}
+
 // What can be chosen: key -> list of names (for the builder)
 export const OPTIONS = {
 	skin: NAMES.skin,
@@ -273,11 +488,12 @@ export const OPTIONS = {
 	cloak: CLOAKS.map((p) => p.name),
 	cloakColor: NAMES.cloakColor,
 	accessory: ACCESSORIES.map((p) => p.name),
+	weapon: WEAPONS.map((p) => p.name),
 };
 
 export const LABELS = {
 	skin: "Skin", hairStyle: "Hair", hairColor: "Hair colour", eyes: "Eyes", eyeColor: "Eye colour",
-	mouth: "Mouth", cloak: "Cloak", cloakColor: "Cloak colour", accessory: "Extra",
+	mouth: "Mouth", cloak: "Clothes", cloakColor: "Clothes colour", accessory: "Extra", weapon: "Weapon",
 };
 
 export const KEYS = Object.keys(OPTIONS);
@@ -295,7 +511,7 @@ export function normalizeAvatar(value) {
 
 export function randomAvatar() {
 	const avatar = {};
-	for (const key of KEYS) avatar[key] = Math.floor(Math.random() * OPTIONS[key].length);
+	for (const key of KEYS) avatar[key] = Math.floor(Math.random() * (BASE_COUNT[key] || OPTIONS[key].length));
 	return avatar;
 }
 
@@ -306,7 +522,7 @@ export function defaultAvatar(seed = "") {
 	const avatar = {};
 	for (const key of KEYS) {
 		hash = Math.imul(hash ^ (hash >>> 15), 2246822519) >>> 0;
-		avatar[key] = hash % OPTIONS[key].length;
+		avatar[key] = hash % (BASE_COUNT[key] || OPTIONS[key].length);
 	}
 	// A new player should not start with a hood or a crown they did not choose
 	avatar.accessory = 0;
@@ -404,12 +620,15 @@ export function drawAvatar(canvas, value, helmet = 0) {
 	const context = canvas.getContext("2d");
 	context.clearRect(0, 0, WIDTH, HEIGHT);
 	const colors = palette(avatar);
-	paint(context, CLOAKS[avatar.cloak].part, colors);
+	const extra = { ...colors, ...HELMET_COLORS };
+	paint(context, CLOAKS[avatar.cloak].part, { ...extra, ...CLOAKS[avatar.cloak].colors });
 	paint(context, BASE_HEAD, colors);
 	paint(context, EYES[avatar.eyes].part, colors);
 	paint(context, MOUTHS[avatar.mouth].part, colors);
-	paint(context, HAIR[avatar.hairStyle].part, colors);
+	paint(context, HAIR[avatar.hairStyle].part, extra);
 	paint(context, ACCESSORIES[avatar.accessory].part, colors);
+	const weapon = WEAPONS[avatar.weapon];
+	if (weapon.part) paint(context, weapon.part, { ...colors, ...weapon.part.colors });
 	if (HELMETS[helmet] && HELMETS[helmet].part) paint(context, HELMETS[helmet].part, { ...colors, ...HELMET_COLORS });
 }
 

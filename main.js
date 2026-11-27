@@ -32,7 +32,7 @@ import Tavern from './js/tavern/Tavern.js';
 import BazaarMenu from './js/trade/BazaarMenu.js';
 import FriendsMenu from './js/friends/FriendsMenu.js';
 import { profileUrl } from './js/profile/profileLink.js';
-import { DEATH_LOSS, DUNGEONS, HELMET_NAMES } from './js/rules.mjs';
+import { DEATH_LOSS, DUNGEONS, HELMET_NAMES, LOOT_NAMES } from './js/rules.mjs';
 import { UNIT_POWER } from './js/raids/rules.mjs';
 import { ACCENTS, ACCENT_NAMES, HELMETS, HELMET_COUNT, drawAvatar, defaultAvatar, normalizeAvatar, randomAvatar } from './js/profile/Avatar.js';
 import formatNumber, { formatRate } from './js/formatNumber.js';
@@ -50,7 +50,9 @@ let signedUp = false; // true once the player has chosen their names
 // How the player looks and what their character page shows (see js/profile and player.html)
 // Health, Defence, Strength and Magic (levels); the points to spend come from the player level
 const Attributes = defaultAttributes();
-const Profile = { avatar: null, bio: "", accent: 0, isPublic: true, showResources: true, showMap: true, helmet: 0, helmetsOwned: [] };
+const Profile = { avatar: null, bio: "", accent: 0, isPublic: true, showResources: true, showMap: true, helmet: 0, helmetsOwned: [], hairsOwned: [], robesOwned: [], shirtsOwned: [], armorsOwned: [], weaponsOwned: [] };
+const ownedParts = () => ({ hair: Profile.hairsOwned, robe: Profile.robesOwned, shirt: Profile.shirtsOwned, armor: Profile.armorsOwned, weapon: Profile.weaponsOwned });
+const cleanOwned = (list) => Array.isArray(list) ? list.filter((n) => Number.isInteger(n) && n >= 1 && n <= 6) : [];
 let myTown = new Town(houseSize, xpRates);
 const Upgrades = new Upgrade();
 
@@ -771,7 +773,7 @@ signUpForm.addEventListener("submit", async (event) => {
 	const accents = document.getElementById("profileAccents");
 	const viewLink = document.getElementById("profileView");
 	let accent = 0;
-	const builder = new AvatarBuilder(document.getElementById("profileBuilder"), randomAvatar());
+	const builder = new AvatarBuilder(document.getElementById("profileBuilder"), randomAvatar(), () => {}, ownedParts);
 	const helmetRow = document.getElementById("profileHelmets");
 	let helmet = 0;
 	function drawHelmets(){
@@ -938,6 +940,11 @@ const saveFields = {
 		if (Number.isInteger(value.accent) && value.accent >= 0 && value.accent < ACCENTS.length) Profile.accent = value.accent;
 		for (const key of ["isPublic", "showResources", "showMap"]) if (typeof value[key] === "boolean") Profile[key] = value[key];
 		if (Array.isArray(value.helmetsOwned)) Profile.helmetsOwned = value.helmetsOwned.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);
+		Profile.hairsOwned = cleanOwned(value.hairsOwned);
+		Profile.robesOwned = cleanOwned(value.robesOwned);
+		Profile.shirtsOwned = cleanOwned(value.shirtsOwned);
+		Profile.armorsOwned = cleanOwned(value.armorsOwned);
+		Profile.weaponsOwned = cleanOwned(value.weaponsOwned);
 		if (Number.isInteger(value.helmet) && (value.helmet === 0 || Profile.helmetsOwned.includes(value.helmet))) Profile.helmet = value.helmet;
 	}],
 
@@ -1056,6 +1063,11 @@ async function sendProfile(candidate = Profile, force = false){
 		if (response.ok){
 			profileLastSent = body;
 			const data = await response.json().catch(() => ({}));
+			if (Array.isArray(data.hairs)) Profile.hairsOwned = cleanOwned(data.hairs);
+			if (Array.isArray(data.robes)) Profile.robesOwned = cleanOwned(data.robes);
+			if (Array.isArray(data.shirts)) Profile.shirtsOwned = cleanOwned(data.shirts);
+			if (Array.isArray(data.armors)) Profile.armorsOwned = cleanOwned(data.armors);
+			if (Array.isArray(data.weapons)) Profile.weaponsOwned = cleanOwned(data.weapons);
 			if (Array.isArray(data.helmets)) Profile.helmetsOwned = data.helmets.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);
 			return { ok: true };
 		}
@@ -1171,6 +1183,7 @@ const underground = new Underground(document, {
 	netDetails: new URLSearchParams(location.search).has("net"), // ?net: shows what is slow, under the ping
 	chat: { subscribe: (fn) => chat ? chat.subscribe(fn) : () => {}, recent: () => (chat ? chat.recentMessages.slice(-6) : []), send: (text) => (chat ? chat.post(text) : Promise.resolve({ ok: false, error: "The chat is not available." })) },
 	helmetChance: new URLSearchParams(location.search).has("helmets") ? 1 : undefined,
+	lootChance: new URLSearchParams(location.search).has("helmets") ? 1 : undefined,
 	getPlayer: () => ({ id: playerSync.id, name: Account.vampireName, level: House.level, avatar: Profile.avatar || defaultAvatar(Account.vampireName), helmet: Profile.helmet, attributes: cleanAttributes({ ...Attributes }) }),
 	// The server decides who may enter from what it knows: make sure that is up to date
 	prepare: async () => {
@@ -1185,15 +1198,26 @@ const underground = new Underground(document, {
 		displayUpdate();
 		return parts.join(" ") + (reward.name ? " (" + reward.name + ")" : "");
 	},
-	onDied: (by) => {
+	onDied: (by, serverLoss) => {
+		// The server says what was lost (it hands the same to the vampire who killed you); without it, work it out here
 		const lost = [];
 		for (const kind of LOSS_KINDS){
-			const amount = Math.floor(Inv.items[kind] * DEATH_LOSS);
+			const amount = serverLoss ? Math.min(Math.floor(serverLoss[kind] || 0), Math.floor(Inv.items[kind])) : Math.floor(Inv.items[kind] * DEATH_LOSS);
 			if (amount > 0){ Inv.items[kind] -= amount; lost.push(amount + " " + kind); }
 		}
 		displayUpdate();
 		save();
 		return "Slain by " + by + "." + (lost.length ? " You lost " + lost.join(", ") + "." : "");
+	},
+	onLoot: (message) => {
+		const key = { hair: "hairsOwned", robe: "robesOwned", shirt: "shirtsOwned", armor: "armorsOwned", weapon: "weaponsOwned" }[message.kind];
+		if (!key) return "You found something new!";
+		const item = Number.isInteger(message.item) ? message.item : message.dungeon;
+		Profile[key] = cleanOwned([...new Set([...Profile[key], ...(message.owned || [])])]);
+		save();
+		const name = message.name || (LOOT_NAMES[message.kind] || [])[item] || "something new";
+		const noun = { hair: "the hairstyle", robe: "the robe", shirt: "the shirt", armor: "the armour", weapon: "the weapon" }[message.kind];
+		return "You found " + noun + " " + name + (message.isNew === false ? " (you already had it)" : "! Choose it in My character.");
 	},
 	onHelmet: (message) => {
 		if (Array.isArray(message.owned)) Profile.helmetsOwned = message.owned.filter((n) => Number.isInteger(n) && n >= 1 && n <= HELMET_COUNT);

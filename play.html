@@ -456,10 +456,13 @@
 
 	<!-- Build menu -->
 	<div id="myModal" class="modal">
-		<div class="modal-content">
+		<div class="modal-content build-content">
 			<div id="close" class="close">&times;</div>
 			<h3>Build</h3>
 
+			<div class="build-columns">
+				<div class="build-column">
+					<h4 class="build-heading">Residence</h4>
 			<div class="button buy-building-button" id="buyHut">Buy hut
 				<div class="hover">
 					<p>Has place for 4 familiars</p>
@@ -476,6 +479,27 @@
 				</div>
 			</div>
 
+			<div class="button buy-building-button" id="buyTavern">Buy tavern
+				<div class="hover">
+					<p>A place where every player can meet: chat, trade, dice and friends. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingTavernWood"></span> wood, <span id="buildingTavernIron"></span> iron, <span id="buildingTavernBronze"></span> bronze, <span id="buildingTavernGold"></span> gold</p>
+					<p>familiars required: <span id="buildingTavernFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+			<div class="button buy-building-button" id="buyMansion">Buy mansion
+				<div class="hover">
+					<p>Your private house. Other players can visit; you can place furniture and send visitors out. Needs level 6. You can have one.</p>
+					<p>Build on grassland</p>
+					<p>price: <span id="buildingMansionWood"></span> wood, <span id="buildingMansionIron"></span> iron, <span id="buildingMansionBronze"></span> bronze, <span id="buildingMansionGold"></span> gold</p>
+					<p>familiars required: <span id="buildingMansionFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
+				</div>
+				<div class="build-column">
+					<h4 class="build-heading">Production</h4>
 			<div class="button buy-building-button" id="buyFarm">Buy farm
 				<div class="hover">
 					<p>Has place for 5 familiars</p>
@@ -524,24 +548,6 @@
 				</div>
 			</div>
 
-			<div class="button buy-building-button" id="buyTavern">Buy tavern
-				<div class="hover">
-					<p>A place where every player can meet: chat, trade, dice and friends. You can have one.</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingTavernWood"></span> wood, <span id="buildingTavernIron"></span> iron, <span id="buildingTavernBronze"></span> bronze, <span id="buildingTavernGold"></span> gold</p>
-					<p>familiars required: <span id="buildingTavernFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
-			<div class="button buy-building-button" id="buyMansion">Buy mansion
-				<div class="hover">
-					<p>Your private house. Other players can visit; you can place furniture and send visitors out. Needs level 6. You can have one.</p>
-					<p>Build on grassland</p>
-					<p>price: <span id="buildingMansionWood"></span> wood, <span id="buildingMansionIron"></span> iron, <span id="buildingMansionBronze"></span> bronze, <span id="buildingMansionGold"></span> gold</p>
-					<p>familiars required: <span id="buildingMansionFamiliarsRequired"></span></p>
-				</div>
-			</div>
-
 			<div class="button buy-building-button" id="buyRoad">Buy road tile
 				<div class="hover">
 					<p>A paved road for trade routes. It can be built on grass, forest, rock (a mountain road) and water (a bridge). After the first tile you keep laying roads by clicking tiles (Esc to stop)</p>
@@ -560,7 +566,9 @@
 				</div>
 			</div>
 
-			<h4 class="build-heading">Defences</h4>
+				</div>
+				<div class="build-column">
+					<h4 class="build-heading">Defence</h4>
 			<div class="button buy-building-button" id="buyWatchTower">Buy watch tower
 				<div class="hover">
 					<p>Warns you before a raid arrives, and shows the raiders' exact strength</p>
@@ -585,6 +593,9 @@
 					<p>Build on grassland</p>
 					<p>price: <span id="buildingFortWood"></span> wood, <span id="buildingFortIron"></span> iron, <span id="buildingFortBronze"></span> bronze, <span id="buildingFortGold"></span> gold</p>
 					<p>familiars required: <span id="buildingFortFamiliarsRequired"></span></p>
+				</div>
+			</div>
+
 				</div>
 			</div>
 		</div>

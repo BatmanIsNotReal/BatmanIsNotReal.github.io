@@ -50,9 +50,10 @@ class LocalConnection {
 		const dungeon = dungeonById(join.dungeon);
 		this.world = new World(join.dungeon, {
 			onKill: (id, monster, reward) => say({ t: "reward", ...reward, name: monster.name }),
+			onLoot: (id, d, kind, item) => say({ t: "loot", kind, dungeon: d, item, name: "", isNew: true, owned: [item] }),
 			onHelmet: (id, d) => say({ t: "helmet", dungeon: d, name: "helmet", isNew: true, owned: [d] }),
 			onDeath: (id, by) => say({ t: "died", by }),
-		}, { helmetChance: info.helmetChance });
+		}, { helmetChance: info.helmetChance, lootChance: info.lootChance });
 		this.world.addPlayer(pid, { name: info.name, level: info.level, stats: info.attributes });
 		say({ t: "hello", you: pid, dungeon: dungeon.id, name: dungeon.name, pvp: !!dungeon.pvp });
 		say({ t: "roster", players: { [pid]: { name: info.name, avatar: info.avatar, helmet: info.helmet, level: info.level } } });
@@ -254,7 +255,7 @@ export default class Underground {
 		const handlers = { message: (m) => this.receive(m), close: () => this.lost() };
 		try {
 			this.conn = this.options.solo
-				? new LocalConnection(join, handlers, { ...player, helmetChance: this.options.helmetChance })
+				? new LocalConnection(join, handlers, { ...player, helmetChance: this.options.helmetChance, lootChance: this.options.lootChance })
 				: new RemoteConnection(this.options.url, join, handlers);
 		} catch {
 			this.say("The underground cannot be reached right now.", true);
@@ -317,11 +318,14 @@ export default class Underground {
 		else if (m.t === "reward") {
 			const text = this.options.onReward?.(m);
 			if (text) this.addFeed(text);
+		} else if (m.t === "loot") {
+			const text = this.options.onLoot?.(m);
+			this.addFeed(text || `You found something new!`, true);
 		} else if (m.t === "helmet") {
 			const text = this.options.onHelmet?.(m);
 			this.addFeed(text || `You found a helmet!`, true);
 		} else if (m.t === "died") {
-			const text = this.options.onDied?.(m.by);
+			const text = this.options.onDied?.(m.by, m.lost);
 			this.addFeed(text || "You died.", false, true);
 		} else if (m.t === "error") {
 			this.say(m.error || "Something went wrong.", true);

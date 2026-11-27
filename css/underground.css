@@ -45,6 +45,17 @@ body.ug-active > *:not(.ug-overlay) { visibility: hidden; }
 .war-body p { margin: 0.4rem 0; text-align: left; }
 .war-actions { margin-top: 0.8rem; }
 .build-heading { margin: 0.8rem 0 0.3rem; color: var(--gold); }
+/* The build menu: Residence | Production | Defence side by side (stacked on a narrow screen) */
+.build-content { width: min(100%, 62rem); }
+.build-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 0.5rem; border: 3px solid var(--line); }
+.build-column { padding: 0 0.75rem 1rem; }
+.build-column + .build-column { border-left: 3px solid var(--line); }
+.build-column .build-heading { margin: 0; padding: 0.6rem 0; font-size: 1.6rem; border-bottom: 3px solid var(--line); }
+.build-column .buy-building-button { width: 100%; box-sizing: border-box; }
+@media (max-width: 760px) {
+	.build-columns { grid-template-columns: 1fr; }
+	.build-column + .build-column { border-left: 0; border-top: 3px solid var(--line); }
+}
 .ug-netdetail { position: absolute; top: 2.4rem; left: 0.8rem; font-size: 0.95rem; color: var(--bone-dim); text-shadow: 0 0 4px #000, 0 0 4px #000; pointer-events: none; }
 
 /* Chat in the underground: the same chat as on the map */
